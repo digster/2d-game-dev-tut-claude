@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced - Game Dev Math Guide</title>
+    <link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Advanced Game Math</h1>
+        <p class="subtitle">Complex behaviors - AI, curves, pathfinding, and advanced systems</p>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="intermediate.html" class="nav-button">← Intermediate</a>
+            <a href="advanced.html" class="nav-button active">Advanced</a>
+            <a href="expert.html" class="nav-button">Expert →</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">📚 Topics in This Guide</div>
+            <ul>
+                <li><a href="#steering">Steering Behaviors (AI Movement)</a></li>
+                <li><a href="#bezier">Bézier Curves & Splines</a></li>
+                <li><a href="#pathfinding">A* Pathfinding</a></li>
+                <li><a href="#state-machines">State Machines</a></li>
+            </ul>
+        </div>
+
+        <!-- STEERING BEHAVIORS -->
+        <div id="steering" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🤖 Steering Behaviors (AI Movement)</h2>
+
+            <div class="concept-box">
+                <h4>What are Steering Behaviors?</h4>
+                <p>Steering behaviors make AI characters move realistically by combining simple forces. Instead of teleporting or moving in straight lines, they accelerate, turn smoothly, and avoid obstacles naturally.</p>
+                <p><strong>Common Behaviors:</strong></p>
+                <ul>
+                    <li><strong>Seek:</strong> Move toward a target</li>
+                    <li><strong>Flee:</strong> Move away from a threat</li>
+                    <li><strong>Arrive:</strong> Slow down when approaching target</li>
+                    <li><strong>Wander:</strong> Move randomly but smoothly</li>
+                    <li><strong>Avoid:</strong> Steer around obstacles</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Steering Behavior Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SteeringEntity</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.maxSpeed = <span class="number">5</span>;
+        <span class="keyword">this</span>.maxForce = <span class="number">0.2</span>;
+    }
+
+    <span class="comment">// Seek: Move toward target</span>
+    <span class="function">seek</span>(target) {
+        <span class="keyword">const</span> desired = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+        desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+
+        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
+        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+
+        <span class="keyword">return</span> steer;
+    }
+
+    <span class="comment">// Arrive: Slow down when close to target</span>
+    <span class="function">arrive</span>(target, slowingRadius = <span class="number">100</span>) {
+        <span class="keyword">const</span> desired = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+        <span class="keyword">const</span> distance = desired.<span class="function">length</span>();
+
+        <span class="keyword">if</span> (distance < slowingRadius) {
+            <span class="comment">// Scale speed based on distance</span>
+            <span class="keyword">const</span> speed = <span class="function">map</span>(distance, <span class="number">0</span>, slowingRadius, <span class="number">0</span>, <span class="keyword">this</span>.maxSpeed);
+            desired.<span class="function">normalize</span>().<span class="function">multiply</span>(speed);
+        } <span class="keyword">else</span> {
+            desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+        }
+
+        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
+        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+
+        <span class="keyword">return</span> steer;
+    }
+
+    <span class="comment">// Flee: Move away from threat</span>
+    <span class="function">flee</span>(threat) {
+        <span class="keyword">const</span> desired = <span class="keyword">this</span>.position.<span class="function">subtract</span>(threat);
+        desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+
+        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
+        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+
+        <span class="keyword">return</span> steer;
+    }
+
+    <span class="function">applyForce</span>(force) {
+        <span class="keyword">this</span>.velocity.<span class="function">add</span>(force);
+        <span class="keyword">this</span>.velocity.<span class="function">limit</span>(<span class="keyword">this</span>.maxSpeed);
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Steering Behaviors</h3>
+            <div class="diagram">
+                <canvas id="steeringDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSeek">Seek Mode</button>
+                <button id="btnArrive">Arrive Mode</button>
+                <button id="btnFlee">Flee Mode</button>
+                <button id="btnWander">Wander Mode</button>
+            </div>
+            <div id="steeringInfo" class="info-display">Move your mouse to see AI respond</div>
+
+            <div class="key-point">
+                <strong>💡 Combining Behaviors:</strong> The real power comes from combining multiple behaviors! For example: Seek the player + Avoid obstacles + Separate from allies = Smart enemy movement!
+            </div>
+        </div>
+
+        <!-- BÉZIER CURVES -->
+        <div id="bezier" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>📈 Bézier Curves & Splines</h2>
+
+            <div class="concept-box">
+                <h4>What are Bézier Curves?</h4>
+                <p>Bézier curves create smooth, curved paths between points. They're used for:</p>
+                <ul>
+                    <li>Character movement paths</li>
+                    <li>Camera tracks</li>
+                    <li>Projectile arcs</li>
+                    <li>UI animations</li>
+                </ul>
+                <p>A quadratic Bézier curve has 3 points: start, control point, and end.</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Bézier Curve Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Quadratic Bézier: 3 points (start, control, end)</span>
+<span class="keyword">function</span> <span class="function">quadraticBezier</span>(p0, p1, p2, t) {
+    <span class="keyword">const</span> x = (<span class="number">1</span> - t) * (<span class="number">1</span> - t) * p0.x +
+              <span class="number">2</span> * (<span class="number">1</span> - t) * t * p1.x +
+              t * t * p2.x;
+
+    <span class="keyword">const</span> y = (<span class="number">1</span> - t) * (<span class="number">1</span> - t) * p0.y +
+              <span class="number">2</span> * (<span class="number">1</span> - t) * t * p1.y +
+              t * t * p2.y;
+
+    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+}
+
+<span class="comment">// Cubic Bézier: 4 points (start, control1, control2, end)</span>
+<span class="keyword">function</span> <span class="function">cubicBezier</span>(p0, p1, p2, p3, t) {
+    <span class="keyword">const</span> u = <span class="number">1</span> - t;
+    <span class="keyword">const</span> tt = t * t;
+    <span class="keyword">const</span> uu = u * u;
+    <span class="keyword">const</span> uuu = uu * u;
+    <span class="keyword">const</span> ttt = tt * t;
+
+    <span class="keyword">const</span> x = uuu * p0.x +
+              <span class="number">3</span> * uu * t * p1.x +
+              <span class="number">3</span> * u * tt * p2.x +
+              ttt * p3.x;
+
+    <span class="keyword">const</span> y = uuu * p0.y +
+              <span class="number">3</span> * uu * t * p1.y +
+              <span class="number">3</span> * u * tt * p2.y +
+              ttt * p3.y;
+
+    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Bézier Curves</h3>
+            <div class="diagram">
+                <canvas id="bezierDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnQuadratic">Quadratic (3 points)</button>
+                <button id="btnCubic">Cubic (4 points)</button>
+                <button id="btnAnimate">Animate Path</button>
+            </div>
+            <div id="bezierInfo" class="info-display">Drag the control points to reshape the curve</div>
+        </div>
+
+        <!-- A* PATHFINDING -->
+        <div id="pathfinding" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🗺️ A* Pathfinding</h2>
+
+            <div class="concept-box">
+                <h4>What is A* Pathfinding?</h4>
+                <p>A* (pronounced "A-star") finds the shortest path from start to goal, avoiding obstacles. It's used in:</p>
+                <ul>
+                    <li>Strategy games (RTS units finding paths)</li>
+                    <li>RPGs (characters navigating to targets)</li>
+                    <li>Tower defense (enemy pathing)</li>
+                </ul>
+                <p><strong>How it works:</strong></p>
+                <ol>
+                    <li>Start at the beginning node</li>
+                    <li>Explore neighboring nodes</li>
+                    <li>Pick the node with lowest cost (distance + estimated distance to goal)</li>
+                    <li>Repeat until goal is reached</li>
+                </ol>
+                <div class="formula">
+                    f(n) = g(n) + h(n)
+                </div>
+                <p>Where:</p>
+                <ul>
+                    <li><code>g(n)</code> = cost from start to current node</li>
+                    <li><code>h(n)</code> = estimated cost from current to goal (heuristic)</li>
+                    <li><code>f(n)</code> = total estimated cost</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: A* Implementation (Simplified)</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Node</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+        <span class="keyword">this</span>.g = <span class="number">0</span>;  <span class="comment">// Cost from start</span>
+        <span class="keyword">this</span>.h = <span class="number">0</span>;  <span class="comment">// Heuristic (estimated cost to goal)</span>
+        <span class="keyword">this</span>.f = <span class="number">0</span>;  <span class="comment">// Total cost (g + h)</span>
+        <span class="keyword">this</span>.parent = <span class="keyword">null</span>;
+    }
+}
+
+<span class="keyword">function</span> <span class="function">astar</span>(start, goal, grid) {
+    <span class="keyword">const</span> openSet = [start];
+    <span class="keyword">const</span> closedSet = [];
+
+    <span class="keyword">while</span> (openSet.length > <span class="number">0</span>) {
+        <span class="comment">// Find node with lowest f score</span>
+        <span class="keyword">let</span> current = openSet[<span class="number">0</span>];
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < openSet.length; i++) {
+            <span class="keyword">if</span> (openSet[i].f < current.f) {
+                current = openSet[i];
+            }
+        }
+
+        <span class="comment">// Found the goal!</span>
+        <span class="keyword">if</span> (current === goal) {
+            <span class="keyword">return</span> <span class="function">reconstructPath</span>(current);
+        }
+
+        <span class="comment">// Move current from open to closed</span>
+        openSet.<span class="function">splice</span>(openSet.<span class="function">indexOf</span>(current), <span class="number">1</span>);
+        closedSet.<span class="function">push</span>(current);
+
+        <span class="comment">// Check all neighbors</span>
+        <span class="keyword">const</span> neighbors = <span class="function">getNeighbors</span>(current, grid);
+        <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
+            <span class="keyword">if</span> (closedSet.<span class="function">includes</span>(neighbor)) <span class="keyword">continue</span>;
+
+            <span class="keyword">const</span> tempG = current.g + <span class="number">1</span>;  <span class="comment">// Distance to neighbor</span>
+
+            <span class="keyword">if</span> (!openSet.<span class="function">includes</span>(neighbor)) {
+                openSet.<span class="function">push</span>(neighbor);
+            } <span class="keyword">else</span> <span class="keyword">if</span> (tempG >= neighbor.g) {
+                <span class="keyword">continue</span>;  <span class="comment">// Not a better path</span>
+            }
+
+            neighbor.g = tempG;
+            neighbor.h = <span class="function">heuristic</span>(neighbor, goal);
+            neighbor.f = neighbor.g + neighbor.h;
+            neighbor.parent = current;
+        }
+    }
+
+    <span class="keyword">return</span> [];  <span class="comment">// No path found</span>
+}
+
+<span class="keyword">function</span> <span class="function">heuristic</span>(a, b) {
+    <span class="comment">// Manhattan distance</span>
+    <span class="keyword">return</span> Math.<span class="function">abs</span>(a.x - b.x) + Math.<span class="function">abs</span>(a.y - b.y);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: A* Pathfinding</h3>
+            <div class="diagram">
+                <canvas id="astarDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSetStart">Set Start</button>
+                <button id="btnSetGoal">Set Goal</button>
+                <button id="btnAddWalls">Draw Walls</button>
+                <button id="btnFindPath">Find Path</button>
+                <button id="btnClearGrid">Clear Grid</button>
+            </div>
+            <div id="astarInfo" class="info-display">Click to place start/goal, drag to draw walls</div>
+
+            <div class="thinking-prompt">
+                <h4>🤔 Think About It:</h4>
+                <p>A* is great for grid-based games. But what if your game doesn't use a grid? Try researching "navigation meshes" (navmeshes) for non-grid pathfinding!</p>
+            </div>
+        </div>
+
+        <!-- STATE MACHINES -->
+        <div id="state-machines" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🔄 State Machines</h2>
+
+            <div class="concept-box">
+                <h4>What are State Machines?</h4>
+                <p>State machines help manage complex behavior by breaking it into simple states. An entity can only be in one state at a time, and transitions between states based on conditions.</p>
+                <p><strong>Example - Enemy AI States:</strong></p>
+                <ul>
+                    <li><strong>Patrol:</strong> Walk around until player is spotted</li>
+                    <li><strong>Chase:</strong> Run toward player</li>
+                    <li><strong>Attack:</strong> When close enough, attack</li>
+                    <li><strong>Flee:</strong> If health is low, run away</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: State Machine Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">State</span> {
+    <span class="function">enter</span>(entity) {}   <span class="comment">// Called when entering this state</span>
+    <span class="function">update</span>(entity) {}  <span class="comment">// Called every frame</span>
+    <span class="function">exit</span>(entity) {}    <span class="comment">// Called when leaving this state</span>
+}
+
+<span class="keyword">class</span> <span class="function">PatrolState</span> <span class="keyword">extends</span> <span class="function">State</span> {
+    <span class="function">enter</span>(entity) {
+        entity.speed = <span class="number">2</span>;
+        entity.color = <span class="string">'#66bb6a'</span>;
+    }
+
+    <span class="function">update</span>(entity) {
+        <span class="comment">// Walk around randomly</span>
+        <span class="keyword">if</span> (Math.<span class="function">random</span>() < <span class="number">0.02</span>) {
+            entity.direction = Vector2D.<span class="function">random</span>(<span class="number">1</span>);
+        }
+
+        <span class="comment">// Check if player is nearby</span>
+        <span class="keyword">const</span> distToPlayer = entity.position.<span class="function">distance</span>(player.position);
+        <span class="keyword">if</span> (distToPlayer < <span class="number">150</span>) {
+            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">ChaseState</span>());
+        }
+    }
+}
+
+<span class="keyword">class</span> <span class="function">ChaseState</span> <span class="keyword">extends</span> <span class="function">State</span> {
+    <span class="function">enter</span>(entity) {
+        entity.speed = <span class="number">4</span>;
+        entity.color = <span class="string">'#ffa726'</span>;
+    }
+
+    <span class="function">update</span>(entity) {
+        <span class="comment">// Chase the player</span>
+        entity.direction = player.position.<span class="function">subtract</span>(entity.position).<span class="function">normalize</span>();
+
+        <span class="keyword">const</span> distToPlayer = entity.position.<span class="function">distance</span>(player.position);
+
+        <span class="comment">// Close enough to attack?</span>
+        <span class="keyword">if</span> (distToPlayer < <span class="number">50</span>) {
+            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">AttackState</span>());
+        }
+        <span class="comment">// Lost sight of player?</span>
+        <span class="keyword">else</span> <span class="keyword">if</span> (distToPlayer > <span class="number">300</span>) {
+            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">PatrolState</span>());
+        }
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Entity</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.currentState = <span class="keyword">new</span> <span class="function">PatrolState</span>();
+        <span class="keyword">this</span>.currentState.<span class="function">enter</span>(<span class="keyword">this</span>);
+    }
+
+    <span class="function">setState</span>(newState) {
+        <span class="keyword">this</span>.currentState.<span class="function">exit</span>(<span class="keyword">this</span>);
+        <span class="keyword">this</span>.currentState = newState;
+        <span class="keyword">this</span>.currentState.<span class="function">enter</span>(<span class="keyword">this</span>);
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.currentState.<span class="function">update</span>(<span class="keyword">this</span>);
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: State Machine AI</h3>
+            <div class="diagram">
+                <canvas id="stateDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddEnemy">Add Enemy</button>
+                <button id="btnResetStates">Reset</button>
+            </div>
+            <div id="stateInfo" class="info-display">Use WASD to move. Watch enemies change states!</div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenge: More Complex States</h4>
+                <p>Try adding these states:</p>
+                <ul>
+                    <li><strong>Investigate:</strong> When player was seen but lost, search the area</li>
+                    <li><strong>Call for Help:</strong> Alert nearby allies when player is spotted</li>
+                    <li><strong>Celebrate:</strong> Victory dance when player is defeated</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="section" style="text-align: center;">
+            <h2>🎉 Excellent Work!</h2>
+            <p style="font-size: 1.2em; margin: 30px 0;">
+                You've mastered advanced techniques! Ready for expert-level optimization?
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="intermediate.html" class="nav-button">← Review Core Systems</a>
+                <a href="expert.html" class="nav-button" style="font-size: 1.2em; padding: 20px 40px;">
+                    Continue to Expert →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <div class="scroll-to-top" id="scrollToTop">↑</div>
+
+    <!-- Load shared utilities -->
+    <script src="shared/utils.js"></script>
+
+    <!-- Page-specific JavaScript -->
+    <script src="advanced-demos.js"></script>
+</body>
+</html>

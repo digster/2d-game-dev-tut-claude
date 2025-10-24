@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beginner - Game Dev Math Guide</title>
+    <link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Beginner's Guide to Game Math</h1>
+        <p class="subtitle">Master the foundations - Vectors, operations, and basic game systems</p>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="index.html" class="nav-button">← Home</a>
+            <a href="beginner.html" class="nav-button active">Beginner</a>
+            <a href="intermediate.html" class="nav-button">Intermediate →</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">📚 Topics in This Guide</div>
+            <ul>
+                <li><a href="#intro">Why Math Matters in Games</a></li>
+                <li><a href="#vectors">Vectors: Position & Direction</a></li>
+                <li><a href="#vector-operations">Essential Vector Operations</a></li>
+                <li><a href="#dot-product">Dot Product: Understanding Direction</a></li>
+                <li><a href="#game-systems">Building Your First Game System</a></li>
+                <li><a href="#matrices">Matrix Transformations</a></li>
+            </ul>
+        </div>
+
+        <!-- INTRODUCTION -->
+        <div id="intro" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🚀 Why Math Matters in Games</h2>
+            <p>When you play a game, math is happening everywhere - even if you don't see it!</p>
+
+            <div class="example-box">
+                <h4>🎯 Real Game Examples</h4>
+                <ul>
+                    <li><strong>Moving a character:</strong> Uses vectors to track position and direction</li>
+                    <li><strong>Rotating a spaceship:</strong> Uses matrices or angles</li>
+                    <li><strong>Checking if you hit an enemy:</strong> Uses vector distance calculations</li>
+                    <li><strong>Creating particle effects:</strong> Uses physics and vectors</li>
+                    <li><strong>Smooth camera following:</strong> Uses linear interpolation (lerp)</li>
+                </ul>
+            </div>
+
+            <p>Don't worry if these terms sound scary! We'll break everything down into simple, visual examples. By the end, you'll understand exactly how games work "under the hood."</p>
+
+            <div class="key-point">
+                <strong>💡 Key Insight:</strong> Game development is just applied math. Once you understand the patterns, you can create anything you imagine!
+            </div>
+        </div>
+
+        <!-- VECTORS -->
+        <div id="vectors" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>📐 Vectors: Your Position & Direction Tool</h2>
+
+            <h3>What is a Vector?</h3>
+            <p>Think of a vector as an arrow that points from one place to another. It has two important properties:</p>
+            <ul>
+                <li><strong>Direction:</strong> Which way it's pointing</li>
+                <li><strong>Length (magnitude):</strong> How far it goes</li>
+            </ul>
+
+            <div class="concept-box">
+                <h4>Real-World Analogy</h4>
+                <p>Imagine you're telling a friend how to walk to a store. You could say:</p>
+                <ul>
+                    <li>"Walk 3 blocks east, then 2 blocks north"</li>
+                    <li>Or in math: <strong>Vector = (3, 2)</strong></li>
+                </ul>
+                <p>The vector (3, 2) means: move 3 units in the X direction (horizontal) and 2 units in the Y direction (vertical).</p>
+            </div>
+
+            <h3>Interactive Demo: Understanding Vectors</h3>
+            <div class="diagram">
+                <canvas id="vectorBasics" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSimpleVector">Show Simple Vector</button>
+                <button id="btnPlayerVector">Player Movement Example</button>
+                <button id="btnBulletVector">Bullet Direction Example</button>
+            </div>
+            <div id="vectorInfo" class="info-display"></div>
+
+            <h3>Building a Vector Class - Step by Step</h3>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>First, let's store x and y:</strong>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: The Simplest Vector (Step 1)</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.x = x;  <span class="comment">// Horizontal position</span>
+        <span class="keyword">this</span>.y = y;  <span class="comment">// Vertical position</span>
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using it in a game:</h4>
+                    <pre><code><span class="comment">// Create a player at position (100, 200)</span>
+<span class="keyword">let</span> playerPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">100</span>, <span class="number">200</span>);
+
+<span class="comment">// Create an enemy at position (300, 150)</span>
+<span class="keyword">let</span> enemyPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">300</span>, <span class="number">150</span>);</code></pre>
+                </div>
+            </details>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Add vector addition (combining movements):</strong>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Adding Movement (Step 2)</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+    }
+
+    <span class="comment">// Add another vector to this one</span>
+    <span class="function">add</span>(other) {
+        <span class="keyword">this</span>.x += other.x;  <span class="comment">// Move horizontally</span>
+        <span class="keyword">this</span>.y += other.y;  <span class="comment">// Move vertically</span>
+        <span class="keyword">return</span> <span class="keyword">this</span>;        <span class="comment">// Allow chaining</span>
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Moving the player:</h4>
+                    <pre><code><span class="comment">// Player starts at (100, 100)</span>
+<span class="keyword">let</span> player = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">100</span>, <span class="number">100</span>);
+
+<span class="comment">// Player presses 'W' key - move up</span>
+<span class="keyword">let</span> movement = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">5</span>);  <span class="comment">// Up is negative Y!</span>
+player.<span class="function">add</span>(movement);
+
+<span class="comment">// Now player is at (100, 95) - moved up 5 pixels!</span></code></pre>
+                </div>
+            </details>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Add distance calculation (for collision detection):</strong>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Measuring Distance (Step 3)</summary>
+                <div class="code-container">
+                    <pre><code><span class="function">distance</span>(other) {
+    <span class="comment">// Use Pythagorean theorem: √(dx² + dy²)</span>
+    <span class="keyword">let</span> dx = other.x - <span class="keyword">this</span>.x;  <span class="comment">// Horizontal distance</span>
+    <span class="keyword">let</span> dy = other.y - <span class="keyword">this</span>.y;  <span class="comment">// Vertical distance</span>
+    <span class="keyword">return</span> Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+}</code></pre>
+                </div>
+
+                <div class="key-point">
+                    <strong>💡 Why distance matters:</strong> You check if a bullet hit an enemy by seeing if the distance between them is less than their combined radii!
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Collision detection:</h4>
+                    <pre><code><span class="keyword">let</span> bullet = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">150</span>, <span class="number">150</span>);
+<span class="keyword">let</span> enemy = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">155</span>, <span class="number">148</span>);
+
+<span class="keyword">let</span> distance = bullet.<span class="function">distance</span>(enemy);  <span class="comment">// About 5.4 pixels</span>
+
+<span class="keyword">if</span> (distance < <span class="number">10</span>) {  <span class="comment">// Hit radius = 10 pixels</span>
+    console.<span class="function">log</span>(<span class="string">"💥 Hit!"</span>);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Play with Vectors!</h3>
+            <div class="diagram">
+                <canvas id="vectorPlayground" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddObject">Add Moving Object</button>
+                <button id="btnClearObjects">Clear All</button>
+            </div>
+            <p style="text-align: center; color: #9e9e9e;">Click and drag to create vectors. Objects will move along their vectors!</p>
+        </div>
+
+        <!-- VECTOR OPERATIONS -->
+        <div id="vector-operations" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🔧 Essential Vector Operations</h2>
+
+            <h3>1. Normalize (Make Unit Length)</h3>
+            <div class="concept-box">
+                <p><strong>Problem:</strong> You want the player to always move at the same speed, regardless of direction.</p>
+                <p><strong>Solution:</strong> Normalize the vector (make it length = 1), then multiply by desired speed.</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Normalization Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="function">normalize</span>() {
+    <span class="keyword">let</span> length = <span class="keyword">this</span>.<span class="function">length</span>();
+    <span class="keyword">if</span> (length > <span class="number">0</span>) {
+        <span class="keyword">this</span>.x /= length;  <span class="comment">// Divide by length</span>
+        <span class="keyword">this</span>.y /= length;
+    }
+    <span class="keyword">return</span> <span class="keyword">this</span>;
+}
+
+<span class="function">length</span>() {
+    <span class="keyword">return</span> Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y);
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Constant Speed Movement:</h4>
+                    <pre><code><span class="comment">// Get input direction (could be diagonal!)</span>
+<span class="keyword">let</span> direction = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+    input.right - input.left,    <span class="comment">// -1, 0, or 1</span>
+    input.down - input.up
+);
+
+<span class="comment">// Normalize so diagonal isn't faster!</span>
+direction.<span class="function">normalize</span>();
+
+<span class="comment">// Apply constant speed</span>
+<span class="keyword">let</span> speed = <span class="number">5</span>;
+direction.<span class="function">multiply</span>(speed);
+
+<span class="comment">// Add to player position</span>
+player.<span class="function">add</span>(direction);</code></pre>
+                </div>
+            </details>
+
+            <div class="key-point">
+                <strong>💡 Why this matters:</strong> Without normalization, moving diagonally would be 1.4x faster (because of Pythagorean theorem)! This is a common bug in games.
+            </div>
+
+            <h3>Interactive Demo: Normalization</h3>
+            <div class="diagram">
+                <canvas id="normalizeDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnToggleNormalize">Toggle Normalization</button>
+            </div>
+            <div id="normalizeInfo" class="info-display">Use WASD keys to move. Watch the speed difference!</div>
+
+            <h3>2. Dot Product (Understanding Angles)</h3>
+            <div class="concept-box">
+                <p><strong>What it tells you:</strong> How much two vectors point in the same direction.</p>
+                <ul>
+                    <li><strong>Positive:</strong> Vectors point roughly the same way</li>
+                    <li><strong>Zero:</strong> Vectors are perpendicular (90 degrees)</li>
+                    <li><strong>Negative:</strong> Vectors point opposite ways</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Dot Product Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="function">dot</span>(other) {
+    <span class="keyword">return</span> <span class="keyword">this</span>.x * other.x + <span class="keyword">this</span>.y * other.y;
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Check if Enemy is in Front:</h4>
+                    <pre><code><span class="comment">// Player is facing direction</span>
+<span class="keyword">let</span> facingDir = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">1</span>, <span class="number">0</span>).<span class="function">normalize</span>();
+
+<span class="comment">// Direction to enemy</span>
+<span class="keyword">let</span> toEnemy = enemy.<span class="function">subtract</span>(player).<span class="function">normalize</span>();
+
+<span class="comment">// Check if in front</span>
+<span class="keyword">let</span> dotProduct = facingDir.<span class="function">dot</span>(toEnemy);
+
+<span class="keyword">if</span> (dotProduct > <span class="number">0</span>) {
+    console.<span class="function">log</span>(<span class="string">"Enemy is in front!"</span>);
+} <span class="keyword">else</span> {
+    console.<span class="function">log</span>(<span class="string">"Enemy is behind!"</span>);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Dot Product</h3>
+            <div class="diagram">
+                <canvas id="dotProductDemo" width="800" height="400"></canvas>
+            </div>
+            <div id="dotInfo" class="info-display">Move your mouse to see the dot product change</div>
+        </div>
+
+        <!-- GAME SYSTEMS -->
+        <div id="game-systems" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🎮 Building Your First Game System</h2>
+
+            <p>Let's put it all together and create a simple game with a player, enemies, and projectiles!</p>
+
+            <h3>Complete Game Loop</h3>
+            <details>
+                <summary>📝 Click to see: Complete Game Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Player</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.speed = <span class="number">5</span>;
+    }
+
+    <span class="function">update</span>(input) {
+        <span class="comment">// Get input direction</span>
+        <span class="keyword">let</span> dir = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            input.right - input.left,
+            input.down - input.up
+        );
+
+        <span class="comment">// Normalize and apply speed</span>
+        <span class="keyword">if</span> (dir.<span class="function">length</span>() > <span class="number">0</span>) {
+            dir.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
+        }
+
+        <span class="comment">// Update position</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(dir);
+    }
+
+    <span class="function">draw</span>(ctx) {
+        ctx.fillStyle = <span class="string">'#4fc3f7'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y, <span class="number">20</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Complete Game</h3>
+            <div class="diagram">
+                <canvas id="gameDemo" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddEnemy">Add Enemy</button>
+                <button id="btnResetGame">Reset Game</button>
+            </div>
+            <div id="gameInfo" class="info-display">Use WASD to move, Click to shoot!</div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenge: Extend the Game!</h4>
+                <p>Try adding these features:</p>
+                <ul>
+                    <li>Make enemies move toward the player</li>
+                    <li>Add a score counter</li>
+                    <li>Create different enemy types</li>
+                    <li>Add power-ups that increase speed</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- MATRICES -->
+        <div id="matrices" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🔄 Matrix Transformations</h2>
+
+            <div class="concept-box">
+                <h4>What are Matrices?</h4>
+                <p>Matrices are powerful tools for transforming objects. They let you:</p>
+                <ul>
+                    <li><strong>Rotate:</strong> Spin an object around a point</li>
+                    <li><strong>Scale:</strong> Make an object bigger or smaller</li>
+                    <li><strong>Translate:</strong> Move an object to a new position</li>
+                    <li><strong>Combine:</strong> Do all of the above at once!</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Matrix2D Class</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Matrix2D</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="comment">// Identity matrix (does nothing)</span>
+        <span class="keyword">this</span>.a = <span class="number">1</span>; <span class="keyword">this</span>.b = <span class="number">0</span>; <span class="keyword">this</span>.tx = <span class="number">0</span>;
+        <span class="keyword">this</span>.c = <span class="number">0</span>; <span class="keyword">this</span>.d = <span class="number">1</span>; <span class="keyword">this</span>.ty = <span class="number">0</span>;
+    }
+
+    <span class="function">rotate</span>(angle) {
+        <span class="keyword">const</span> cos = Math.<span class="function">cos</span>(angle);
+        <span class="keyword">const</span> sin = Math.<span class="function">sin</span>(angle);
+        <span class="comment">// Apply rotation transformation</span>
+        <span class="comment">// ... matrix math here ...</span>
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="function">scale</span>(sx, sy) {
+        <span class="keyword">this</span>.a *= sx;
+        <span class="keyword">this</span>.b *= sx;
+        <span class="keyword">this</span>.c *= sy;
+        <span class="keyword">this</span>.d *= sy;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="function">translate</span>(tx, ty) {
+        <span class="keyword">this</span>.tx += tx;
+        <span class="keyword">this</span>.ty += ty;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Transformations</h3>
+            <div class="diagram">
+                <canvas id="matrixDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnRotate">Rotate</button>
+                <button id="btnScale">Scale</button>
+                <button id="btnTranslate">Translate</button>
+                <button id="btnCombined">Combined Transform</button>
+            </div>
+            <div id="matrixInfo" class="info-display">Watch how different transformations affect the shape</div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="section" style="text-align: center;">
+            <h2>🎉 Congratulations!</h2>
+            <p style="font-size: 1.2em; margin: 30px 0;">
+                You've mastered the fundamentals! Ready for the next level?
+            </p>
+            <a href="intermediate.html" class="nav-button" style="font-size: 1.2em; padding: 20px 40px;">
+                Continue to Intermediate →
+            </a>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <div class="scroll-to-top" id="scrollToTop">↑</div>
+
+    <!-- Load shared utilities -->
+    <script src="shared/utils.js"></script>
+
+    <!-- Page-specific JavaScript -->
+    <script src="beginner-demos.js"></script>
+</body>
+</html>

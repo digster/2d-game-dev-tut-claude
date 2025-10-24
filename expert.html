@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expert - Game Dev Math Guide</title>
+    <link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Expert Game Math</h1>
+        <p class="subtitle">Optimization & Advanced Systems - Performance, procedural generation, and complex features</p>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="advanced.html" class="nav-button">← Advanced</a>
+            <a href="expert.html" class="nav-button active">Expert</a>
+            <a href="index.html" class="nav-button">Home</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">📚 Topics in This Guide</div>
+            <ul>
+                <li><a href="#spatial">Spatial Partitioning & QuadTree</a></li>
+                <li><a href="#pooling">Object Pooling</a></li>
+                <li><a href="#procgen">Procedural Generation</a></li>
+                <li><a href="#tilemap">Tilemap Systems</a></li>
+            </ul>
+        </div>
+
+        <!-- SPATIAL PARTITIONING & QUADTREE -->
+        <div id="spatial" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🌳 Spatial Partitioning & QuadTree</h2>
+
+            <div class="concept-box">
+                <h4>The Problem: Collision Detection is Slow!</h4>
+                <p>Imagine you have 1000 objects in your game. To check collisions between all of them, you'd need to check every pair:</p>
+                <div class="formula">
+                    1000 × 1000 = 1,000,000 checks per frame!
+                </div>
+                <p>At 60 FPS, that's 60 million checks per second. Your game would crawl to a halt!</p>
+
+                <h4>The Solution: Spatial Partitioning</h4>
+                <p>Instead of checking every object against every other object, divide space into regions. Only check objects that are in the same region!</p>
+                <p><strong>QuadTree</strong> recursively divides 2D space into four quadrants. Each quadrant can be further divided if it contains too many objects.</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: QuadTree Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">QuadTree</span> {
+    <span class="keyword">constructor</span>(boundary, capacity = <span class="number">4</span>) {
+        <span class="keyword">this</span>.boundary = boundary;  <span class="comment">// Rectangle defining this quad</span>
+        <span class="keyword">this</span>.capacity = capacity;  <span class="comment">// Max objects before subdividing</span>
+        <span class="keyword">this</span>.objects = [];
+        <span class="keyword">this</span>.divided = <span class="keyword">false</span>;
+    }
+
+    <span class="function">subdivide</span>() {
+        <span class="keyword">const</span> x = <span class="keyword">this</span>.boundary.x;
+        <span class="keyword">const</span> y = <span class="keyword">this</span>.boundary.y;
+        <span class="keyword">const</span> w = <span class="keyword">this</span>.boundary.width / <span class="number">2</span>;
+        <span class="keyword">const</span> h = <span class="keyword">this</span>.boundary.height / <span class="number">2</span>;
+
+        <span class="keyword">this</span>.northeast = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x + w, y: y, width: w, height: h}, <span class="keyword">this</span>.capacity);
+        <span class="keyword">this</span>.northwest = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x, y: y, width: w, height: h}, <span class="keyword">this</span>.capacity);
+        <span class="keyword">this</span>.southeast = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x + w, y: y + h, width: w, height: h}, <span class="keyword">this</span>.capacity);
+        <span class="keyword">this</span>.southwest = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x, y: y + h, width: w, height: h}, <span class="keyword">this</span>.capacity);
+
+        <span class="keyword">this</span>.divided = <span class="keyword">true</span>;
+    }
+
+    <span class="function">insert</span>(object) {
+        <span class="comment">// Check if object is in this boundary</span>
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.<span class="function">contains</span>(object)) {
+            <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+
+        <span class="comment">// If there's room, add it here</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.objects.length < <span class="keyword">this</span>.capacity) {
+            <span class="keyword">this</span>.objects.<span class="function">push</span>(object);
+            <span class="keyword">return</span> <span class="keyword">true</span>;
+        }
+
+        <span class="comment">// Otherwise, subdivide and add to child</span>
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.divided) {
+            <span class="keyword">this</span>.<span class="function">subdivide</span>();
+        }
+
+        <span class="keyword">return</span> <span class="keyword">this</span>.northeast.<span class="function">insert</span>(object) ||
+               <span class="keyword">this</span>.northwest.<span class="function">insert</span>(object) ||
+               <span class="keyword">this</span>.southeast.<span class="function">insert</span>(object) ||
+               <span class="keyword">this</span>.southwest.<span class="function">insert</span>(object);
+    }
+
+    <span class="function">query</span>(range, found = []) {
+        <span class="comment">// Check if range intersects this quad's boundary</span>
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.<span class="function">intersects</span>(range)) {
+            <span class="keyword">return</span> found;
+        }
+
+        <span class="comment">// Check objects in this quad</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> obj <span class="keyword">of</span> <span class="keyword">this</span>.objects) {
+            <span class="keyword">if</span> (<span class="function">rangeContains</span>(range, obj)) {
+                found.<span class="function">push</span>(obj);
+            }
+        }
+
+        <span class="comment">// Recursively search children</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.divided) {
+            <span class="keyword">this</span>.northeast.<span class="function">query</span>(range, found);
+            <span class="keyword">this</span>.northwest.<span class="function">query</span>(range, found);
+            <span class="keyword">this</span>.southeast.<span class="function">query</span>(range, found);
+            <span class="keyword">this</span>.southwest.<span class="function">query</span>(range, found);
+        }
+
+        <span class="keyword">return</span> found;
+    }
+
+    <span class="function">contains</span>(object) {
+        <span class="keyword">return</span> object.x >= <span class="keyword">this</span>.boundary.x &&
+               object.x < <span class="keyword">this</span>.boundary.x + <span class="keyword">this</span>.boundary.width &&
+               object.y >= <span class="keyword">this</span>.boundary.y &&
+               object.y < <span class="keyword">this</span>.boundary.y + <span class="keyword">this</span>.boundary.height;
+    }
+
+    <span class="function">intersects</span>(range) {
+        <span class="keyword">return</span> !(<span class="keyword">this</span>.boundary.x > range.x + range.width ||
+                 <span class="keyword">this</span>.boundary.x + <span class="keyword">this</span>.boundary.width < range.x ||
+                 <span class="keyword">this</span>.boundary.y > range.y + range.height ||
+                 <span class="keyword">this</span>.boundary.y + <span class="keyword">this</span>.boundary.height < range.y);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using QuadTree for Collision Detection:</h4>
+                    <pre><code><span class="comment">// Create quadtree</span>
+<span class="keyword">const</span> boundary = {x: <span class="number">0</span>, y: <span class="number">0</span>, width: <span class="number">800</span>, height: <span class="number">600</span>};
+<span class="keyword">const</span> quadtree = <span class="keyword">new</span> <span class="function">QuadTree</span>(boundary);
+
+<span class="comment">// Insert all objects</span>
+objects.<span class="function">forEach</span>(obj => quadtree.<span class="function">insert</span>(obj));
+
+<span class="comment">// For each object, only check nearby objects</span>
+objects.<span class="function">forEach</span>(obj => {
+    <span class="keyword">const</span> range = {
+        x: obj.x - obj.radius * <span class="number">2</span>,
+        y: obj.y - obj.radius * <span class="number">2</span>,
+        width: obj.radius * <span class="number">4</span>,
+        height: obj.radius * <span class="number">4</span>
+    };
+
+    <span class="keyword">const</span> nearby = quadtree.<span class="function">query</span>(range);
+    nearby.<span class="function">forEach</span>(other => {
+        <span class="keyword">if</span> (obj !== other && obj.<span class="function">collidesWith</span>(other)) {
+            <span class="function">handleCollision</span>(obj, other);
+        }
+    });
+});</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: QuadTree Visualization</h3>
+            <div class="diagram">
+                <canvas id="quadtreeDemo" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddMany">Add 100 Objects</button>
+                <button id="btnToggleTree">Toggle Tree Visualization</button>
+                <button id="btnClearQuad">Clear All</button>
+            </div>
+            <div id="quadInfo" class="info-display">Move mouse to query nearby objects</div>
+
+            <div class="key-point">
+                <strong>💡 Performance Impact:</strong> With QuadTree, 1000 objects might only require ~5,000 checks instead of 1,000,000! That's a 200x speedup!
+            </div>
+        </div>
+
+        <!-- OBJECT POOLING -->
+        <div id="pooling" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>♻️ Object Pooling</h2>
+
+            <div class="concept-box">
+                <h4>The Problem: Creating Objects is Slow</h4>
+                <p>In games with lots of bullets, particles, or enemies, constantly creating and destroying objects causes:</p>
+                <ul>
+                    <li>Memory allocation overhead</li>
+                    <li>Garbage collection pauses (frame drops!)</li>
+                    <li>Slower performance</li>
+                </ul>
+
+                <h4>The Solution: Object Pooling</h4>
+                <p>Instead of creating/destroying objects, reuse them! Create a "pool" of objects at startup, then activate/deactivate them as needed.</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Object Pool Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">ObjectPool</span> {
+    <span class="keyword">constructor</span>(createFn, resetFn, initialSize = <span class="number">50</span>) {
+        <span class="keyword">this</span>.createFn = createFn;  <span class="comment">// Function to create new objects</span>
+        <span class="keyword">this</span>.resetFn = resetFn;    <span class="comment">// Function to reset objects for reuse</span>
+        <span class="keyword">this</span>.pool = [];
+        <span class="keyword">this</span>.active = [];
+
+        <span class="comment">// Pre-create objects</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < initialSize; i++) {
+            <span class="keyword">this</span>.pool.<span class="function">push</span>(<span class="keyword">this</span>.<span class="function">createFn</span>());
+        }
+    }
+
+    <span class="function">get</span>(...args) {
+        <span class="keyword">let</span> object;
+
+        <span class="keyword">if</span> (<span class="keyword">this</span>.pool.length > <span class="number">0</span>) {
+            <span class="comment">// Reuse from pool</span>
+            object = <span class="keyword">this</span>.pool.<span class="function">pop</span>();
+        } <span class="keyword">else</span> {
+            <span class="comment">// Pool is empty, create new</span>
+            object = <span class="keyword">this</span>.<span class="function">createFn</span>();
+        }
+
+        <span class="comment">// Reset and activate</span>
+        <span class="keyword">this</span>.<span class="function">resetFn</span>(object, ...args);
+        <span class="keyword">this</span>.active.<span class="function">push</span>(object);
+
+        <span class="keyword">return</span> object;
+    }
+
+    <span class="function">release</span>(object) {
+        <span class="comment">// Remove from active</span>
+        <span class="keyword">const</span> index = <span class="keyword">this</span>.active.<span class="function">indexOf</span>(object);
+        <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
+            <span class="keyword">this</span>.active.<span class="function">splice</span>(index, <span class="number">1</span>);
+        }
+
+        <span class="comment">// Return to pool</span>
+        <span class="keyword">this</span>.pool.<span class="function">push</span>(object);
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Update all active objects</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="keyword">this</span>.active.length - <span class="number">1</span>; i >= <span class="number">0</span>; i--) {
+            <span class="keyword">const</span> obj = <span class="keyword">this</span>.active[i];
+
+            <span class="comment">// Update returns false when object should be released</span>
+            <span class="keyword">if</span> (!obj.<span class="function">update</span>()) {
+                <span class="keyword">this</span>.<span class="function">release</span>(obj);
+            }
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Bullet Pool</h4>
+                    <pre><code><span class="comment">// Create bullet pool</span>
+<span class="keyword">const</span> bulletPool = <span class="keyword">new</span> <span class="function">ObjectPool</span>(
+    <span class="comment">// Create function</span>
+    () => ({
+        position: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
+        velocity: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
+        active: <span class="keyword">false</span>,
+        update() {
+            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+            <span class="comment">// Return false if out of bounds</span>
+            <span class="keyword">return</span> <span class="keyword">this</span>.position.x >= <span class="number">0</span> && <span class="keyword">this</span>.position.x <= <span class="number">800</span>;
+        }
+    }),
+    <span class="comment">// Reset function</span>
+    (bullet, x, y, vx, vy) => {
+        bullet.position.<span class="function">set</span>(x, y);
+        bullet.velocity.<span class="function">set</span>(vx, vy);
+        bullet.active = <span class="keyword">true</span>;
+    }
+);
+
+<span class="comment">// Spawn a bullet (no garbage creation!)</span>
+<span class="keyword">const</span> bullet = bulletPool.<span class="function">get</span>(playerX, playerY, <span class="number">10</span>, <span class="number">0</span>);
+
+<span class="comment">// Update all active bullets</span>
+bulletPool.<span class="function">update</span>();</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Object Pooling</h3>
+            <div class="diagram">
+                <canvas id="poolingDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnWithPool">With Pooling</button>
+                <button id="btnWithoutPool">Without Pooling</button>
+                <button id="btnSpawnMany">Spawn 100 Objects</button>
+            </div>
+            <div id="poolInfo" class="info-display">Compare performance with and without object pooling</div>
+        </div>
+
+        <!-- PROCEDURAL GENERATION -->
+        <div id="procgen" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🎲 Procedural Generation</h2>
+
+            <div class="concept-box">
+                <h4>What is Procedural Generation?</h4>
+                <p>Creating game content algorithmically instead of manually. Used for:</p>
+                <ul>
+                    <li>Terrain and landscapes</li>
+                    <li>Dungeons and levels</li>
+                    <li>Trees and vegetation</li>
+                    <li>Textures and patterns</li>
+                </ul>
+                <p><strong>Perlin Noise</strong> creates smooth, natural-looking randomness - perfect for terrain!</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Simple Noise Function</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Simplified Perlin-like noise</span>
+<span class="keyword">class</span> <span class="function">NoiseGenerator</span> {
+    <span class="keyword">constructor</span>(seed = <span class="number">0</span>) {
+        <span class="keyword">this</span>.seed = seed;
+    }
+
+    <span class="comment">// Simple hash function for pseudo-random values</span>
+    <span class="function">hash</span>(x, y) {
+        <span class="keyword">let</span> h = <span class="keyword">this</span>.seed + x * <span class="number">374761393</span> + y * <span class="number">668265263</span>;
+        h = (h ^ (h >> <span class="number">13</span>)) * <span class="number">1274126177</span>;
+        <span class="keyword">return</span> (h ^ (h >> <span class="number">16</span>)) / <span class="number">2147483648</span> + <span class="number">0.5</span>;
+    }
+
+    <span class="comment">// Smooth interpolation</span>
+    <span class="function">smoothstep</span>(t) {
+        <span class="keyword">return</span> t * t * (<span class="number">3</span> - <span class="number">2</span> * t);
+    }
+
+    <span class="comment">// 2D noise function</span>
+    <span class="function">noise</span>(x, y) {
+        <span class="keyword">const</span> xi = Math.<span class="function">floor</span>(x);
+        <span class="keyword">const</span> yi = Math.<span class="function">floor</span>(y);
+        <span class="keyword">const</span> xf = x - xi;
+        <span class="keyword">const</span> yf = y - yi;
+
+        <span class="comment">// Get corner values</span>
+        <span class="keyword">const</span> n00 = <span class="keyword">this</span>.<span class="function">hash</span>(xi, yi);
+        <span class="keyword">const</span> n10 = <span class="keyword">this</span>.<span class="function">hash</span>(xi + <span class="number">1</span>, yi);
+        <span class="keyword">const</span> n01 = <span class="keyword">this</span>.<span class="function">hash</span>(xi, yi + <span class="number">1</span>);
+        <span class="keyword">const</span> n11 = <span class="keyword">this</span>.<span class="function">hash</span>(xi + <span class="number">1</span>, yi + <span class="number">1</span>);
+
+        <span class="comment">// Smooth interpolation</span>
+        <span class="keyword">const</span> sx = <span class="keyword">this</span>.<span class="function">smoothstep</span>(xf);
+        <span class="keyword">const</span> sy = <span class="keyword">this</span>.<span class="function">smoothstep</span>(yf);
+
+        <span class="keyword">const</span> nx0 = <span class="function">lerp</span>(n00, n10, sx);
+        <span class="keyword">const</span> nx1 = <span class="function">lerp</span>(n01, n11, sx);
+
+        <span class="keyword">return</span> <span class="function">lerp</span>(nx0, nx1, sy);
+    }
+
+    <span class="comment">// Multi-octave noise (more detail)</span>
+    <span class="function">fractalNoise</span>(x, y, octaves = <span class="number">4</span>) {
+        <span class="keyword">let</span> value = <span class="number">0</span>;
+        <span class="keyword">let</span> amplitude = <span class="number">1</span>;
+        <span class="keyword">let</span> frequency = <span class="number">1</span>;
+        <span class="keyword">let</span> maxValue = <span class="number">0</span>;
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < octaves; i++) {
+            value += <span class="keyword">this</span>.<span class="function">noise</span>(x * frequency, y * frequency) * amplitude;
+            maxValue += amplitude;
+            amplitude *= <span class="number">0.5</span>;
+            frequency *= <span class="number">2</span>;
+        }
+
+        <span class="keyword">return</span> value / maxValue;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Procedural Terrain</h3>
+            <div class="diagram">
+                <canvas id="procgenDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnNewSeed">New Random Seed</button>
+                <button id="btnTerrain">Generate Terrain</button>
+                <button id="btnClouds">Generate Clouds</button>
+                <button id="btnMarble">Generate Marble</button>
+            </div>
+            <div id="procgenInfo" class="info-display">Watch procedural generation create natural patterns</div>
+        </div>
+
+        <!-- TILEMAP SYSTEMS -->
+        <div id="tilemap" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🗺️ Tilemap Systems</h2>
+
+            <div class="concept-box">
+                <h4>What are Tilemaps?</h4>
+                <p>Tilemaps divide the game world into a grid of tiles. Each tile can be a different type (grass, wall, water, etc.). Benefits:</p>
+                <ul>
+                    <li>Memory efficient (reuse tile graphics)</li>
+                    <li>Easy level editing</li>
+                    <li>Simple collision detection</li>
+                    <li>Fast rendering (only draw visible tiles)</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Tilemap Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Tilemap</span> {
+    <span class="keyword">constructor</span>(width, height, tileSize) {
+        <span class="keyword">this</span>.width = width;
+        <span class="keyword">this</span>.height = height;
+        <span class="keyword">this</span>.tileSize = tileSize;
+        <span class="keyword">this</span>.tiles = [];
+
+        <span class="comment">// Initialize empty map</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < height; y++) {
+            <span class="keyword">this</span>.tiles[y] = [];
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < width; x++) {
+                <span class="keyword">this</span>.tiles[y][x] = <span class="number">0</span>;  <span class="comment">// 0 = empty</span>
+            }
+        }
+    }
+
+    <span class="function">setTile</span>(x, y, type) {
+        <span class="keyword">if</span> (x >= <span class="number">0</span> && x < <span class="keyword">this</span>.width && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.height) {
+            <span class="keyword">this</span>.tiles[y][x] = type;
+        }
+    }
+
+    <span class="function">getTile</span>(x, y) {
+        <span class="keyword">if</span> (x >= <span class="number">0</span> && x < <span class="keyword">this</span>.width && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.height) {
+            <span class="keyword">return</span> <span class="keyword">this</span>.tiles[y][x];
+        }
+        <span class="keyword">return</span> -<span class="number">1</span>;  <span class="comment">// Out of bounds</span>
+    }
+
+    <span class="comment">// Convert world position to tile coordinates</span>
+    <span class="function">worldToTile</span>(worldX, worldY) {
+        <span class="keyword">return</span> {
+            x: Math.<span class="function">floor</span>(worldX / <span class="keyword">this</span>.tileSize),
+            y: Math.<span class="function">floor</span>(worldY / <span class="keyword">this</span>.tileSize)
+        };
+    }
+
+    <span class="comment">// Check if tile is solid (for collision)</span>
+    <span class="function">isSolid</span>(x, y) {
+        <span class="keyword">const</span> tile = <span class="keyword">this</span>.<span class="function">getTile</span>(x, y);
+        <span class="keyword">return</span> tile === <span class="number">1</span>;  <span class="comment">// 1 = wall</span>
+    }
+
+    <span class="function">render</span>(ctx, camera) {
+        <span class="comment">// Only render visible tiles</span>
+        <span class="keyword">const</span> startX = Math.<span class="function">max</span>(<span class="number">0</span>, Math.<span class="function">floor</span>(camera.x / <span class="keyword">this</span>.tileSize));
+        <span class="keyword">const</span> startY = Math.<span class="function">max</span>(<span class="number">0</span>, Math.<span class="function">floor</span>(camera.y / <span class="keyword">this</span>.tileSize));
+        <span class="keyword">const</span> endX = Math.<span class="function">min</span>(<span class="keyword">this</span>.width, startX + camera.width / <span class="keyword">this</span>.tileSize + <span class="number">1</span>);
+        <span class="keyword">const</span> endY = Math.<span class="function">min</span>(<span class="keyword">this</span>.height, startY + camera.height / <span class="keyword">this</span>.tileSize + <span class="number">1</span>);
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = startY; y < endY; y++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = startX; x < endX; x++) {
+                <span class="keyword">const</span> tile = <span class="keyword">this</span>.tiles[y][x];
+                <span class="keyword">if</span> (tile !== <span class="number">0</span>) {
+                    <span class="keyword">this</span>.<span class="function">renderTile</span>(ctx, x, y, tile, camera);
+                }
+            }
+        }
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Tilemap Editor</h3>
+            <div class="diagram">
+                <canvas id="tilemapDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnGrass">Paint Grass</button>
+                <button id="btnWall">Paint Wall</button>
+                <button id="btnWater">Paint Water</button>
+                <button id="btnErase">Erase</button>
+                <button id="btnClearTilemap">Clear Map</button>
+            </div>
+            <div id="tilemapInfo" class="info-display">Click and drag to paint tiles</div>
+        </div>
+
+        <!-- Congratulations -->
+        <div class="section" style="text-align: center;">
+            <h2>🎉 Congratulations, Expert!</h2>
+            <p style="font-size: 1.2em; margin: 30px 0;">
+                You've completed the entire Game Dev Math Guide! You now have the knowledge to create sophisticated, optimized games.
+            </p>
+
+            <div class="key-point" style="text-align: left;">
+                <strong>🚀 Where to go from here:</strong>
+                <ul>
+                    <li>Build a complete game using these techniques</li>
+                    <li>Experiment with combining multiple systems</li>
+                    <li>Research more advanced topics like shaders, physics engines, and multiplayer networking</li>
+                    <li>Share your creations with the game dev community!</li>
+                </ul>
+            </div>
+
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 40px;">
+                <a href="index.html" class="nav-button" style="font-size: 1.2em; padding: 20px 40px;">
+                    ← Back to Home
+                </a>
+                <a href="beginner.html" class="nav-button">
+                    Review Fundamentals
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <div class="scroll-to-top" id="scrollToTop">↑</div>
+
+    <!-- Load shared utilities -->
+    <script src="shared/utils.js"></script>
+
+    <!-- Page-specific JavaScript -->
+    <script src="expert-demos.js"></script>
+</body>
+</html>

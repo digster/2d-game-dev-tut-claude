@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intermediate - Game Dev Math Guide</title>
+    <link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Intermediate Game Math</h1>
+        <p class="subtitle">Core systems - Physics, collision detection, and visual effects</p>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="beginner.html" class="nav-button">← Beginner</a>
+            <a href="intermediate.html" class="nav-button active">Intermediate</a>
+            <a href="advanced.html" class="nav-button">Advanced →</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">📚 Topics in This Guide</div>
+            <ul>
+                <li><a href="#lerp">Linear Interpolation (Lerp)</a></li>
+                <li><a href="#physics">Physics Systems with Forces</a></li>
+                <li><a href="#collision">Collision Detection</a></li>
+                <li><a href="#raycasting">Raycasting & Line of Sight</a></li>
+                <li><a href="#particles">Particle Systems</a></li>
+            </ul>
+        </div>
+
+        <!-- LINEAR INTERPOLATION -->
+        <div id="lerp" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🎯 Linear Interpolation (Lerp)</h2>
+
+            <div class="concept-box">
+                <h4>What is Lerp?</h4>
+                <p>Lerp smoothly transitions between two values. It's the secret behind smooth camera movement, object animations, and color transitions!</p>
+                <div class="formula">
+                    result = start + (end - start) * t
+                </div>
+                <p>Where <code>t</code> is a value between 0 and 1:</p>
+                <ul>
+                    <li><strong>t = 0:</strong> Returns start value</li>
+                    <li><strong>t = 0.5:</strong> Returns halfway between start and end</li>
+                    <li><strong>t = 1:</strong> Returns end value</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Lerp Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Basic lerp function</span>
+<span class="keyword">function</span> <span class="function">lerp</span>(start, end, t) {
+    <span class="keyword">return</span> start + (end - start) * t;
+}
+
+<span class="comment">// Vector lerp</span>
+Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">function</span>(target, t) {
+    <span class="keyword">this</span>.x += (target.x - <span class="keyword">this</span>.x) * t;
+    <span class="keyword">this</span>.y += (target.y - <span class="keyword">this</span>.y) * t;
+    <span class="keyword">return</span> <span class="keyword">this</span>;
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Smooth Camera Follow:</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">Camera</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+    }
+
+    <span class="function">follow</span>(target, smoothing = <span class="number">0.1</span>) {
+        <span class="comment">// Smoothly move camera toward target</span>
+        <span class="keyword">this</span>.position.<span class="function">lerp</span>(target, smoothing);
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Lerp in Action</h3>
+            <div class="diagram">
+                <canvas id="lerpDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSlowLerp">Slow (t=0.02)</button>
+                <button id="btnMediumLerp">Medium (t=0.1)</button>
+                <button id="btnFastLerp">Fast (t=0.3)</button>
+                <button id="btnResetLerp">Reset</button>
+            </div>
+            <div id="lerpInfo" class="info-display">Click anywhere to set a new target</div>
+
+            <div class="key-point">
+                <strong>💡 Pro Tip:</strong> Smaller t values (0.01-0.05) create slower, smoother movement. Larger values (0.2-0.5) are snappier. Never use t >= 1 in lerp - it can cause overshooting!
+            </div>
+        </div>
+
+        <!-- PHYSICS SYSTEMS -->
+        <div id="physics" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>⚡ Physics Systems with Forces</h2>
+
+            <div class="concept-box">
+                <h4>Basic Physics Principles</h4>
+                <p>Game physics is based on Newton's laws:</p>
+                <ul>
+                    <li><strong>Position:</strong> Where the object is</li>
+                    <li><strong>Velocity:</strong> How fast it's moving (and in what direction)</li>
+                    <li><strong>Acceleration:</strong> How velocity changes over time</li>
+                    <li><strong>Force:</strong> What causes acceleration (gravity, wind, etc.)</li>
+                </ul>
+                <div class="formula">
+                    Force = Mass × Acceleration
+                </div>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Physics Entity Class</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">PhysicsEntity</span> {
+    <span class="keyword">constructor</span>(x, y, mass = <span class="number">1</span>) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.mass = mass;
+    }
+
+    <span class="function">applyForce</span>(force) {
+        <span class="comment">// F = ma, so a = F/m</span>
+        <span class="keyword">const</span> f = force.<span class="function">copy</span>().<span class="function">divide</span>(<span class="keyword">this</span>.mass);
+        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(f);
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Update velocity based on acceleration</span>
+        <span class="keyword">this</span>.velocity.<span class="function">add</span>(<span class="keyword">this</span>.acceleration);
+
+        <span class="comment">// Update position based on velocity</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Reset acceleration (forces are applied each frame)</span>
+        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Adding Gravity:</h4>
+                    <pre><code><span class="keyword">const</span> gravity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0.5</span>);  <span class="comment">// Downward force</span>
+
+<span class="keyword">function</span> <span class="function">gameLoop</span>() {
+    entities.<span class="function">forEach</span>(entity => {
+        entity.<span class="function">applyForce</span>(gravity);
+        entity.<span class="function">update</span>();
+    });
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Physics Simulation</h3>
+            <div class="diagram">
+                <canvas id="physicsDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddBall">Add Ball</button>
+                <button id="btnToggleGravity">Toggle Gravity</button>
+                <button id="btnAddWind">Add Wind</button>
+                <button id="btnResetPhysics">Reset</button>
+            </div>
+            <div id="physicsInfo" class="info-display">Click to apply force to nearby objects</div>
+        </div>
+
+        <!-- COLLISION DETECTION -->
+        <div id="collision" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>💥 Collision Detection</h2>
+
+            <div class="concept-box">
+                <h4>Types of Collision Detection</h4>
+                <ul>
+                    <li><strong>Circle vs Circle:</strong> Compare distance to sum of radii</li>
+                    <li><strong>Rectangle vs Rectangle (AABB):</strong> Check overlap on both axes</li>
+                    <li><strong>Circle vs Rectangle:</strong> Find closest point on rectangle to circle center</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Collision Detection Functions</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Circle vs Circle</span>
+<span class="keyword">function</span> <span class="function">circleVsCircle</span>(c1, r1, c2, r2) {
+    <span class="keyword">const</span> distance = c1.<span class="function">distance</span>(c2);
+    <span class="keyword">return</span> distance < r1 + r2;
+}
+
+<span class="comment">// AABB (Axis-Aligned Bounding Box) - Rectangle vs Rectangle</span>
+<span class="keyword">function</span> <span class="function">aabbVsAabb</span>(pos1, w1, h1, pos2, w2, h2) {
+    <span class="keyword">return</span> pos1.x < pos2.x + w2 &&
+           pos1.x + w1 > pos2.x &&
+           pos1.y < pos2.y + h2 &&
+           pos1.y + h1 > pos2.y;
+}
+
+<span class="comment">// Circle vs Rectangle</span>
+<span class="keyword">function</span> <span class="function">circleVsRect</span>(circlePos, radius, rectPos, width, height) {
+    <span class="comment">// Find closest point on rectangle to circle</span>
+    <span class="keyword">const</span> closestX = <span class="function">clamp</span>(circlePos.x, rectPos.x, rectPos.x + width);
+    <span class="keyword">const</span> closestY = <span class="function">clamp</span>(circlePos.y, rectPos.y, rectPos.y + height);
+
+    <span class="keyword">const</span> distX = circlePos.x - closestX;
+    <span class="keyword">const</span> distY = circlePos.y - closestY;
+
+    <span class="keyword">return</span> (distX * distX + distY * distY) < (radius * radius);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Collision Detection</h3>
+            <div class="diagram">
+                <canvas id="collisionDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddCircle">Add Circle</button>
+                <button id="btnAddRect">Add Rectangle</button>
+                <button id="btnClearCollision">Clear All</button>
+            </div>
+            <div id="collisionInfo" class="info-display">Drag objects around. They'll turn red when colliding!</div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenge: Collision Response</h4>
+                <p>Try implementing these collision responses:</p>
+                <ul>
+                    <li>Make objects bounce off each other</li>
+                    <li>Transfer momentum between colliding objects</li>
+                    <li>Create "sticky" collisions that join objects together</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- RAYCASTING -->
+        <div id="raycasting" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>👁️ Raycasting & Line of Sight</h2>
+
+            <div class="concept-box">
+                <h4>What is Raycasting?</h4>
+                <p>Raycasting shoots an invisible line (ray) from a point in a direction to check what it hits. Used for:</p>
+                <ul>
+                    <li><strong>Line of sight:</strong> Can the enemy see the player?</li>
+                    <li><strong>Shooting:</strong> What did the bullet hit?</li>
+                    <li><strong>Mouse picking:</strong> What object did the user click?</li>
+                    <li><strong>Pathfinding:</strong> Is there a wall in the way?</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Ray Class</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Ray</span> {
+    <span class="keyword">constructor</span>(origin, direction) {
+        <span class="keyword">this</span>.origin = origin.<span class="function">copy</span>();
+        <span class="keyword">this</span>.direction = direction.<span class="function">copy</span>().<span class="function">normalize</span>();
+    }
+
+    <span class="comment">// Check if ray intersects with a circle</span>
+    <span class="function">intersectsCircle</span>(center, radius) {
+        <span class="keyword">const</span> oc = <span class="keyword">this</span>.origin.<span class="function">subtract</span>(center);
+        <span class="keyword">const</span> a = <span class="keyword">this</span>.direction.<span class="function">dot</span>(<span class="keyword">this</span>.direction);
+        <span class="keyword">const</span> b = <span class="number">2</span> * oc.<span class="function">dot</span>(<span class="keyword">this</span>.direction);
+        <span class="keyword">const</span> c = oc.<span class="function">dot</span>(oc) - radius * radius;
+
+        <span class="keyword">const</span> discriminant = b * b - <span class="number">4</span> * a * c;
+        <span class="keyword">return</span> discriminant >= <span class="number">0</span>;
+    }
+
+    <span class="comment">// Get point along ray at distance t</span>
+    <span class="function">pointAt</span>(t) {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.origin.x + <span class="keyword">this</span>.direction.x * t,
+            <span class="keyword">this</span>.origin.y + <span class="keyword">this</span>.direction.y * t
+        );
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Raycasting</h3>
+            <div class="diagram">
+                <canvas id="raycastDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddObstacle">Add Obstacle</button>
+                <button id="btnClearRaycast">Clear Obstacles</button>
+            </div>
+            <div id="raycastInfo" class="info-display">Move your mouse. Rays turn red when they hit objects!</div>
+        </div>
+
+        <!-- PARTICLE SYSTEMS -->
+        <div id="particles" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>✨ Particle Systems</h2>
+
+            <div class="concept-box">
+                <h4>What are Particle Systems?</h4>
+                <p>Particle systems create visual effects using many small objects (particles). Used for:</p>
+                <ul>
+                    <li>Explosions and fire</li>
+                    <li>Smoke and steam</li>
+                    <li>Rain and snow</li>
+                    <li>Magic spells and trails</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Particle System</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Particle</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = Vector2D.<span class="function">random</span>(<span class="function">randomFloat</span>(<span class="number">1</span>, <span class="number">5</span>));
+        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
+        <span class="keyword">this</span>.decay = <span class="function">randomFloat</span>(<span class="number">0.01</span>, <span class="number">0.03</span>);
+        <span class="keyword">this</span>.size = <span class="function">randomFloat</span>(<span class="number">2</span>, <span class="number">8</span>);
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="number">0.98</span>);  <span class="comment">// Friction</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        ctx.globalAlpha = <span class="keyword">this</span>.life;
+        ctx.fillStyle = <span class="string">'#ffa726'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y, <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+        ctx.globalAlpha = <span class="number">1</span>;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">ParticleSystem</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.particles = [];
+    }
+
+    <span class="function">emit</span>(x, y, count = <span class="number">20</span>) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < count; i++) {
+            <span class="keyword">this</span>.particles.<span class="function">push</span>(<span class="keyword">new</span> <span class="function">Particle</span>(x, y));
+        }
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.particles = <span class="keyword">this</span>.particles.<span class="function">filter</span>(p => p.<span class="function">update</span>());
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="keyword">this</span>.particles.<span class="function">forEach</span>(p => p.<span class="function">draw</span>(ctx));
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Particle Effects</h3>
+            <div class="diagram">
+                <canvas id="particleDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnExplosion">Explosion</button>
+                <button id="btnFountain">Fountain</button>
+                <button id="btnTrail">Trail Mode</button>
+            </div>
+            <div id="particleInfo" class="info-display">Click anywhere to create particles!</div>
+
+            <div class="thinking-prompt">
+                <h4>🤔 Think About It:</h4>
+                <p>What happens if you create thousands of particles? How would you optimize the system to handle many effects at once?</p>
+                <p><em>Hint: Check out the Expert guide's section on Object Pooling!</em></p>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="section" style="text-align: center;">
+            <h2>🎉 Great Progress!</h2>
+            <p style="font-size: 1.2em; margin: 30px 0;">
+                You now understand core game systems! Ready for advanced techniques?
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="beginner.html" class="nav-button">← Review Basics</a>
+                <a href="advanced.html" class="nav-button" style="font-size: 1.2em; padding: 20px 40px;">
+                    Continue to Advanced →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <div class="scroll-to-top" id="scrollToTop">↑</div>
+
+    <!-- Load shared utilities -->
+    <script src="shared/utils.js"></script>
+
+    <!-- Page-specific JavaScript -->
+    <script src="intermediate-demos.js"></script>
+</body>
+</html>
