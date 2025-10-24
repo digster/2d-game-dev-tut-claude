@@ -25,8 +25,12 @@
                 <li><a href="#intro">Why Math Matters in Games</a></li>
                 <li><a href="#vectors">Vectors: Position & Direction</a></li>
                 <li><a href="#vector-operations">Essential Vector Operations</a></li>
-                <li><a href="#dot-product">Dot Product: Understanding Direction</a></li>
                 <li><a href="#game-systems">Building Your First Game System</a></li>
+                <li><a href="#health-system">Health & Damage System</a></li>
+                <li><a href="#scoring-system">Scoring & Combo System</a></li>
+                <li><a href="#inventory-system">Inventory System</a></li>
+                <li><a href="#timer-system">Timer & Cooldown System</a></li>
+                <li><a href="#powerup-system">Power-up System</a></li>
                 <li><a href="#matrices">Matrix Transformations</a></li>
             </ul>
         </div>
@@ -365,6 +369,553 @@ player.<span class="function">add</span>(direction);</code></pre>
                     <li>Add power-ups that increase speed</li>
                 </ul>
             </div>
+
+            <h3>More Essential Game Systems</h3>
+            <p>Every game needs these core systems. Let's explore each one!</p>
+        </div>
+
+        <!-- HEALTH SYSTEM -->
+        <div id="health-system" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>❤️ Health & Damage System</h2>
+
+            <div class="concept-box">
+                <h4>Why Health Systems Matter</h4>
+                <p>Health systems control when entities die, how much damage they take, and provide feedback to players. They're essential for any game with combat or hazards.</p>
+                <p><strong>Key Components:</strong></p>
+                <ul>
+                    <li><strong>Current Health:</strong> How much life remains</li>
+                    <li><strong>Max Health:</strong> Maximum possible health</li>
+                    <li><strong>Damage:</strong> Reduce health when hit</li>
+                    <li><strong>Heal:</strong> Restore health (capped at max)</li>
+                    <li><strong>Death:</strong> What happens at 0 health</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Health System Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">HealthSystem</span> {
+    <span class="keyword">constructor</span>(maxHealth) {
+        <span class="keyword">this</span>.maxHealth = maxHealth;
+        <span class="keyword">this</span>.currentHealth = maxHealth;
+        <span class="keyword">this</span>.isAlive = <span class="keyword">true</span>;
+        <span class="keyword">this</span>.isInvulnerable = <span class="keyword">false</span>;
+        <span class="keyword">this</span>.invulnerabilityTimer = <span class="number">0</span>;
+    }
+
+    <span class="function">takeDamage</span>(amount) {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.isInvulnerable || !<span class="keyword">this</span>.isAlive) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+        <span class="keyword">this</span>.currentHealth -= amount;
+        <span class="keyword">this</span>.currentHealth = Math.<span class="function">max</span>(<span class="number">0</span>, <span class="keyword">this</span>.currentHealth);
+
+        <span class="comment">// Brief invulnerability after hit (i-frames)</span>
+        <span class="keyword">this</span>.<span class="function">makeInvulnerable</span>(<span class="number">1000</span>); <span class="comment">// 1 second</span>
+
+        <span class="keyword">if</span> (<span class="keyword">this</span>.currentHealth <= <span class="number">0</span>) {
+            <span class="keyword">this</span>.<span class="function">die</span>();
+        }
+
+        <span class="keyword">return</span> <span class="keyword">true</span>; <span class="comment">// Damage was dealt</span>
+    }
+
+    <span class="function">heal</span>(amount) {
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.isAlive) <span class="keyword">return</span>;
+
+        <span class="keyword">this</span>.currentHealth += amount;
+        <span class="keyword">this</span>.currentHealth = Math.<span class="function">min</span>(<span class="keyword">this</span>.maxHealth, <span class="keyword">this</span>.currentHealth);
+    }
+
+    <span class="function">makeInvulnerable</span>(duration) {
+        <span class="keyword">this</span>.isInvulnerable = <span class="keyword">true</span>;
+        <span class="keyword">this</span>.invulnerabilityTimer = duration;
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.invulnerabilityTimer > <span class="number">0</span>) {
+            <span class="keyword">this</span>.invulnerabilityTimer -= deltaTime;
+            <span class="keyword">if</span> (<span class="keyword">this</span>.invulnerabilityTimer <= <span class="number">0</span>) {
+                <span class="keyword">this</span>.isInvulnerable = <span class="keyword">false</span>;
+            }
+        }
+    }
+
+    <span class="function">die</span>() {
+        <span class="keyword">this</span>.isAlive = <span class="keyword">false</span>;
+        <span class="keyword">this</span>.currentHealth = <span class="number">0</span>;
+    }
+
+    <span class="function">getHealthPercentage</span>() {
+        <span class="keyword">return</span> (<span class="keyword">this</span>.currentHealth / <span class="keyword">this</span>.maxHealth) * <span class="number">100</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Health Bar</h3>
+            <div class="diagram">
+                <canvas id="healthDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnDamage">Deal Damage (10)</button>
+                <button id="btnHeal">Heal (20)</button>
+                <button id="btnMaxDamage">Max Damage</button>
+                <button id="btnFullHeal">Full Heal</button>
+            </div>
+            <div id="healthInfo" class="info-display">Click buttons to damage or heal the character</div>
+        </div>
+
+        <!-- SCORING SYSTEM -->
+        <div id="scoring-system" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🏆 Scoring & Combo System</h2>
+
+            <div class="concept-box">
+                <h4>Why Scoring Matters</h4>
+                <p>Scoring gives players goals and rewards skill. Combo systems add depth by rewarding consecutive actions.</p>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li><strong>Base Score:</strong> Points for actions</li>
+                    <li><strong>Multipliers:</strong> Increase points earned</li>
+                    <li><strong>Combo Counter:</strong> Track consecutive hits</li>
+                    <li><strong>Combo Timer:</strong> Reset if too slow</li>
+                    <li><strong>High Score:</strong> Best performance tracking</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Scoring System Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">ScoringSystem</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.score = <span class="number">0</span>;
+        <span class="keyword">this</span>.combo = <span class="number">0</span>;
+        <span class="keyword">this</span>.comboTimer = <span class="number">0</span>;
+        <span class="keyword">this</span>.comboTimeout = <span class="number">2000</span>; <span class="comment">// 2 seconds</span>
+        <span class="keyword">this</span>.highScore = <span class="number">0</span>;
+    }
+
+    <span class="function">addScore</span>(basePoints) {
+        <span class="comment">// Combo multiplier</span>
+        <span class="keyword">const</span> multiplier = <span class="number">1</span> + (<span class="keyword">this</span>.combo * <span class="number">0.1</span>);
+        <span class="keyword">const</span> finalPoints = Math.<span class="function">floor</span>(basePoints * multiplier);
+
+        <span class="keyword">this</span>.score += finalPoints;
+        <span class="keyword">this</span>.combo++;
+        <span class="keyword">this</span>.comboTimer = <span class="keyword">this</span>.comboTimeout;
+
+        <span class="comment">// Update high score</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.score > <span class="keyword">this</span>.highScore) {
+            <span class="keyword">this</span>.highScore = <span class="keyword">this</span>.score;
+        }
+
+        <span class="keyword">return</span> finalPoints;
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.comboTimer > <span class="number">0</span>) {
+            <span class="keyword">this</span>.comboTimer -= deltaTime;
+            <span class="keyword">if</span> (<span class="keyword">this</span>.comboTimer <= <span class="number">0</span>) {
+                <span class="keyword">this</span>.<span class="function">breakCombo</span>();
+            }
+        }
+    }
+
+    <span class="function">breakCombo</span>() {
+        <span class="keyword">this</span>.combo = <span class="number">0</span>;
+        <span class="keyword">this</span>.comboTimer = <span class="number">0</span>;
+    }
+
+    <span class="function">reset</span>() {
+        <span class="keyword">this</span>.score = <span class="number">0</span>;
+        <span class="keyword">this</span>.<span class="function">breakCombo</span>();
+    }
+
+    <span class="function">getComboMultiplier</span>() {
+        <span class="keyword">return</span> <span class="number">1</span> + (<span class="keyword">this</span>.combo * <span class="number">0.1</span>);
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Combo System</h3>
+            <div class="diagram">
+                <canvas id="scoringDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnScore">Hit Target (+100)</button>
+                <button id="btnResetScore">Reset Score</button>
+            </div>
+            <div id="scoringInfo" class="info-display">Hit targets quickly to build combos!</div>
+        </div>
+
+        <!-- INVENTORY SYSTEM -->
+        <div id="inventory-system" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>🎒 Inventory System</h2>
+
+            <div class="concept-box">
+                <h4>Managing Items</h4>
+                <p>Inventory systems let players collect, store, and use items. Essential for RPGs, survival games, and more!</p>
+                <p><strong>Core Operations:</strong></p>
+                <ul>
+                    <li><strong>Add Item:</strong> Pickup or receive items</li>
+                    <li><strong>Remove Item:</strong> Use or drop items</li>
+                    <li><strong>Stack Items:</strong> Group identical items</li>
+                    <li><strong>Check Capacity:</strong> Inventory limits</li>
+                    <li><strong>Find Item:</strong> Search inventory</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Inventory System Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Item</span> {
+    <span class="keyword">constructor</span>(id, name, stackable = <span class="keyword">false</span>, maxStack = <span class="number">1</span>) {
+        <span class="keyword">this</span>.id = id;
+        <span class="keyword">this</span>.name = name;
+        <span class="keyword">this</span>.stackable = stackable;
+        <span class="keyword">this</span>.maxStack = maxStack;
+        <span class="keyword">this</span>.quantity = <span class="number">1</span>;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Inventory</span> {
+    <span class="keyword">constructor</span>(capacity = <span class="number">20</span>) {
+        <span class="keyword">this</span>.items = [];
+        <span class="keyword">this</span>.capacity = capacity;
+    }
+
+    <span class="function">addItem</span>(item) {
+        <span class="keyword">if</span> (item.stackable) {
+            <span class="comment">// Try to stack with existing item</span>
+            <span class="keyword">const</span> existing = <span class="keyword">this</span>.items.<span class="function">find</span>(i => i.id === item.id);
+            <span class="keyword">if</span> (existing && existing.quantity < existing.maxStack) {
+                existing.quantity++;
+                <span class="keyword">return</span> <span class="keyword">true</span>;
+            }
+        }
+
+        <span class="comment">// Add as new item if space available</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.items.length < <span class="keyword">this</span>.capacity) {
+            <span class="keyword">this</span>.items.<span class="function">push</span>(item);
+            <span class="keyword">return</span> <span class="keyword">true</span>;
+        }
+
+        <span class="keyword">return</span> <span class="keyword">false</span>; <span class="comment">// Inventory full</span>
+    }
+
+    <span class="function">removeItem</span>(itemId, quantity = <span class="number">1</span>) {
+        <span class="keyword">const</span> index = <span class="keyword">this</span>.items.<span class="function">findIndex</span>(i => i.id === itemId);
+        <span class="keyword">if</span> (index === -<span class="number">1</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+        <span class="keyword">const</span> item = <span class="keyword">this</span>.items[index];
+        item.quantity -= quantity;
+
+        <span class="keyword">if</span> (item.quantity <= <span class="number">0</span>) {
+            <span class="keyword">this</span>.items.<span class="function">splice</span>(index, <span class="number">1</span>);
+        }
+
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+
+    <span class="function">hasItem</span>(itemId, quantity = <span class="number">1</span>) {
+        <span class="keyword">const</span> item = <span class="keyword">this</span>.items.<span class="function">find</span>(i => i.id === itemId);
+        <span class="keyword">return</span> item && item.quantity >= quantity;
+    }
+
+    <span class="function">getItemCount</span>(itemId) {
+        <span class="keyword">const</span> item = <span class="keyword">this</span>.items.<span class="function">find</span>(i => i.id === itemId);
+        <span class="keyword">return</span> item ? item.quantity : <span class="number">0</span>;
+    }
+
+    <span class="function">isFull</span>() {
+        <span class="keyword">return</span> <span class="keyword">this</span>.items.length >= <span class="keyword">this</span>.capacity;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Inventory</h3>
+            <div class="diagram">
+                <canvas id="inventoryDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnPickupPotion">Pickup Potion</button>
+                <button id="btnPickupSword">Pickup Sword</button>
+                <button id="btnPickupCoin">Pickup Coin</button>
+                <button id="btnUseItem">Use Selected</button>
+                <button id="btnClearInventory">Clear All</button>
+            </div>
+            <div id="inventoryInfo" class="info-display">Click items in the grid to select them</div>
+        </div>
+
+        <!-- TIMER SYSTEM -->
+        <div id="timer-system" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>⏱️ Timer & Cooldown System</h2>
+
+            <div class="concept-box">
+                <h4>Managing Time in Games</h4>
+                <p>Timers control when actions can happen, create urgency, and prevent spam. They're everywhere in games!</p>
+                <p><strong>Common Uses:</strong></p>
+                <ul>
+                    <li><strong>Cooldowns:</strong> Limit ability usage</li>
+                    <li><strong>Countdowns:</strong> Time limits on objectives</li>
+                    <li><strong>Buffs/Debuffs:</strong> Temporary effects</li>
+                    <li><strong>Respawn Timers:</strong> Enemy/item spawning</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Timer System Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Timer</span> {
+    <span class="keyword">constructor</span>(duration) {
+        <span class="keyword">this</span>.duration = duration;
+        <span class="keyword">this</span>.remaining = duration;
+        <span class="keyword">this</span>.isActive = <span class="keyword">false</span>;
+        <span class="keyword">this</span>.isPaused = <span class="keyword">false</span>;
+    }
+
+    <span class="function">start</span>() {
+        <span class="keyword">this</span>.isActive = <span class="keyword">true</span>;
+        <span class="keyword">this</span>.remaining = <span class="keyword">this</span>.duration;
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.isActive || <span class="keyword">this</span>.isPaused) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+        <span class="keyword">this</span>.remaining -= deltaTime;
+
+        <span class="keyword">if</span> (<span class="keyword">this</span>.remaining <= <span class="number">0</span>) {
+            <span class="keyword">this</span>.remaining = <span class="number">0</span>;
+            <span class="keyword">this</span>.isActive = <span class="keyword">false</span>;
+            <span class="keyword">return</span> <span class="keyword">true</span>; <span class="comment">// Timer finished</span>
+        }
+
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+
+    <span class="function">reset</span>() {
+        <span class="keyword">this</span>.remaining = <span class="keyword">this</span>.duration;
+    }
+
+    <span class="function">getProgress</span>() {
+        <span class="keyword">return</span> <span class="number">1</span> - (<span class="keyword">this</span>.remaining / <span class="keyword">this</span>.duration);
+    }
+
+    <span class="function">isReady</span>() {
+        <span class="keyword">return</span> !<span class="keyword">this</span>.isActive;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Cooldown</span> <span class="keyword">extends</span> <span class="function">Timer</span> {
+    <span class="function">use</span>() {
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.<span class="function">isReady</span>()) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+        <span class="keyword">this</span>.<span class="function">start</span>();
+        <span class="keyword">return</span> <span class="keyword">true</span>; <span class="comment">// Ability used successfully</span>
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Ability Cooldowns</h3>
+            <div class="diagram">
+                <canvas id="timerDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnFireball">Fireball (2s)</button>
+                <button id="btnIceBlast">Ice Blast (3s)</button>
+                <button id="btnLightning">Lightning (5s)</button>
+                <button id="btnUltimate">Ultimate (10s)</button>
+            </div>
+            <div id="timerInfo" class="info-display">Use abilities and watch the cooldown timers</div>
+        </div>
+
+        <!-- POWER-UP SYSTEM -->
+        <div id="powerup-system" class="section">
+            <span class="level-indicator level-beginner">BEGINNER</span>
+            <h2>⚡ Power-up System</h2>
+
+            <div class="concept-box">
+                <h4>Creating Collectible Power-ups</h4>
+                <p>Power-ups are temporary or permanent boosts that enhance player abilities. They add variety and excitement to gameplay!</p>
+                <p><strong>Key Components:</strong></p>
+                <ul>
+                    <li><strong>Power-up Types:</strong> Different effects (speed, shield, weapon upgrades)</li>
+                    <li><strong>Duration:</strong> How long the effect lasts</li>
+                    <li><strong>Collection:</strong> Detecting when player picks them up</li>
+                    <li><strong>Effects:</strong> What they modify (speed, damage, health)</li>
+                    <li><strong>Visual Feedback:</strong> Show active power-ups to player</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Power-up System Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">PowerUp</span> {
+    <span class="keyword">constructor</span>(type, x, y) {
+        <span class="keyword">this</span>.type = type;
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.radius = <span class="number">15</span>;
+        <span class="keyword">this</span>.collected = <span class="keyword">false</span>;
+        <span class="keyword">this</span>.rotation = <span class="number">0</span>;
+
+        <span class="comment">// Power-up properties based on type</span>
+        <span class="keyword">this</span>.config = <span class="keyword">this</span>.<span class="function">getConfig</span>(type);
+    }
+
+    <span class="function">getConfig</span>(type) {
+        <span class="keyword">const</span> configs = {
+            <span class="string">'speed'</span>: {
+                color: <span class="string">'#4fc3f7'</span>,
+                icon: <span class="string">'⚡'</span>,
+                duration: <span class="number">5000</span>,
+                effect: { speedMultiplier: <span class="number">1.5</span> }
+            },
+            <span class="string">'shield'</span>: {
+                color: <span class="string">'#66bb6a'</span>,
+                icon: <span class="string">'🛡️'</span>,
+                duration: <span class="number">8000</span>,
+                effect: { invulnerable: <span class="keyword">true</span> }
+            },
+            <span class="string">'damage'</span>: {
+                color: <span class="string">'#ef5350'</span>,
+                icon: <span class="string">'🔥'</span>,
+                duration: <span class="number">6000</span>,
+                effect: { damageMultiplier: <span class="number">2</span> }
+            },
+            <span class="string">'health'</span>: {
+                color: <span class="string">'#ffa726'</span>,
+                icon: <span class="string">'❤️'</span>,
+                duration: <span class="number">0</span>,  <span class="comment">// Instant effect</span>
+                effect: { healAmount: <span class="number">50</span> }
+            }
+        };
+        <span class="keyword">return</span> configs[type];
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="comment">// Rotate for visual effect</span>
+        <span class="keyword">this</span>.rotation += deltaTime * <span class="number">0.002</span>;
+    }
+
+    <span class="function">checkCollision</span>(playerPos, playerRadius) {
+        <span class="keyword">const</span> distance = <span class="keyword">this</span>.position.<span class="function">distance</span>(playerPos);
+        <span class="keyword">return</span> distance < (<span class="keyword">this</span>.radius + playerRadius);
+    }
+
+    <span class="function">draw</span>(ctx) {
+        ctx.<span class="function">save</span>();
+        ctx.<span class="function">translate</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
+        ctx.<span class="function">rotate</span>(<span class="keyword">this</span>.rotation);
+
+        <span class="comment">// Draw outer glow</span>
+        ctx.fillStyle = <span class="keyword">this</span>.config.color;
+        ctx.globalAlpha = <span class="number">0.3</span>;
+        ctx.<span class="function">beginPath</span>();
+        ctx.<span class="function">arc</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="keyword">this</span>.radius + <span class="number">5</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+
+        <span class="comment">// Draw main circle</span>
+        ctx.globalAlpha = <span class="number">1</span>;
+        ctx.<span class="function">beginPath</span>();
+        ctx.<span class="function">arc</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="keyword">this</span>.radius, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+
+        <span class="comment">// Draw icon</span>
+        ctx.font = <span class="string">'20px Arial'</span>;
+        ctx.textAlign = <span class="string">'center'</span>;
+        ctx.textBaseline = <span class="string">'middle'</span>;
+        ctx.<span class="function">fillText</span>(<span class="keyword">this</span>.config.icon, <span class="number">0</span>, <span class="number">0</span>);
+
+        ctx.<span class="function">restore</span>();
+    }
+}
+
+<span class="keyword">class</span> <span class="function">PowerUpManager</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.activePowerUps = [];  <span class="comment">// Currently active on player</span>
+        <span class="keyword">this</span>.availablePowerUps = [];  <span class="comment">// In the world to collect</span>
+    }
+
+    <span class="function">collectPowerUp</span>(powerUp) {
+        <span class="keyword">if</span> (powerUp.config.duration > <span class="number">0</span>) {
+            <span class="comment">// Timed power-up</span>
+            <span class="keyword">this</span>.activePowerUps.<span class="function">push</span>({
+                type: powerUp.type,
+                config: powerUp.config,
+                timeRemaining: powerUp.config.duration
+            });
+        } <span class="keyword">else</span> {
+            <span class="comment">// Instant effect (like health)</span>
+            <span class="keyword">return</span> powerUp.config.effect;
+        }
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="comment">// Update active power-up durations</span>
+        <span class="keyword">this</span>.activePowerUps = <span class="keyword">this</span>.activePowerUps.<span class="function">filter</span>(powerUp => {
+            powerUp.timeRemaining -= deltaTime;
+            <span class="keyword">return</span> powerUp.timeRemaining > <span class="number">0</span>;
+        });
+    }
+
+    <span class="function">hasEffect</span>(effectName) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.activePowerUps.<span class="function">some</span>(p =>
+            p.config.effect[effectName] !== <span class="keyword">undefined</span>
+        );
+    }
+
+    <span class="function">getMultiplier</span>(multiplierName) {
+        <span class="keyword">const</span> powerUp = <span class="keyword">this</span>.activePowerUps.<span class="function">find</span>(p =>
+            p.config.effect[multiplierName] !== <span class="keyword">undefined</span>
+        );
+        <span class="keyword">return</span> powerUp ? powerUp.config.effect[multiplierName] : <span class="number">1</span>;
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using Power-ups in Your Game:</h4>
+                    <pre><code><span class="comment">// Create power-up manager</span>
+<span class="keyword">const</span> powerUpManager = <span class="keyword">new</span> <span class="function">PowerUpManager</span>();
+
+<span class="comment">// Spawn a speed power-up</span>
+<span class="keyword">const</span> speedBoost = <span class="keyword">new</span> <span class="function">PowerUp</span>(<span class="string">'speed'</span>, <span class="number">200</span>, <span class="number">200</span>);
+
+<span class="comment">// In game loop - check collision</span>
+<span class="keyword">if</span> (speedBoost.<span class="function">checkCollision</span>(player.position, player.radius)) {
+    powerUpManager.<span class="function">collectPowerUp</span>(speedBoost);
+    <span class="comment">// Remove from world</span>
+    availablePowerUps.<span class="function">splice</span>(index, <span class="number">1</span>);
+}
+
+<span class="comment">// Apply speed multiplier</span>
+<span class="keyword">const</span> speedMultiplier = powerUpManager.<span class="function">getMultiplier</span>(<span class="string">'speedMultiplier'</span>);
+player.speed = baseSpeed * speedMultiplier;</code></pre>
+                </div>
+            </details>
+
+            <div class="key-point">
+                <strong>💡 Design Tip:</strong> Power-ups should be balanced - powerful enough to feel exciting, but temporary enough to not break the game. Visual and audio feedback makes collecting them feel rewarding!
+            </div>
+
+            <h3>Interactive Demo: Collect Power-ups</h3>
+            <div class="diagram">
+                <canvas id="powerupDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSpawnSpeed">Spawn Speed ⚡</button>
+                <button id="btnSpawnShield">Spawn Shield 🛡️</button>
+                <button id="btnSpawnDamage">Spawn Damage 🔥</button>
+                <button id="btnSpawnHealth">Spawn Health ❤️</button>
+                <button id="btnClearPowerups">Clear All</button>
+            </div>
+            <div id="powerupInfo" class="info-display">Use WASD to move. Collect power-ups to see their effects!</div>
         </div>
 
         <!-- MATRICES -->

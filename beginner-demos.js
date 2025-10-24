@@ -651,3 +651,845 @@ if (matrixCanvas) {
 
     animateMatrix();
 }
+
+// ===================================
+// DEMO: Health System
+// ===================================
+const healthCanvas = document.getElementById('healthDemo');
+if (healthCanvas) {
+    const ctx = healthCanvas.getContext('2d');
+    const info = document.getElementById('healthInfo');
+
+    class Character {
+        constructor(x, y, maxHealth) {
+            this.position = new Vector2D(x, y);
+            this.maxHealth = maxHealth;
+            this.currentHealth = maxHealth;
+            this.isAlive = true;
+            this.isInvulnerable = false;
+            this.invulTimer = 0;
+            this.flashTimer = 0;
+        }
+
+        takeDamage(amount) {
+            if (this.isInvulnerable || !this.isAlive) return false;
+
+            this.currentHealth -= amount;
+            this.currentHealth = Math.max(0, this.currentHealth);
+            this.isInvulnerable = true;
+            this.invulTimer = 60; // 1 second at 60fps
+            this.flashTimer = 30;
+
+            if (this.currentHealth <= 0) {
+                this.isAlive = false;
+            }
+            return true;
+        }
+
+        heal(amount) {
+            if (!this.isAlive) return;
+            this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount);
+        }
+
+        update() {
+            if (this.invulTimer > 0) {
+                this.invulTimer--;
+                if (this.invulTimer === 0) this.isInvulnerable = false;
+            }
+            if (this.flashTimer > 0) this.flashTimer--;
+        }
+
+        draw(ctx) {
+            const x = this.position.x;
+            const y = this.position.y;
+
+            // Draw character
+            if (!this.isAlive || (this.flashTimer > 0 && Math.floor(this.flashTimer / 5) % 2 === 0)) {
+                ctx.globalAlpha = 0.5;
+            }
+
+            ctx.fillStyle = this.isAlive ? '#4fc3f7' : '#666';
+            ctx.beginPath();
+            ctx.arc(x, y, 40, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1;
+
+            // Draw health bar
+            const barWidth = 100;
+            const barHeight = 12;
+            const healthPercent = this.currentHealth / this.maxHealth;
+
+            // Background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x - barWidth / 2, y - 70, barWidth, barHeight);
+
+            // Health
+            const healthColor = healthPercent > 0.5 ? '#66bb6a' : healthPercent > 0.25 ? '#ffeb3b' : '#f44336';
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(x - barWidth / 2, y - 70, barWidth * healthPercent, barHeight);
+
+            // Border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - barWidth / 2, y - 70, barWidth, barHeight);
+
+            // Text
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.floor(this.currentHealth)}/${this.maxHealth}`, x, y - 75);
+        }
+    }
+
+    const character = new Character(400, 200, 100);
+
+    document.getElementById('btnDamage').addEventListener('click', () => {
+        character.takeDamage(10);
+    });
+
+    document.getElementById('btnHeal').addEventListener('click', () => {
+        character.heal(20);
+    });
+
+    document.getElementById('btnMaxDamage').addEventListener('click', () => {
+        character.takeDamage(999);
+    });
+
+    document.getElementById('btnFullHeal').addEventListener('click', () => {
+        character.currentHealth = character.maxHealth;
+        character.isAlive = true;
+    });
+
+    function animateHealth() {
+        clearCanvas(ctx, healthCanvas.width, healthCanvas.height);
+
+        character.update();
+        character.draw(ctx);
+
+        const status = character.isAlive ? 'Alive' : 'Dead';
+        const invuln = character.isInvulnerable ? ' | Invulnerable!' : '';
+        info.textContent = `Health: ${Math.floor(character.currentHealth)}/${character.maxHealth} | Status: ${status}${invuln}`;
+
+        requestAnimationFrame(animateHealth);
+    }
+
+    animateHealth();
+}
+
+// ===================================
+// DEMO: Scoring System
+// ===================================
+const scoringCanvas = document.getElementById('scoringDemo');
+if (scoringCanvas) {
+    const ctx = scoringCanvas.getContext('2d');
+    const info = document.getElementById('scoringInfo');
+
+    let score = 0;
+    let combo = 0;
+    let comboTimer = 0;
+    let highScore = 0;
+    let lastTime = Date.now();
+
+    const targets = [];
+    for (let i = 0; i < 5; i++) {
+        targets.push({
+            x: randomFloat(100, scoringCanvas.width - 100),
+            y: randomFloat(100, scoringCanvas.height - 100),
+            radius: 30,
+            hit: false
+        });
+    }
+
+    document.getElementById('btnScore').addEventListener('click', () => {
+        const multiplier = 1 + (combo * 0.1);
+        const points = Math.floor(100 * multiplier);
+        score += points;
+        combo++;
+        comboTimer = 2000; // 2 seconds
+
+        if (score > highScore) highScore = score;
+
+        // Visual feedback
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        target.hit = true;
+        setTimeout(() => target.hit = false, 200);
+    });
+
+    document.getElementById('btnResetScore').addEventListener('click', () => {
+        score = 0;
+        combo = 0;
+        comboTimer = 0;
+    });
+
+    function animateScoring() {
+        clearCanvas(ctx, scoringCanvas.width, scoringCanvas.height);
+
+        const now = Date.now();
+        const deltaTime = now - lastTime;
+        lastTime = now;
+
+        // Update combo timer
+        if (comboTimer > 0) {
+            comboTimer -= deltaTime;
+            if (comboTimer <= 0) {
+                combo = 0;
+                comboTimer = 0;
+            }
+        }
+
+        // Draw targets
+        targets.forEach(target => {
+            ctx.fillStyle = target.hit ? '#ffeb3b' : '#66bb6a';
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+
+        // Draw score
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 48px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Score: ${score}`, 20, 60);
+
+        // Draw combo
+        if (combo > 0) {
+            const comboAlpha = Math.min(1, comboTimer / 500);
+            ctx.globalAlpha = comboAlpha;
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = 'bold 36px monospace';
+            ctx.fillText(`Combo x${combo}`, 20, 110);
+            ctx.globalAlpha = 1;
+
+            // Combo timer bar
+            const barWidth = 200;
+            const progress = comboTimer / 2000;
+            ctx.fillStyle = 'rgba(255, 235, 59, 0.3)';
+            ctx.fillRect(20, 120, barWidth, 8);
+            ctx.fillStyle = '#ffeb3b';
+            ctx.fillRect(20, 120, barWidth * progress, 8);
+        }
+
+        // Draw high score
+        ctx.fillStyle = '#999';
+        ctx.font = '20px monospace';
+        ctx.fillText(`High Score: ${highScore}`, 20, 160);
+
+        info.textContent = `Click "Hit Target" quickly to build combos! Multiplier: ${(1 + combo * 0.1).toFixed(1)}x`;
+
+        requestAnimationFrame(animateScoring);
+    }
+
+    animateScoring();
+}
+
+// ===================================
+// DEMO: Inventory System
+// ===================================
+const inventoryCanvas = document.getElementById('inventoryDemo');
+if (inventoryCanvas) {
+    const ctx = inventoryCanvas.getContext('2d');
+    const info = document.getElementById('inventoryInfo');
+
+    class Item {
+        constructor(id, name, icon, stackable, maxStack) {
+            this.id = id;
+            this.name = name;
+            this.icon = icon;
+            this.stackable = stackable;
+            this.maxStack = maxStack;
+            this.quantity = 1;
+        }
+    }
+
+    const inventory = {
+        items: [],
+        capacity: 12,
+        selectedIndex: -1
+    };
+
+    const itemTypes = {
+        potion: { name: 'Health Potion', icon: '🧪', stackable: true, maxStack: 10 },
+        sword: { name: 'Iron Sword', icon: '⚔️', stackable: false, maxStack: 1 },
+        coin: { name: 'Gold Coin', icon: '💰', stackable: true, maxStack: 99 }
+    };
+
+    function addItem(type) {
+        const template = itemTypes[type];
+
+        if (template.stackable) {
+            const existing = inventory.items.find(i => i.id === type);
+            if (existing && existing.quantity < existing.maxStack) {
+                existing.quantity++;
+                return true;
+            }
+        }
+
+        if (inventory.items.length < inventory.capacity) {
+            inventory.items.push(new Item(type, template.name, template.icon, template.stackable, template.maxStack));
+            return true;
+        }
+        return false;
+    }
+
+    document.getElementById('btnPickupPotion').addEventListener('click', () => addItem('potion'));
+    document.getElementById('btnPickupSword').addEventListener('click', () => addItem('sword'));
+    document.getElementById('btnPickupCoin').addEventListener('click', () => addItem('coin'));
+
+    document.getElementById('btnUseItem').addEventListener('click', () => {
+        if (inventory.selectedIndex >= 0 && inventory.selectedIndex < inventory.items.length) {
+            const item = inventory.items[inventory.selectedIndex];
+            item.quantity--;
+            if (item.quantity <= 0) {
+                inventory.items.splice(inventory.selectedIndex, 1);
+                inventory.selectedIndex = -1;
+            }
+        }
+    });
+
+    document.getElementById('btnClearInventory').addEventListener('click', () => {
+        inventory.items = [];
+        inventory.selectedIndex = -1;
+    });
+
+    inventoryCanvas.addEventListener('click', (e) => {
+        const rect = inventoryCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const cols = 4;
+        const slotSize = 80;
+        const padding = 20;
+        const startX = (inventoryCanvas.width - (cols * slotSize + (cols - 1) * padding)) / 2;
+        const startY = 100;
+
+        for (let i = 0; i < inventory.capacity; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const slotX = startX + col * (slotSize + padding);
+            const slotY = startY + row * (slotSize + padding);
+
+            if (x >= slotX && x < slotX + slotSize && y >= slotY && y < slotY + slotSize) {
+                inventory.selectedIndex = i < inventory.items.length ? i : -1;
+                break;
+            }
+        }
+    });
+
+    function animateInventory() {
+        clearCanvas(ctx, inventoryCanvas.width, inventoryCanvas.height);
+
+        // Title
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Inventory', inventoryCanvas.width / 2, 50);
+
+        // Draw inventory grid
+        const cols = 4;
+        const slotSize = 80;
+        const padding = 20;
+        const startX = (inventoryCanvas.width - (cols * slotSize + (cols - 1) * padding)) / 2;
+        const startY = 100;
+
+        for (let i = 0; i < inventory.capacity; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = startX + col * (slotSize + padding);
+            const y = startY + row * (slotSize + padding);
+
+            // Draw slot
+            const isSelected = i === inventory.selectedIndex;
+            ctx.fillStyle = isSelected ? '#4fc3f7' : '#333';
+            ctx.fillRect(x, y, slotSize, slotSize);
+
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, slotSize, slotSize);
+
+            // Draw item if exists
+            if (i < inventory.items.length) {
+                const item = inventory.items[i];
+                ctx.font = '40px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#fff';
+                ctx.fillText(item.icon, x + slotSize / 2, y + slotSize / 2 - 5);
+
+                // Draw quantity
+                if (item.quantity > 1) {
+                    ctx.font = 'bold 14px monospace';
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(item.quantity, x + slotSize - 5, y + slotSize - 5);
+                }
+            }
+        }
+
+        const itemName = inventory.selectedIndex >= 0 && inventory.selectedIndex < inventory.items.length
+            ? inventory.items[inventory.selectedIndex].name
+            : 'None';
+
+        info.textContent = `Slots: ${inventory.items.length}/${inventory.capacity} | Selected: ${itemName}`;
+
+        requestAnimationFrame(animateInventory);
+    }
+
+    animateInventory();
+}
+
+// ===================================
+// DEMO: Timer/Cooldown System
+// ===================================
+const timerCanvas = document.getElementById('timerDemo');
+if (timerCanvas) {
+    const ctx = timerCanvas.getContext('2d');
+    const info = document.getElementById('timerInfo');
+
+    class Cooldown {
+        constructor(name, duration, icon) {
+            this.name = name;
+            this.duration = duration;
+            this.remaining = 0;
+            this.icon = icon;
+        }
+
+        use() {
+            if (this.isReady()) {
+                this.remaining = this.duration;
+                return true;
+            }
+            return false;
+        }
+
+        update(deltaTime) {
+            if (this.remaining > 0) {
+                this.remaining -= deltaTime;
+                if (this.remaining < 0) this.remaining = 0;
+            }
+        }
+
+        isReady() {
+            return this.remaining === 0;
+        }
+
+        getProgress() {
+            return 1 - (this.remaining / this.duration);
+        }
+    }
+
+    const abilities = [
+        new Cooldown('Fireball', 2000, '🔥'),
+        new Cooldown('Ice Blast', 3000, '❄️'),
+        new Cooldown('Lightning', 5000, '⚡'),
+        new Cooldown('Ultimate', 10000, '💥')
+    ];
+
+    let lastTime = Date.now();
+
+    document.getElementById('btnFireball').addEventListener('click', () => abilities[0].use());
+    document.getElementById('btnIceBlast').addEventListener('click', () => abilities[1].use());
+    document.getElementById('btnLightning').addEventListener('click', () => abilities[2].use());
+    document.getElementById('btnUltimate').addEventListener('click', () => abilities[3].use());
+
+    function animateTimer() {
+        clearCanvas(ctx, timerCanvas.width, timerCanvas.height);
+
+        const now = Date.now();
+        const deltaTime = now - lastTime;
+        lastTime = now;
+
+        abilities.forEach(ability => ability.update(deltaTime));
+
+        // Draw abilities
+        const slotSize = 100;
+        const padding = 30;
+        const totalWidth = abilities.length * slotSize + (abilities.length - 1) * padding;
+        const startX = (timerCanvas.width - totalWidth) / 2;
+        const y = timerCanvas.height / 2 - slotSize / 2;
+
+        abilities.forEach((ability, i) => {
+            const x = startX + i * (slotSize + padding);
+
+            // Draw slot
+            ctx.fillStyle = ability.isReady() ? '#66bb6a' : '#333';
+            ctx.fillRect(x, y, slotSize, slotSize);
+
+            ctx.strokeStyle = ability.isReady() ? '#fff' : '#666';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, slotSize, slotSize);
+
+            // Draw icon
+            ctx.font = '48px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (!ability.isReady()) ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#fff';
+            ctx.fillText(ability.icon, x + slotSize / 2, y + slotSize / 2);
+            ctx.globalAlpha = 1;
+
+            // Draw cooldown overlay
+            if (!ability.isReady()) {
+                const progress = ability.getProgress();
+                const overlayHeight = slotSize * (1 - progress);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(x, y, slotSize, overlayHeight);
+
+                // Draw time remaining
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px monospace';
+                ctx.fillText(Math.ceil(ability.remaining / 1000) + 's', x + slotSize / 2, y + slotSize / 2);
+            }
+
+            // Draw ability name
+            ctx.fillStyle = '#999';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(ability.name, x + slotSize / 2, y + slotSize + 20);
+        });
+
+        const readyCount = abilities.filter(a => a.isReady()).length;
+        info.textContent = `Ready Abilities: ${readyCount}/${abilities.length}`;
+
+        requestAnimationFrame(animateTimer);
+    }
+
+    animateTimer();
+}
+
+// ========================================
+// POWER-UP SYSTEM DEMO
+// ========================================
+const powerupCanvas = document.getElementById('powerupDemo');
+if (powerupCanvas) {
+    const ctx = powerupCanvas.getContext('2d');
+    const info = document.getElementById('powerupInfo');
+
+    // Power-up class
+    class PowerUp {
+        constructor(type, x, y) {
+            this.type = type;
+            this.position = new Vector2D(x, y);
+            this.radius = 15;
+            this.rotation = 0;
+            this.config = this.getConfig(type);
+            this.pulseTime = 0;
+        }
+
+        getConfig(type) {
+            const configs = {
+                'speed': {
+                    color: '#4fc3f7',
+                    icon: '⚡',
+                    name: 'Speed Boost',
+                    duration: 5000,
+                    effect: { speedMultiplier: 1.5 }
+                },
+                'shield': {
+                    color: '#66bb6a',
+                    icon: '🛡️',
+                    name: 'Shield',
+                    duration: 8000,
+                    effect: { invulnerable: true }
+                },
+                'damage': {
+                    color: '#ef5350',
+                    icon: '🔥',
+                    name: 'Damage Boost',
+                    duration: 6000,
+                    effect: { damageMultiplier: 2 }
+                },
+                'health': {
+                    color: '#ffa726',
+                    icon: '❤️',
+                    name: 'Health Pack',
+                    duration: 0,
+                    effect: { healAmount: 50 }
+                }
+            };
+            return configs[type];
+        }
+
+        update(deltaTime) {
+            this.rotation += deltaTime * 0.002;
+            this.pulseTime += deltaTime * 0.003;
+        }
+
+        checkCollision(playerPos, playerRadius) {
+            const distance = this.position.distance(playerPos);
+            return distance < (this.radius + playerRadius);
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.rotation);
+
+            // Pulsing glow
+            const pulse = Math.sin(this.pulseTime) * 0.3 + 0.7;
+            const glowSize = this.radius + 5 + pulse * 3;
+
+            ctx.fillStyle = this.config.color;
+            ctx.globalAlpha = 0.3 * pulse;
+            ctx.beginPath();
+            ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main circle
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Icon
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.config.icon, 0, 0);
+
+            ctx.restore();
+        }
+    }
+
+    // Player with power-up effects
+    class PowerUpPlayer {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.radius = 20;
+            this.baseSpeed = 3;
+            this.speed = this.baseSpeed;
+            this.activePowerUps = [];
+            this.health = 100;
+            this.maxHealth = 100;
+        }
+
+        update(deltaTime) {
+            // Update active power-ups
+            this.activePowerUps = this.activePowerUps.filter(powerUp => {
+                powerUp.timeRemaining -= deltaTime;
+                return powerUp.timeRemaining > 0;
+            });
+
+            // Apply speed multiplier
+            const speedMultiplier = this.getMultiplier('speedMultiplier');
+            this.speed = this.baseSpeed * speedMultiplier;
+
+            // Move based on keys
+            const direction = new Vector2D(0, 0);
+            if (powerupKeys.w) direction.y -= 1;
+            if (powerupKeys.s) direction.y += 1;
+            if (powerupKeys.a) direction.x -= 1;
+            if (powerupKeys.d) direction.x += 1;
+
+            if (direction.length() > 0) {
+                direction.normalize();
+                this.position.add(direction.multiply(this.speed));
+            }
+
+            // Keep in bounds
+            this.position.x = Math.max(this.radius, Math.min(powerupCanvas.width - this.radius, this.position.x));
+            this.position.y = Math.max(this.radius, Math.min(powerupCanvas.height - this.radius, this.position.y));
+        }
+
+        collectPowerUp(powerUp) {
+            if (powerUp.config.duration > 0) {
+                // Timed power-up
+                this.activePowerUps.push({
+                    type: powerUp.type,
+                    config: powerUp.config,
+                    timeRemaining: powerUp.config.duration
+                });
+            } else {
+                // Instant effect (health)
+                if (powerUp.config.effect.healAmount) {
+                    this.health = Math.min(this.maxHealth, this.health + powerUp.config.effect.healAmount);
+                }
+            }
+        }
+
+        hasEffect(effectName) {
+            return this.activePowerUps.some(p => p.config.effect[effectName] !== undefined);
+        }
+
+        getMultiplier(multiplierName) {
+            const powerUp = this.activePowerUps.find(p => p.config.effect[multiplierName] !== undefined);
+            return powerUp ? powerUp.config.effect[multiplierName] : 1;
+        }
+
+        draw(ctx) {
+            // Shield effect
+            if (this.hasEffect('invulnerable')) {
+                ctx.strokeStyle = '#66bb6a';
+                ctx.lineWidth = 4;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius + 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            // Speed effect (trailing)
+            if (this.hasEffect('speedMultiplier')) {
+                ctx.fillStyle = '#4fc3f7';
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Damage effect (flames)
+            if (this.hasEffect('damageMultiplier')) {
+                ctx.fillStyle = '#ef5350';
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius + 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Player body
+            ctx.fillStyle = '#4fc3f7';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Health bar
+            const barWidth = 60;
+            const barHeight = 6;
+            const barX = this.position.x - barWidth / 2;
+            const barY = this.position.y - this.radius - 15;
+
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+
+            const healthPercent = this.health / this.maxHealth;
+            ctx.fillStyle = healthPercent > 0.5 ? '#66bb6a' : healthPercent > 0.25 ? '#ffa726' : '#ef5350';
+            ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+        }
+    }
+
+    // Game state
+    const player = new PowerUpPlayer(powerupCanvas.width / 2, powerupCanvas.height / 2);
+    const powerups = [];
+    const powerupKeys = { w: false, a: false, s: false, d: false };
+    let lastTime = Date.now();
+
+    // Input handling
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (key in powerupKeys) powerupKeys[key] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        if (key in powerupKeys) powerupKeys[key] = false;
+    });
+
+    // Button handlers
+    const spawnButtons = {
+        btnSpawnSpeed: 'speed',
+        btnSpawnShield: 'shield',
+        btnSpawnDamage: 'damage',
+        btnSpawnHealth: 'health'
+    };
+
+    Object.entries(spawnButtons).forEach(([btnId, type]) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const x = Math.random() * (powerupCanvas.width - 100) + 50;
+                const y = Math.random() * (powerupCanvas.height - 100) + 50;
+                powerups.push(new PowerUp(type, x, y));
+            });
+        }
+    });
+
+    const clearBtn = document.getElementById('btnClearPowerups');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            powerups.length = 0;
+            player.activePowerUps.length = 0;
+        });
+    }
+
+    // Animation loop
+    function animatePowerup() {
+        clearCanvas(ctx, powerupCanvas.width, powerupCanvas.height);
+
+        const now = Date.now();
+        const deltaTime = now - lastTime;
+        lastTime = now;
+
+        // Update powerups
+        powerups.forEach(powerup => powerup.update(deltaTime));
+
+        // Check collisions
+        for (let i = powerups.length - 1; i >= 0; i--) {
+            if (powerups[i].checkCollision(player.position, player.radius)) {
+                player.collectPowerUp(powerups[i]);
+                powerups.splice(i, 1);
+            }
+        }
+
+        // Update player
+        player.update(deltaTime);
+
+        // Draw powerups
+        powerups.forEach(powerup => powerup.draw(ctx));
+
+        // Draw player
+        player.draw(ctx);
+
+        // Draw active power-ups UI
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('Active Power-ups:', 20, 30);
+
+        player.activePowerUps.forEach((powerUp, i) => {
+            const y = 60 + i * 30;
+            const timeLeft = (powerUp.timeRemaining / 1000).toFixed(1);
+
+            ctx.fillStyle = powerUp.config.color;
+            ctx.fillRect(20, y - 15, 200, 20);
+
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText(`${powerUp.config.icon} ${powerUp.config.name}: ${timeLeft}s`, 25, y);
+
+            // Progress bar
+            const progress = powerUp.timeRemaining / powerUp.config.duration;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(20, y - 15, 200 * progress, 20);
+        });
+
+        // Info text
+        const activeCount = player.activePowerUps.length;
+        const availableCount = powerups.length;
+        info.textContent = `Power-ups: ${availableCount} available, ${activeCount} active | Health: ${player.health}/${player.maxHealth}`;
+
+        requestAnimationFrame(animatePowerup);
+    }
+
+    animatePowerup();
+}
