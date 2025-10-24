@@ -18,7 +18,7 @@ if (scrollToTopBtn) {
 }
 
 // ===================================
-// DEMO 1: Steering Behaviors
+// DEMO 1: Steering Behaviors (Enhanced)
 // ===================================
 const steeringCanvas = document.getElementById('steeringDemo');
 if (steeringCanvas) {
@@ -26,15 +26,18 @@ if (steeringCanvas) {
     const info = document.getElementById('steeringInfo');
 
     class SteeringAgent {
-        constructor(x, y) {
+        constructor(x, y, color = '#4fc3f7') {
             this.position = new Vector2D(x, y);
-            this.velocity = new Vector2D(0, 0);
+            this.velocity = new Vector2D(randomFloat(-2, 2), randomFloat(-2, 2));
             this.acceleration = new Vector2D(0, 0);
             this.maxSpeed = 4;
-            this.maxForce = 0.2;
-            this.wanderAngle = 0;
+            this.maxForce = 0.15;
+            this.wanderAngle = randomFloat(0, Math.PI * 2);
+            this.radius = 8;
+            this.color = color;
         }
 
+        // Basic: Seek toward target
         seek(target) {
             const desired = target.subtract(this.position);
             desired.normalize().multiply(this.maxSpeed);
@@ -43,6 +46,7 @@ if (steeringCanvas) {
             return steer;
         }
 
+        // Advanced: Arrive - slow down as we approach
         arrive(target, slowingRadius = 100) {
             const desired = target.subtract(this.position);
             const distance = desired.length();
@@ -59,6 +63,7 @@ if (steeringCanvas) {
             return steer;
         }
 
+        // Basic: Flee from threat
         flee(threat) {
             const desired = this.position.subtract(threat);
             desired.normalize().multiply(this.maxSpeed);
@@ -67,6 +72,23 @@ if (steeringCanvas) {
             return steer;
         }
 
+        // Advanced: Pursue - seek future predicted position
+        pursue(target, targetVelocity) {
+            const distance = this.position.distance(target);
+            const T = distance / this.maxSpeed; // Prediction time
+            const futurePosition = target.copy().add(targetVelocity.copy().multiply(T));
+            return this.seek(futurePosition);
+        }
+
+        // Advanced: Evade - flee from future predicted position
+        evade(threat, threatVelocity) {
+            const distance = this.position.distance(threat);
+            const T = distance / this.maxSpeed;
+            const futurePosition = threat.copy().add(threatVelocity.copy().multiply(T));
+            return this.flee(futurePosition);
+        }
+
+        // Wander - random smooth movement
         wander() {
             const wanderRadius = 50;
             const wanderDistance = 80;
@@ -78,6 +100,108 @@ if (steeringCanvas) {
             const displacement = Vector2D.fromAngle(this.wanderAngle, wanderRadius);
 
             return circlePos.add(displacement);
+        }
+
+        // Obstacle Avoidance
+        avoidObstacles(obstacles) {
+            const ahead = this.velocity.copy().normalize().multiply(50);
+            const aheadPos = this.position.copy().add(ahead);
+            const ahead2Pos = this.position.copy().add(ahead.copy().multiply(0.5));
+
+            let mostThreatening = null;
+            let closestDist = Infinity;
+
+            for (const obstacle of obstacles) {
+                const dist1 = aheadPos.distance(obstacle.position);
+                const dist2 = ahead2Pos.distance(obstacle.position);
+                const dist = Math.min(dist1, dist2);
+
+                if (dist < obstacle.radius + this.radius && dist < closestDist) {
+                    closestDist = dist;
+                    mostThreatening = obstacle;
+                }
+            }
+
+            if (mostThreatening) {
+                const avoidance = aheadPos.subtract(mostThreatening.position);
+                avoidance.normalize().multiply(2);
+                return avoidance;
+            }
+
+            return new Vector2D(0, 0);
+        }
+
+        // Separation - avoid crowding neighbors
+        separate(neighbors, desiredSeparation = 40) {
+            const steer = new Vector2D(0, 0);
+            let count = 0;
+
+            for (const other of neighbors) {
+                const d = this.position.distance(other.position);
+                if (d > 0 && d < desiredSeparation) {
+                    const diff = this.position.subtract(other.position);
+                    diff.normalize();
+                    diff.divide(d); // Weight by distance
+                    steer.add(diff);
+                    count++;
+                }
+            }
+
+            if (count > 0) {
+                steer.divide(count);
+                steer.normalize();
+                steer.multiply(this.maxSpeed);
+                steer.subtract(this.velocity);
+                steer.limit(this.maxForce);
+            }
+
+            return steer;
+        }
+
+        // Cohesion - steer toward average position of neighbors
+        cohesion(neighbors, neighborDist = 80) {
+            const sum = new Vector2D(0, 0);
+            let count = 0;
+
+            for (const other of neighbors) {
+                const d = this.position.distance(other.position);
+                if (d > 0 && d < neighborDist) {
+                    sum.add(other.position);
+                    count++;
+                }
+            }
+
+            if (count > 0) {
+                sum.divide(count);
+                return this.seek(sum);
+            }
+
+            return new Vector2D(0, 0);
+        }
+
+        // Alignment - match velocity with neighbors
+        align(neighbors, neighborDist = 80) {
+            const sum = new Vector2D(0, 0);
+            let count = 0;
+
+            for (const other of neighbors) {
+                const d = this.position.distance(other.position);
+                if (d > 0 && d < neighborDist) {
+                    sum.add(other.velocity);
+                    count++;
+                }
+            }
+
+            if (count > 0) {
+                sum.divide(count);
+                sum.normalize();
+                sum.multiply(this.maxSpeed);
+                const steer = sum.subtract(this.velocity);
+                steer.limit(this.maxForce);
+                return steer;
+            }
+
+            return new Vector2D(0, 0);
         }
 
         applyForce(force) {
@@ -97,73 +221,199 @@ if (steeringCanvas) {
             if (this.position.y > steeringCanvas.height) this.position.y = 0;
         }
 
-        draw(ctx) {
+        draw(ctx, showVelocity = false) {
             ctx.save();
             ctx.translate(this.position.x, this.position.y);
+
+            // Draw velocity line if enabled
+            if (showVelocity && this.velocity.length() > 0.1) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                const velEnd = this.velocity.copy().multiply(5);
+                ctx.lineTo(velEnd.x, velEnd.y);
+                ctx.stroke();
+            }
+
             ctx.rotate(this.velocity.angle());
 
-            ctx.fillStyle = '#4fc3f7';
+            // Draw agent as triangle
+            ctx.fillStyle = this.color;
             ctx.beginPath();
-            ctx.moveTo(15, 0);
-            ctx.lineTo(-10, 8);
-            ctx.lineTo(-10, -8);
+            ctx.moveTo(12, 0);
+            ctx.lineTo(-8, 6);
+            ctx.lineTo(-8, -6);
             ctx.closePath();
             ctx.fill();
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
             ctx.restore();
         }
     }
 
+    class Obstacle {
+        constructor(x, y, radius = 30) {
+            this.position = new Vector2D(x, y);
+            this.radius = radius;
+        }
+
+        draw(ctx) {
+            ctx.fillStyle = '#f44336';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#b71c1c';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
     const agents = [];
+    const obstacles = [];
     let mousePos = new Vector2D(400, 250);
+    let mouseVel = new Vector2D(0, 0);
+    let lastMousePos = mousePos.copy();
     let currentMode = 'seek';
 
-    for (let i = 0; i < 5; i++) {
+    const modeDescriptions = {
+        'seek': 'Move directly toward target',
+        'arrive': 'Slow down when approaching target',
+        'flee': 'Run away from target',
+        'pursue': 'Predict and chase moving target',
+        'evade': 'Predict and escape from moving target',
+        'wander': 'Random exploration',
+        'avoid': 'Steer around obstacles',
+        'flock': 'Separation + Cohesion + Alignment'
+    };
+
+    // Initialize agents
+    for (let i = 0; i < 15; i++) {
         agents.push(new SteeringAgent(
             randomFloat(50, steeringCanvas.width - 50),
-            randomFloat(50, steeringCanvas.height - 50)
+            randomFloat(50, steeringCanvas.height - 50),
+            `hsl(${i * 24}, 70%, 60%)`
         ));
     }
 
+    // Add some obstacles
+    obstacles.push(new Obstacle(300, 150, 35));
+    obstacles.push(new Obstacle(500, 350, 40));
+    obstacles.push(new Obstacle(650, 200, 30));
+
     steeringCanvas.addEventListener('mousemove', (e) => {
         const rect = steeringCanvas.getBoundingClientRect();
+        lastMousePos = mousePos.copy();
         mousePos.x = e.clientX - rect.left;
         mousePos.y = e.clientY - rect.top;
+        mouseVel = mousePos.subtract(lastMousePos);
     });
 
-    document.getElementById('btnSeek').addEventListener('click', () => currentMode = 'seek');
-    document.getElementById('btnArrive').addEventListener('click', () => currentMode = 'arrive');
-    document.getElementById('btnFlee').addEventListener('click', () => currentMode = 'flee');
-    document.getElementById('btnWander').addEventListener('click', () => currentMode = 'wander');
+    // Mode buttons
+    const modeButtons = {
+        'btnSeek': 'seek',
+        'btnArrive': 'arrive',
+        'btnFlee': 'flee',
+        'btnWander': 'wander',
+        'btnPursue': 'pursue',
+        'btnEvade': 'evade',
+        'btnAvoid': 'avoid',
+        'btnFlock': 'flock'
+    };
+
+    for (const [btnId, mode] of Object.entries(modeButtons)) {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                currentMode = mode;
+                // Update button states
+                Object.keys(modeButtons).forEach(id => {
+                    const b = document.getElementById(id);
+                    if (b) b.classList.remove('active');
+                });
+                btn.classList.add('active');
+            });
+        }
+    }
+
+    // Set initial active button
+    const btnSeek = document.getElementById('btnSeek');
+    if (btnSeek) btnSeek.classList.add('active');
 
     function animateSteering() {
         clearCanvas(ctx, steeringCanvas.width, steeringCanvas.height);
 
-        // Draw target
-        ctx.strokeStyle = '#66bb6a';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(mousePos.x, mousePos.y, 20, 0, Math.PI * 2);
-        ctx.stroke();
+        // Draw obstacles
+        obstacles.forEach(obs => obs.draw(ctx));
 
+        // Draw target/threat
+        if (currentMode !== 'wander' && currentMode !== 'flock') {
+            ctx.strokeStyle = currentMode === 'flee' || currentMode === 'evade' ? '#f44336' : '#66bb6a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(mousePos.x, mousePos.y, 25, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw predicted position for pursue/evade
+            if (currentMode === 'pursue' || currentMode === 'evade') {
+                const predictedPos = mousePos.copy().add(mouseVel.copy().multiply(10));
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(predictedPos.x, predictedPos.y, 20, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // Update and draw agents
         agents.forEach(agent => {
-            let force;
-            if (currentMode === 'seek') {
-                force = agent.seek(mousePos);
-            } else if (currentMode === 'arrive') {
-                force = agent.arrive(mousePos);
-            } else if (currentMode === 'flee') {
-                force = agent.flee(mousePos);
-            } else if (currentMode === 'wander') {
-                force = agent.wander();
+            let force = new Vector2D(0, 0);
+
+            switch(currentMode) {
+                case 'seek':
+                    force = agent.seek(mousePos);
+                    break;
+                case 'arrive':
+                    force = agent.arrive(mousePos);
+                    break;
+                case 'flee':
+                    force = agent.flee(mousePos);
+                    break;
+                case 'pursue':
+                    force = agent.pursue(mousePos, mouseVel);
+                    break;
+                case 'evade':
+                    force = agent.evade(mousePos, mouseVel);
+                    break;
+                case 'wander':
+                    force = agent.wander();
+                    break;
+                case 'avoid':
+                    const seekForce = agent.seek(mousePos);
+                    const avoidForce = agent.avoidObstacles(obstacles);
+                    force = seekForce.add(avoidForce.multiply(3)); // Avoidance is weighted higher
+                    break;
+                case 'flock':
+                    const sep = agent.separate(agents);
+                    const coh = agent.cohesion(agents);
+                    const ali = agent.align(agents);
+                    // Weight the three flocking behaviors
+                    force = sep.multiply(1.5).add(coh).add(ali);
+                    break;
             }
 
             agent.applyForce(force);
             agent.update();
-            agent.draw(ctx);
+            agent.draw(ctx, currentMode === 'flock');
         });
 
-        info.textContent = `Mode: ${currentMode.toUpperCase()}`;
+        info.textContent = `Mode: ${currentMode.toUpperCase()} - ${modeDescriptions[currentMode]} | Agents: ${agents.length}`;
 
         requestAnimationFrame(animateSteering);
     }

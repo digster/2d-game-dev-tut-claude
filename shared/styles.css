@@ -331,6 +331,12 @@ button:active {
     transform: translateY(0);
 }
 
+button.active {
+    background-color: #66bb6a;
+    color: white;
+    box-shadow: 0 4px 8px rgba(102, 187, 106, 0.4);
+}
+
 button:disabled {
     background-color: #555;
     cursor: not-allowed;

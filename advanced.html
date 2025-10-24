@@ -40,13 +40,12 @@
             <div class="concept-box">
                 <h4>What are Steering Behaviors?</h4>
                 <p>Steering behaviors make AI characters move realistically by combining simple forces. Instead of teleporting or moving in straight lines, they accelerate, turn smoothly, and avoid obstacles naturally.</p>
-                <p><strong>Common Behaviors:</strong></p>
+                <p><strong>Behavior Types:</strong></p>
                 <ul>
-                    <li><strong>Seek:</strong> Move toward a target</li>
-                    <li><strong>Flee:</strong> Move away from a threat</li>
-                    <li><strong>Arrive:</strong> Slow down when approaching target</li>
-                    <li><strong>Wander:</strong> Move randomly but smoothly</li>
-                    <li><strong>Avoid:</strong> Steer around obstacles</li>
+                    <li><strong>Basic:</strong> Seek (move toward), Flee (move away), Arrive (slow down when close), Wander (explore randomly)</li>
+                    <li><strong>Predictive:</strong> Pursue (chase future position), Evade (escape from future position)</li>
+                    <li><strong>Avoidance:</strong> Obstacle Avoidance (steer around objects)</li>
+                    <li><strong>Flocking:</strong> Separation (avoid crowding), Cohesion (stay together), Alignment (match direction)</li>
                 </ul>
             </div>
 
@@ -119,12 +118,16 @@
                 <canvas id="steeringDemo" width="800" height="500"></canvas>
             </div>
             <div class="controls">
-                <button id="btnSeek">Seek Mode</button>
-                <button id="btnArrive">Arrive Mode</button>
-                <button id="btnFlee">Flee Mode</button>
-                <button id="btnWander">Wander Mode</button>
+                <button id="btnSeek" class="active">Seek</button>
+                <button id="btnArrive">Arrive</button>
+                <button id="btnFlee">Flee</button>
+                <button id="btnPursue">Pursue</button>
+                <button id="btnEvade">Evade</button>
+                <button id="btnWander">Wander</button>
+                <button id="btnAvoid">Avoid Obstacles</button>
+                <button id="btnFlock">Flock</button>
             </div>
-            <div id="steeringInfo" class="info-display">Move your mouse to see AI respond</div>
+            <div id="steeringInfo" class="info-display">Move your mouse to interact with 15 AI agents. Red obstacles block the way!</div>
 
             <div class="key-point">
                 <strong>💡 Combining Behaviors:</strong> The real power comes from combining multiple behaviors! For example: Seek the player + Avoid obstacles + Separate from allies = Smart enemy movement!
