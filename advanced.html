@@ -23,9 +23,12 @@
             <div class="toc-title">📚 Topics in This Guide</div>
             <ul>
                 <li><a href="#steering">Steering Behaviors (AI Movement)</a></li>
+                <li><a href="#quaternions">Quaternions: 3D Rotations</a></li>
                 <li><a href="#bezier">Bézier Curves & Splines</a></li>
                 <li><a href="#pathfinding">A* Pathfinding</a></li>
                 <li><a href="#state-machines">State Machines</a></li>
+                <li><a href="#ik">Inverse Kinematics</a></li>
+                <li><a href="#shadows">Shadow Casting & Vision</a></li>
             </ul>
         </div>
 
@@ -125,6 +128,139 @@
 
             <div class="key-point">
                 <strong>💡 Combining Behaviors:</strong> The real power comes from combining multiple behaviors! For example: Seek the player + Avoid obstacles + Separate from allies = Smart enemy movement!
+            </div>
+        </div>
+
+        <!-- QUATERNIONS -->
+        <div id="quaternions" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🔄 Quaternions: 3D Rotations</h2>
+
+            <div class="concept-box">
+                <h4>What are Quaternions?</h4>
+                <p>Quaternions are a mathematical system for representing 3D rotations. While this guide focuses on 2D games, understanding quaternions is crucial when you move to 3D.</p>
+                <p><strong>Why use Quaternions instead of Euler angles (pitch, yaw, roll)?</strong></p>
+                <ul>
+                    <li><strong>No Gimbal Lock:</strong> Euler angles can "freeze" when two axes align</li>
+                    <li><strong>Smooth Interpolation:</strong> Rotating between orientations is smoother</li>
+                    <li><strong>Efficient:</strong> Faster for combining multiple rotations</li>
+                    <li><strong>Stable:</strong> No numerical drift over many rotations</li>
+                </ul>
+                <p>A quaternion has 4 components: <code>(x, y, z, w)</code> where w is the "real" part.</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Quaternion Implementation (Simplified)</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Quaternion</span> {
+    <span class="keyword">constructor</span>(x = <span class="number">0</span>, y = <span class="number">0</span>, z = <span class="number">0</span>, w = <span class="number">1</span>) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+        <span class="keyword">this</span>.z = z;
+        <span class="keyword">this</span>.w = w;
+    }
+
+    <span class="comment">// Create quaternion from axis-angle rotation</span>
+    <span class="keyword">static</span> <span class="function">fromAxisAngle</span>(axis, angle) {
+        <span class="keyword">const</span> halfAngle = angle / <span class="number">2</span>;
+        <span class="keyword">const</span> s = Math.<span class="function">sin</span>(halfAngle);
+
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+            axis.x * s,
+            axis.y * s,
+            axis.z * s,
+            Math.<span class="function">cos</span>(halfAngle)
+        );
+    }
+
+    <span class="comment">// Create from Euler angles (in radians)</span>
+    <span class="keyword">static</span> <span class="function">fromEuler</span>(pitch, yaw, roll) {
+        <span class="keyword">const</span> cy = Math.<span class="function">cos</span>(yaw * <span class="number">0.5</span>);
+        <span class="keyword">const</span> sy = Math.<span class="function">sin</span>(yaw * <span class="number">0.5</span>);
+        <span class="keyword">const</span> cp = Math.<span class="function">cos</span>(pitch * <span class="number">0.5</span>);
+        <span class="keyword">const</span> sp = Math.<span class="function">sin</span>(pitch * <span class="number">0.5</span>);
+        <span class="keyword">const</span> cr = Math.<span class="function">cos</span>(roll * <span class="number">0.5</span>);
+        <span class="keyword">const</span> sr = Math.<span class="function">sin</span>(roll * <span class="number">0.5</span>);
+
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+            sr * cp * cy - cr * sp * sy,
+            cr * sp * cy + sr * cp * sy,
+            cr * cp * sy - sr * sp * cy,
+            cr * cp * cy + sr * sp * sy
+        );
+    }
+
+    <span class="comment">// Multiply two quaternions (combine rotations)</span>
+    <span class="function">multiply</span>(q) {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+            <span class="keyword">this</span>.w * q.x + <span class="keyword">this</span>.x * q.w + <span class="keyword">this</span>.y * q.z - <span class="keyword">this</span>.z * q.y,
+            <span class="keyword">this</span>.w * q.y - <span class="keyword">this</span>.x * q.z + <span class="keyword">this</span>.y * q.w + <span class="keyword">this</span>.z * q.x,
+            <span class="keyword">this</span>.w * q.z + <span class="keyword">this</span>.x * q.y - <span class="keyword">this</span>.y * q.x + <span class="keyword">this</span>.z * q.w,
+            <span class="keyword">this</span>.w * q.w - <span class="keyword">this</span>.x * q.x - <span class="keyword">this</span>.y * q.y - <span class="keyword">this</span>.z * q.z
+        );
+    }
+
+    <span class="comment">// Spherical linear interpolation (smooth rotation)</span>
+    <span class="keyword">static</span> <span class="function">slerp</span>(q1, q2, t) {
+        <span class="keyword">let</span> dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
+
+        <span class="comment">// If negative dot, negate one quaternion</span>
+        <span class="keyword">if</span> (dot < <span class="number">0</span>) {
+            q2 = <span class="keyword">new</span> <span class="function">Quaternion</span>(-q2.x, -q2.y, -q2.z, -q2.w);
+            dot = -dot;
+        }
+
+        <span class="comment">// If very close, use linear interpolation</span>
+        <span class="keyword">if</span> (dot > <span class="number">0.9995</span>) {
+            <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+                <span class="function">lerp</span>(q1.x, q2.x, t),
+                <span class="function">lerp</span>(q1.y, q2.y, t),
+                <span class="function">lerp</span>(q1.z, q2.z, t),
+                <span class="function">lerp</span>(q1.w, q2.w, t)
+            ).<span class="function">normalize</span>();
+        }
+
+        <span class="keyword">const</span> theta = Math.<span class="function">acos</span>(dot);
+        <span class="keyword">const</span> sinTheta = Math.<span class="function">sin</span>(theta);
+
+        <span class="keyword">const</span> w1 = Math.<span class="function">sin</span>((<span class="number">1</span> - t) * theta) / sinTheta;
+        <span class="keyword">const</span> w2 = Math.<span class="function">sin</span>(t * theta) / sinTheta;
+
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+            q1.x * w1 + q2.x * w2,
+            q1.y * w1 + q2.y * w2,
+            q1.z * w1 + q2.z * w2,
+            q1.w * w1 + q2.w * w2
+        );
+    }
+
+    <span class="function">normalize</span>() {
+        <span class="keyword">const</span> len = Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y +
+                              <span class="keyword">this</span>.z * <span class="keyword">this</span>.z + <span class="keyword">this</span>.w * <span class="keyword">this</span>.w);
+        <span class="keyword">this</span>.x /= len;
+        <span class="keyword">this</span>.y /= len;
+        <span class="keyword">this</span>.z /= len;
+        <span class="keyword">this</span>.w /= len;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Quaternion Rotation</h3>
+            <div class="diagram">
+                <canvas id="quaternionDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnRotateX">Rotate X-axis</button>
+                <button id="btnRotateY">Rotate Y-axis</button>
+                <button id="btnRotateZ">Rotate Z-axis</button>
+                <button id="btnSlerp">Smooth Interpolation</button>
+            </div>
+            <div id="quaternionInfo" class="info-display">Watch smooth 3D rotation without gimbal lock</div>
+
+            <div class="key-point">
+                <strong>💡 When to use Quaternions:</strong> For 3D games, character animation, camera systems, or any time you need smooth, stable rotations in 3D space!
             </div>
         </div>
 
@@ -418,6 +554,262 @@
                     <li><strong>Call for Help:</strong> Alert nearby allies when player is spotted</li>
                     <li><strong>Celebrate:</strong> Victory dance when player is defeated</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- INVERSE KINEMATICS -->
+        <div id="ik" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🦾 Inverse Kinematics</h2>
+
+            <div class="concept-box">
+                <h4>What is Inverse Kinematics (IK)?</h4>
+                <p>IK is the technique of calculating joint angles needed to reach a target position. It's the opposite of Forward Kinematics (FK).</p>
+                <ul>
+                    <li><strong>Forward Kinematics:</strong> "Given these joint angles, where does the hand end up?"</li>
+                    <li><strong>Inverse Kinematics:</strong> "To reach this position, what joint angles do I need?"</li>
+                </ul>
+                <p><strong>Common Uses:</strong></p>
+                <ul>
+                    <li>Character arms reaching for objects</li>
+                    <li>Legs adapting to terrain</li>
+                    <li>Robotic arm simulations</li>
+                    <li>Procedural animation</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Two-Joint IK Implementation (Arm/Leg)</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">TwoJointIK</span> {
+    <span class="keyword">constructor</span>(baseX, baseY, length1, length2) {
+        <span class="keyword">this</span>.base = <span class="keyword">new</span> <span class="function">Vector2D</span>(baseX, baseY);
+        <span class="keyword">this</span>.length1 = length1;  <span class="comment">// Upper arm/leg length</span>
+        <span class="keyword">this</span>.length2 = length2;  <span class="comment">// Lower arm/leg length</span>
+        <span class="keyword">this</span>.joint = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.end = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+    }
+
+    <span class="function">solve</span>(targetX, targetY) {
+        <span class="keyword">const</span> target = <span class="keyword">new</span> <span class="function">Vector2D</span>(targetX, targetY);
+        <span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(<span class="keyword">this</span>.base);
+        <span class="keyword">const</span> distance = toTarget.<span class="function">length</span>();
+
+        <span class="comment">// Maximum reach</span>
+        <span class="keyword">const</span> maxReach = <span class="keyword">this</span>.length1 + <span class="keyword">this</span>.length2;
+
+        <span class="comment">// Target is out of reach - stretch toward it</span>
+        <span class="keyword">if</span> (distance >= maxReach) {
+            <span class="keyword">const</span> direction = toTarget.<span class="function">normalize</span>();
+            <span class="keyword">this</span>.joint = <span class="keyword">this</span>.base.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length1));
+            <span class="keyword">this</span>.end = <span class="keyword">this</span>.joint.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length2));
+            <span class="keyword">return</span>;
+        }
+
+        <span class="comment">// Target is too close</span>
+        <span class="keyword">if</span> (distance < Math.<span class="function">abs</span>(<span class="keyword">this</span>.length1 - <span class="keyword">this</span>.length2)) {
+            <span class="keyword">const</span> direction = toTarget.<span class="function">normalize</span>();
+            <span class="keyword">this</span>.joint = <span class="keyword">this</span>.base.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length1));
+            <span class="keyword">this</span>.end = target;
+            <span class="keyword">return</span>;
+        }
+
+        <span class="comment">// Use law of cosines to find angles</span>
+        <span class="keyword">const</span> a = <span class="keyword">this</span>.length1;
+        <span class="keyword">const</span> b = <span class="keyword">this</span>.length2;
+        <span class="keyword">const</span> c = distance;
+
+        <span class="comment">// Angle at the base</span>
+        <span class="keyword">const</span> angleToTarget = Math.<span class="function">atan2</span>(toTarget.y, toTarget.x);
+        <span class="keyword">const</span> cosAngle1 = (a * a + c * c - b * b) / (<span class="number">2</span> * a * c);
+        <span class="keyword">const</span> angle1 = Math.<span class="function">acos</span>(<span class="function">clamp</span>(cosAngle1, -<span class="number">1</span>, <span class="number">1</span>));
+
+        <span class="comment">// Calculate joint position</span>
+        <span class="keyword">const</span> jointAngle = angleToTarget + angle1;
+        <span class="keyword">this</span>.joint.x = <span class="keyword">this</span>.base.x + a * Math.<span class="function">cos</span>(jointAngle);
+        <span class="keyword">this</span>.joint.y = <span class="keyword">this</span>.base.y + a * Math.<span class="function">sin</span>(jointAngle);
+
+        <span class="comment">// End effector is the target</span>
+        <span class="keyword">this</span>.end = target.<span class="function">copy</span>();
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Draw bones</span>
+        ctx.strokeStyle = <span class="string">'#42a5f5'</span>;
+        ctx.lineWidth = <span class="number">8</span>;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.base.x, <span class="keyword">this</span>.base.y);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.joint.x, <span class="keyword">this</span>.joint.y);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.end.x, <span class="keyword">this</span>.end.y);
+        ctx.<span class="function">stroke</span>();
+
+        <span class="comment">// Draw joints</span>
+        [<span class="keyword">this</span>.base, <span class="keyword">this</span>.joint, <span class="keyword">this</span>.end].<span class="function">forEach</span>((joint, i) => {
+            ctx.fillStyle = i === <span class="number">2</span> ? <span class="string">'#f44336'</span> : <span class="string">'#66bb6a'</span>;
+            ctx.beginPath();
+            ctx.<span class="function">arc</span>(joint.x, joint.y, <span class="number">10</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+            ctx.<span class="function">fill</span>();
+        });
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Inverse Kinematics</h3>
+            <div class="diagram">
+                <canvas id="ikDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddArm">Add Arm</button>
+                <button id="btnToggleConstraints">Toggle Constraints</button>
+                <button id="btnResetIK">Reset</button>
+            </div>
+            <div id="ikInfo" class="info-display">Move your mouse - watch the arms reach for it!</div>
+
+            <div class="thinking-prompt">
+                <h4>🤔 Think About It:</h4>
+                <p>For more than 2 joints (like a full spine or tentacle), you'd use an iterative algorithm like FABRIK (Forward And Backward Reaching Inverse Kinematics). It's more complex but handles any number of joints!</p>
+            </div>
+        </div>
+
+        <!-- SHADOW CASTING & VISION -->
+        <div id="shadows" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>👁️ Shadow Casting & Vision</h2>
+
+            <div class="concept-box">
+                <h4>What is Shadow Casting?</h4>
+                <p>Shadow casting determines what areas are visible from a point of view and what's hidden in shadows. Essential for:</p>
+                <ul>
+                    <li>Stealth games (can enemies see the player?)</li>
+                    <li>Fog of war in strategy games</li>
+                    <li>Lighting and shadow systems</li>
+                    <li>Line-of-sight for AI</li>
+                </ul>
+                <p><strong>Common Techniques:</strong></p>
+                <ul>
+                    <li><strong>Raycasting:</strong> Cast rays in all directions from light source</li>
+                    <li><strong>Shadow Volumes:</strong> Project shapes away from light</li>
+                    <li><strong>Visibility Polygons:</strong> Calculate the exact visible area</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Raycasting Shadow Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">ShadowCaster</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.walls = [];  <span class="comment">// Line segments that cast shadows</span>
+    }
+
+    <span class="function">addWall</span>(x1, y1, x2, y2) {
+        <span class="keyword">this</span>.walls.<span class="function">push</span>({
+            p1: <span class="keyword">new</span> <span class="function">Vector2D</span>(x1, y1),
+            p2: <span class="keyword">new</span> <span class="function">Vector2D</span>(x2, y2)
+        });
+    }
+
+    <span class="comment">// Get all unique angles to cast rays toward</span>
+    <span class="function">getAngles</span>(source) {
+        <span class="keyword">const</span> angles = [];
+
+        <span class="keyword">for</span> (<span class="keyword">const</span> wall <span class="keyword">of</span> <span class="keyword">this</span>.walls) {
+            <span class="comment">// Add angles to each endpoint</span>
+            <span class="keyword">const</span> angle1 = Math.<span class="function">atan2</span>(wall.p1.y - source.y, wall.p1.x - source.x);
+            <span class="keyword">const</span> angle2 = Math.<span class="function">atan2</span>(wall.p2.y - source.y, wall.p2.x - source.x);
+
+            <span class="comment">// Add small offsets to catch edges</span>
+            angles.<span class="function">push</span>(angle1 - <span class="number">0.0001</span>, angle1, angle1 + <span class="number">0.0001</span>);
+            angles.<span class="function">push</span>(angle2 - <span class="number">0.0001</span>, angle2, angle2 + <span class="number">0.0001</span>);
+        }
+
+        <span class="keyword">return</span> angles;
+    }
+
+    <span class="comment">// Cast a ray and find closest intersection</span>
+    <span class="function">castRay</span>(source, angle, maxDistance = <span class="number">1000</span>) {
+        <span class="keyword">const</span> direction = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            Math.<span class="function">cos</span>(angle),
+            Math.<span class="function">sin</span>(angle)
+        );
+
+        <span class="keyword">const</span> rayEnd = source.<span class="function">add</span>(direction.<span class="function">multiply</span>(maxDistance));
+
+        <span class="keyword">let</span> closestIntersection = rayEnd;
+        <span class="keyword">let</span> closestDistance = maxDistance;
+
+        <span class="keyword">for</span> (<span class="keyword">const</span> wall <span class="keyword">of</span> <span class="keyword">this</span>.walls) {
+            <span class="keyword">const</span> intersection = <span class="function">lineIntersection</span>(
+                source, rayEnd,
+                wall.p1, wall.p2
+            );
+
+            <span class="keyword">if</span> (intersection) {
+                <span class="keyword">const</span> dist = source.<span class="function">distance</span>(intersection);
+                <span class="keyword">if</span> (dist < closestDistance) {
+                    closestDistance = dist;
+                    closestIntersection = intersection;
+                }
+            }
+        }
+
+        <span class="keyword">return</span> closestIntersection;
+    }
+
+    <span class="comment">// Calculate visible polygon</span>
+    <span class="function">getVisibleArea</span>(source) {
+        <span class="keyword">const</span> angles = <span class="keyword">this</span>.<span class="function">getAngles</span>(source);
+        <span class="keyword">const</span> intersections = [];
+
+        <span class="keyword">for</span> (<span class="keyword">const</span> angle <span class="keyword">of</span> angles) {
+            <span class="keyword">const</span> point = <span class="keyword">this</span>.<span class="function">castRay</span>(source, angle);
+            intersections.<span class="function">push</span>({
+                point: point,
+                angle: Math.<span class="function">atan2</span>(point.y - source.y, point.x - source.x)
+            });
+        }
+
+        <span class="comment">// Sort by angle</span>
+        intersections.<span class="function">sort</span>((a, b) => a.angle - b.angle);
+
+        <span class="keyword">return</span> intersections.<span class="function">map</span>(i => i.point);
+    }
+
+    <span class="function">draw</span>(ctx, source) {
+        <span class="keyword">const</span> visibleArea = <span class="keyword">this</span>.<span class="function">getVisibleArea</span>(source);
+
+        <span class="comment">// Draw visible area</span>
+        ctx.fillStyle = <span class="string">'rgba(255, 255, 100, 0.3)'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(source.x, source.y);
+        visibleArea.<span class="function">forEach</span>(p => ctx.<span class="function">lineTo</span>(p.x, p.y));
+        ctx.<span class="function">closePath</span>();
+        ctx.<span class="function">fill</span>();
+
+        <span class="comment">// Draw light source</span>
+        ctx.fillStyle = <span class="string">'#ffeb3b'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(source.x, source.y, <span class="number">8</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Shadow Casting</h3>
+            <div class="diagram">
+                <canvas id="shadowDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddObstacle">Add Obstacle</button>
+                <button id="btnClearObstacles">Clear Obstacles</button>
+                <button id="btnToggleRays">Toggle Rays</button>
+            </div>
+            <div id="shadowInfo" class="info-display">Move your mouse to cast light and shadows</div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenge: Field of View</h4>
+                <p>Modify the shadow caster to only show a limited field of view (like 90 degrees). This is great for stealth games where enemies have cone-shaped vision!</p>
             </div>
         </div>
 

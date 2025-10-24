@@ -628,3 +628,469 @@ if (tilemapCanvas) {
 
     animateTilemap();
 }
+
+// ===================================
+// DEMO 5: Sound Propagation
+// ===================================
+const soundCanvas = document.getElementById('soundDemo');
+if (soundCanvas) {
+    const ctx = soundCanvas.getContext('2d');
+    const info = document.getElementById('soundInfo');
+
+    const soundSources = [];
+    const obstacles = [];
+    const listener = {
+        position: new Vector2D(soundCanvas.width / 2, soundCanvas.height / 2),
+        velocity: new Vector2D(0, 0)
+    };
+
+    const soundKeys = {};
+
+    // Web Audio API setup
+    let audioContext = null;
+    let soundEnabled = false;
+
+    class SoundSource {
+        constructor(x, y, frequency = 440) {
+            this.position = new Vector2D(x, y);
+            this.maxDistance = 300;
+            this.baseVolume = 1.0;
+            this.frequency = frequency;
+
+            // Audio nodes (created when sound is enabled)
+            this.oscillator = null;
+            this.gainNode = null;
+            this.pannerNode = null;
+        }
+
+        initAudio() {
+            if (!audioContext || this.oscillator) return;
+
+            // Create oscillator (tone generator)
+            this.oscillator = audioContext.createOscillator();
+            this.oscillator.type = 'sine';
+            this.oscillator.frequency.value = this.frequency;
+
+            // Create gain node (volume control)
+            this.gainNode = audioContext.createGain();
+            this.gainNode.gain.value = 0;
+
+            // Create panner node (stereo positioning)
+            this.pannerNode = audioContext.createStereoPanner();
+            this.pannerNode.pan.value = 0;
+
+            // Connect: oscillator -> gain -> panner -> output
+            this.oscillator.connect(this.gainNode);
+            this.gainNode.connect(this.pannerNode);
+            this.pannerNode.connect(audioContext.destination);
+
+            // Start the oscillator
+            this.oscillator.start();
+        }
+
+        stopAudio() {
+            if (this.oscillator) {
+                this.oscillator.stop();
+                this.oscillator.disconnect();
+                this.gainNode.disconnect();
+                this.pannerNode.disconnect();
+                this.oscillator = null;
+                this.gainNode = null;
+                this.pannerNode = null;
+            }
+        }
+
+        calculateVolume(listenerPos) {
+            const distance = this.position.distance(listenerPos);
+            if (distance >= this.maxDistance) return 0;
+            return this.baseVolume * (1 - (distance / this.maxDistance));
+        }
+
+        calculateOcclusion(listenerPos, obstacles) {
+            let occlusionFactor = 1.0;
+            for (const obstacle of obstacles) {
+                if (lineIntersectsRect(listenerPos, this.position, obstacle)) {
+                    occlusionFactor *= 0.3;
+                }
+            }
+            return occlusionFactor;
+        }
+
+        calculatePan(listenerPos) {
+            const dx = this.position.x - listenerPos.x;
+            const distance = Math.max(1, this.position.distance(listenerPos));
+            return clamp(dx / 200, -1, 1); // Pan based on horizontal offset
+        }
+
+        updateAudio(listenerPos) {
+            if (!this.gainNode || !this.pannerNode) return;
+
+            const volume = this.calculateVolume(listenerPos);
+            const occlusion = this.calculateOcclusion(listenerPos, obstacles);
+            const finalVolume = volume * occlusion;
+            const pan = this.calculatePan(listenerPos);
+
+            // Smooth volume transitions
+            this.gainNode.gain.setTargetAtTime(finalVolume * 0.3, audioContext.currentTime, 0.05);
+            this.pannerNode.pan.setTargetAtTime(pan, audioContext.currentTime, 0.05);
+        }
+
+        draw(ctx, listenerPos) {
+            const volume = this.calculateVolume(listenerPos);
+            const occlusion = this.calculateOcclusion(listenerPos, obstacles);
+            const finalVolume = volume * occlusion;
+
+            // Draw volume circle
+            ctx.strokeStyle = `rgba(100, 255, 100, ${finalVolume * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.maxDistance, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw sound source (pulsate if sound is enabled)
+            const pulseSize = soundEnabled ? 12 + Math.sin(Date.now() * 0.005) * 3 : 12;
+            ctx.fillStyle = occlusion < 1 ? '#ff9800' : '#4caf50';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, pulseSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw volume text
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px monospace';
+            ctx.fillText(`${Math.floor(finalVolume * 100)}%`, this.position.x - 15, this.position.y - 20);
+        }
+    }
+
+    // Add initial sources with different frequencies
+    soundSources.push(new SoundSource(200, 200, 440)); // A4 note
+    soundSources.push(new SoundSource(600, 300, 523.25)); // C5 note
+
+    // Key event listeners for sound demo
+    window.addEventListener('keydown', (e) => {
+        soundKeys[e.key.toLowerCase()] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        soundKeys[e.key.toLowerCase()] = false;
+    });
+
+    // Button event listeners
+    const btnAddSoundSource = document.getElementById('btnAddSoundSource');
+    const btnAddWall = document.getElementById('btnAddWall');
+    const btnToggleSound = document.getElementById('btnToggleSound');
+    const btnClearSound = document.getElementById('btnClearSound');
+
+    // Musical notes for variety
+    const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+
+    if (btnAddSoundSource) {
+        btnAddSoundSource.addEventListener('click', () => {
+            const x = randomFloat(100, soundCanvas.width - 100);
+            const y = randomFloat(100, soundCanvas.height - 100);
+            const freq = frequencies[Math.floor(Math.random() * frequencies.length)];
+            const source = new SoundSource(x, y, freq);
+
+            // If sound is enabled, initialize audio for new source
+            if (soundEnabled) {
+                source.initAudio();
+            }
+
+            soundSources.push(source);
+        });
+    }
+
+    if (btnAddWall) {
+        btnAddWall.addEventListener('click', () => {
+            const x = randomFloat(100, soundCanvas.width - 150);
+            const y = randomFloat(100, soundCanvas.height - 150);
+            const width = randomFloat(50, 150);
+            const height = randomFloat(50, 150);
+            obstacles.push({x, y, width, height});
+        });
+    }
+
+    if (btnToggleSound) {
+        btnToggleSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            btnToggleSound.textContent = soundEnabled ? 'Disable Sound' : 'Enable Sound';
+
+            if (soundEnabled) {
+                // Create audio context (requires user interaction)
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                // Initialize audio for all sources
+                soundSources.forEach(source => source.initAudio());
+            } else {
+                // Stop all audio
+                soundSources.forEach(source => source.stopAudio());
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+            }
+        });
+    }
+
+    if (btnClearSound) {
+        btnClearSound.addEventListener('click', () => {
+            // Stop audio for all sources before clearing
+            soundSources.forEach(source => source.stopAudio());
+            soundSources.length = 0;
+            obstacles.length = 0;
+        });
+    }
+
+    function animateSound() {
+        clearCanvas(ctx, soundCanvas.width, soundCanvas.height);
+
+        // Update listener position
+        const dir = new Vector2D(
+            (soundKeys.d ? 1 : 0) - (soundKeys.a ? 1 : 0),
+            (soundKeys.s ? 1 : 0) - (soundKeys.w ? 1 : 0)
+        );
+
+        if (dir.length() > 0) {
+            listener.position.add(dir.normalize().multiply(4));
+        }
+
+        listener.position.x = clamp(listener.position.x, 20, soundCanvas.width - 20);
+        listener.position.y = clamp(listener.position.y, 20, soundCanvas.height - 20);
+
+        // Update and draw sound sources
+        soundSources.forEach(source => {
+            // Update audio volume and panning based on listener position
+            if (soundEnabled) {
+                source.updateAudio(listener.position);
+            }
+            source.draw(ctx, listener.position);
+        });
+
+        // Draw obstacles
+        obstacles.forEach(obstacle => {
+            ctx.fillStyle = '#666';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        });
+
+        // Draw listener
+        ctx.fillStyle = '#42a5f5';
+        ctx.beginPath();
+        ctx.arc(listener.position.x, listener.position.y, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add sound indicator if enabled
+        if (soundEnabled) {
+            ctx.strokeStyle = '#ffeb3b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(listener.position.x, listener.position.y, 20 + Math.sin(Date.now() * 0.01) * 5, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        info.textContent = `Sources: ${soundSources.length} | Obstacles: ${obstacles.length} | Sound: ${soundEnabled ? 'ON' : 'OFF'} | Listener: (${Math.floor(listener.position.x)}, ${Math.floor(listener.position.y)})`;
+
+        requestAnimationFrame(animateSound);
+    }
+
+    animateSound();
+}
+
+// ===================================
+// DEMO 6: Network Interpolation
+// ===================================
+const networkCanvas = document.getElementById('networkDemo');
+if (networkCanvas) {
+    const ctx = networkCanvas.getContext('2d');
+    const info = document.getElementById('networkInfo');
+
+    let latency = 0;
+    let packetLoss = 0;
+    let usePrediction = true;
+
+    const networkKeys = {};
+
+    // Player with client-side prediction
+    const player = {
+        position: new Vector2D(networkCanvas.width / 2, networkCanvas.height / 2),
+        serverPosition: new Vector2D(networkCanvas.width / 2, networkCanvas.height / 2),
+        renderPosition: new Vector2D(networkCanvas.width / 2, networkCanvas.height / 2),
+        inputSequence: 0,
+        pendingInputs: [],
+        speed: 4
+    };
+
+    // Simulated server updates
+    const serverUpdateBuffer = [];
+    let lastServerUpdate = Date.now();
+
+    // Key event listeners for network demo
+    window.addEventListener('keydown', (e) => {
+        networkKeys[e.key.toLowerCase()] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        networkKeys[e.key.toLowerCase()] = false;
+    });
+
+    // Button event listeners
+    const btnAddLatency = document.getElementById('btnAddLatency');
+    const btnTogglePrediction = document.getElementById('btnTogglePrediction');
+    const btnPacketLoss = document.getElementById('btnPacketLoss');
+    const btnResetNetwork = document.getElementById('btnResetNetwork');
+
+    if (btnAddLatency) {
+        btnAddLatency.addEventListener('click', () => {
+            latency += 100;
+        });
+    }
+
+    if (btnTogglePrediction) {
+        btnTogglePrediction.addEventListener('click', () => {
+            usePrediction = !usePrediction;
+        });
+    }
+
+    if (btnPacketLoss) {
+        btnPacketLoss.addEventListener('click', () => {
+            packetLoss = packetLoss > 0 ? 0 : 0.2;
+        });
+    }
+
+    if (btnResetNetwork) {
+        btnResetNetwork.addEventListener('click', () => {
+            latency = 0;
+            packetLoss = 0;
+            player.position.set(networkCanvas.width / 2, networkCanvas.height / 2);
+            player.serverPosition.set(networkCanvas.width / 2, networkCanvas.height / 2);
+            player.renderPosition.set(networkCanvas.width / 2, networkCanvas.height / 2);
+        });
+    }
+
+    function applyInput() {
+        const input = new Vector2D(
+            (networkKeys.d ? 1 : 0) - (networkKeys.a ? 1 : 0),
+            (networkKeys.s ? 1 : 0) - (networkKeys.w ? 1 : 0)
+        );
+
+        if (input.length() > 0) {
+            input.normalize().multiply(player.speed);
+            player.inputSequence++;
+
+            if (usePrediction) {
+                // Client-side prediction
+                player.pendingInputs.push({
+                    input: input.copy(),
+                    sequence: player.inputSequence
+                });
+
+                // Apply immediately
+                player.position.add(input);
+
+                // Simulate sending to server
+                simulateSendToServer(input.copy(), player.inputSequence);
+            } else {
+                // No prediction - wait for server
+                simulateSendToServer(input.copy(), player.inputSequence);
+            }
+        }
+    }
+
+    function simulateSendToServer(input, sequence) {
+        // Simulate packet loss
+        if (Math.random() < packetLoss) return;
+
+        // Simulate server processing after latency
+        setTimeout(() => {
+            // Server applies input
+            player.serverPosition.add(input);
+
+            // Server sends back confirmation
+            setTimeout(() => {
+                receiveServerUpdate(player.serverPosition.copy(), sequence);
+            }, latency / 2);
+        }, latency / 2);
+    }
+
+    function receiveServerUpdate(serverPos, lastProcessedInput) {
+        if (usePrediction) {
+            // Server reconciliation
+            player.pendingInputs = player.pendingInputs.filter(
+                i => i.sequence > lastProcessedInput
+            );
+
+            // Rewind to server position
+            player.position = serverPos.copy();
+
+            // Replay unprocessed inputs
+            for (const input of player.pendingInputs) {
+                player.position.add(input.input);
+            }
+        } else {
+            // Just use server position
+            player.position = serverPos.copy();
+        }
+
+        player.renderPosition = player.position.copy();
+    }
+
+    function animateNetwork() {
+        clearCanvas(ctx, networkCanvas.width, networkCanvas.height);
+
+        applyInput();
+
+        // Smooth interpolation for rendering
+        if (!usePrediction) {
+            player.renderPosition.x += (player.position.x - player.renderPosition.x) * 0.2;
+            player.renderPosition.y += (player.position.y - player.renderPosition.y) * 0.2;
+        } else {
+            player.renderPosition = player.position.copy();
+        }
+
+        player.renderPosition.x = clamp(player.renderPosition.x, 20, networkCanvas.width - 20);
+        player.renderPosition.y = clamp(player.renderPosition.y, 20, networkCanvas.height - 20);
+
+        // Draw grid
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < networkCanvas.width; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, networkCanvas.height);
+            ctx.stroke();
+        }
+        for (let y = 0; y < networkCanvas.height; y += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(networkCanvas.width, y);
+            ctx.stroke();
+        }
+
+        // Draw server position (ghost)
+        ctx.fillStyle = 'rgba(100, 255, 100, 0.3)';
+        ctx.beginPath();
+        ctx.arc(player.serverPosition.x, player.serverPosition.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw player
+        ctx.fillStyle = usePrediction ? '#42a5f5' : '#ff5722';
+        ctx.beginPath();
+        ctx.arc(player.renderPosition.x, player.renderPosition.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw connection info
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px monospace';
+        ctx.fillText(`Latency: ${latency}ms`, 10, 20);
+        ctx.fillText(`Packet Loss: ${Math.floor(packetLoss * 100)}%`, 10, 40);
+        ctx.fillText(`Prediction: ${usePrediction ? 'ON' : 'OFF'}`, 10, 60);
+
+        info.textContent = `Pending Inputs: ${player.pendingInputs.length} | Prediction: ${usePrediction ? 'Enabled' : 'Disabled'}`;
+
+        requestAnimationFrame(animateNetwork);
+    }
+
+    animateNetwork();
+}

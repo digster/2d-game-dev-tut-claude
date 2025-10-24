@@ -26,6 +26,8 @@
                 <li><a href="#pooling">Object Pooling</a></li>
                 <li><a href="#procgen">Procedural Generation</a></li>
                 <li><a href="#tilemap">Tilemap Systems</a></li>
+                <li><a href="#sound">Sound Propagation</a></li>
+                <li><a href="#network">Network Interpolation</a></li>
             </ul>
         </div>
 
@@ -487,6 +489,315 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 <button id="btnClearTilemap">Clear Map</button>
             </div>
             <div id="tilemapInfo" class="info-display">Click and drag to paint tiles</div>
+        </div>
+
+        <!-- SOUND PROPAGATION -->
+        <div id="sound" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🔊 Sound Propagation</h2>
+
+            <div class="concept-box">
+                <h4>What is Sound Propagation?</h4>
+                <p>Sound propagation simulates how audio changes based on distance, obstacles, and environment. This creates immersive audio experiences in games.</p>
+                <p><strong>Key Concepts:</strong></p>
+                <ul>
+                    <li><strong>Distance Attenuation:</strong> Sound gets quieter with distance</li>
+                    <li><strong>Occlusion:</strong> Walls block or muffle sound</li>
+                    <li><strong>Reverb:</strong> Echoes in enclosed spaces</li>
+                    <li><strong>Doppler Effect:</strong> Pitch changes based on relative velocity</li>
+                    <li><strong>3D Positioning:</strong> Panning based on direction</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Sound Propagation System</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SoundSource</span> {
+    <span class="keyword">constructor</span>(x, y, maxDistance = <span class="number">500</span>) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.maxDistance = maxDistance;
+        <span class="keyword">this</span>.baseVolume = <span class="number">1.0</span>;
+    }
+
+    <span class="comment">// Calculate volume based on distance</span>
+    <span class="function">calculateVolume</span>(listenerPos) {
+        <span class="keyword">const</span> distance = <span class="keyword">this</span>.position.<span class="function">distance</span>(listenerPos);
+
+        <span class="keyword">if</span> (distance >= <span class="keyword">this</span>.maxDistance) {
+            <span class="keyword">return</span> <span class="number">0</span>;
+        }
+
+        <span class="comment">// Linear falloff (can also use inverse square law)</span>
+        <span class="keyword">const</span> attenuation = <span class="number">1</span> - (distance / <span class="keyword">this</span>.maxDistance);
+
+        <span class="keyword">return</span> <span class="keyword">this</span>.baseVolume * attenuation;
+    }
+
+    <span class="comment">// Calculate stereo panning (-1 = left, 0 = center, 1 = right)</span>
+    <span class="function">calculatePanning</span>(listenerPos, listenerForward) {
+        <span class="keyword">const</span> toSound = <span class="keyword">this</span>.position.<span class="function">subtract</span>(listenerPos);
+        <span class="keyword">const</span> right = <span class="keyword">new</span> <span class="function">Vector2D</span>(-listenerForward.y, listenerForward.x);
+
+        <span class="comment">// Dot product with right vector</span>
+        <span class="keyword">const</span> pan = toSound.<span class="function">normalize</span>().<span class="function">dot</span>(right);
+
+        <span class="keyword">return</span> <span class="function">clamp</span>(pan, -<span class="number">1</span>, <span class="number">1</span>);
+    }
+
+    <span class="comment">// Check if sound is occluded by obstacles</span>
+    <span class="function">calculateOcclusion</span>(listenerPos, obstacles) {
+        <span class="keyword">let</span> occlusionFactor = <span class="number">1.0</span>;
+
+        <span class="keyword">for</span> (<span class="keyword">const</span> obstacle <span class="keyword">of</span> obstacles) {
+            <span class="comment">// Cast ray from listener to sound source</span>
+            <span class="keyword">const</span> intersection = <span class="function">lineIntersectsRect</span>(
+                listenerPos,
+                <span class="keyword">this</span>.position,
+                obstacle
+            );
+
+            <span class="keyword">if</span> (intersection) {
+                <span class="comment">// Sound is muffled by obstacle</span>
+                occlusionFactor *= <span class="number">0.3</span>;  <span class="comment">// 70% reduction</span>
+            }
+        }
+
+        <span class="keyword">return</span> occlusionFactor;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">AudioManager</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.listener = {
+            position: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
+            forward: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">1</span>)  <span class="comment">// Facing up</span>
+        };
+        <span class="keyword">this</span>.sources = [];
+        <span class="keyword">this</span>.obstacles = [];
+    }
+
+    <span class="function">addSource</span>(x, y, audioElement) {
+        <span class="keyword">const</span> source = <span class="keyword">new</span> <span class="function">SoundSource</span>(x, y);
+        source.audio = audioElement;
+        <span class="keyword">this</span>.sources.<span class="function">push</span>(source);
+        <span class="keyword">return</span> source;
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">for</span> (<span class="keyword">const</span> source <span class="keyword">of</span> <span class="keyword">this</span>.sources) {
+            <span class="comment">// Calculate volume with distance and occlusion</span>
+            <span class="keyword">let</span> volume = source.<span class="function">calculateVolume</span>(<span class="keyword">this</span>.listener.position);
+            <span class="keyword">const</span> occlusion = source.<span class="function">calculateOcclusion</span>(
+                <span class="keyword">this</span>.listener.position,
+                <span class="keyword">this</span>.obstacles
+            );
+            volume *= occlusion;
+
+            <span class="comment">// Calculate panning</span>
+            <span class="keyword">const</span> pan = source.<span class="function">calculatePanning</span>(
+                <span class="keyword">this</span>.listener.position,
+                <span class="keyword">this</span>.listener.forward
+            );
+
+            <span class="comment">// Apply to Web Audio API (if available)</span>
+            <span class="keyword">if</span> (source.audio) {
+                source.audio.volume = volume;
+                <span class="comment">// For stereo panning, you'd use a StereoPannerNode</span>
+            }
+        }
+    }
+
+    <span class="comment">// Doppler effect (pitch shift based on velocity)</span>
+    <span class="function">calculateDopplerShift</span>(sourcePos, sourceVel, listenerPos, listenerVel) {
+        <span class="keyword">const</span> speedOfSound = <span class="number">343</span>;  <span class="comment">// m/s (or arbitrary game units)</span>
+
+        <span class="keyword">const</span> toListener = listenerPos.<span class="function">subtract</span>(sourcePos).<span class="function">normalize</span>();
+
+        <span class="comment">// Velocity components toward each other</span>
+        <span class="keyword">const</span> sourceSpeed = sourceVel.<span class="function">dot</span>(toListener);
+        <span class="keyword">const</span> listenerSpeed = listenerVel.<span class="function">dot</span>(toListener);
+
+        <span class="comment">// Doppler formula</span>
+        <span class="keyword">const</span> pitchShift = (speedOfSound + listenerSpeed) /
+                           (speedOfSound - sourceSpeed);
+
+        <span class="keyword">return</span> <span class="function">clamp</span>(pitchShift, <span class="number">0.5</span>, <span class="number">2.0</span>);  <span class="comment">// Limit to reasonable range</span>
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Sound Propagation</h3>
+            <div class="diagram">
+                <canvas id="soundDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddSoundSource">Add Sound Source</button>
+                <button id="btnAddWall">Add Wall</button>
+                <button id="btnToggleSound">Enable Sound</button>
+                <button id="btnClearSound">Clear All</button>
+            </div>
+            <div id="soundInfo" class="info-display">Click "Enable Sound" to hear audio! Use WASD to move the listener (blue circle).</div>
+
+            <div class="key-point">
+                <strong>💡 Web Audio API:</strong> For real games, use the Web Audio API with AudioContext, PannerNode for 3D positioning, and GainNode for volume control. It provides hardware-accelerated spatial audio!
+            </div>
+        </div>
+
+        <!-- NETWORK INTERPOLATION -->
+        <div id="network" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🌐 Network Interpolation</h2>
+
+            <div class="concept-box">
+                <h4>What is Network Interpolation?</h4>
+                <p>In multiplayer games, network updates arrive irregularly (lag, packet loss). Interpolation smoothly animates between network updates to create fluid motion.</p>
+                <p><strong>Core Techniques:</strong></p>
+                <ul>
+                    <li><strong>Client-Side Prediction:</strong> Predict local player movement immediately</li>
+                    <li><strong>Server Reconciliation:</strong> Correct predictions when server disagrees</li>
+                    <li><strong>Entity Interpolation:</strong> Smooth other players' movement</li>
+                    <li><strong>Lag Compensation:</strong> Account for network delay in hit detection</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Network Interpolation System</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">NetworkEntity</span> {
+    <span class="keyword">constructor</span>(id) {
+        <span class="keyword">this</span>.id = id;
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.renderPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+
+        <span class="comment">// Buffer of recent server updates</span>
+        <span class="keyword">this</span>.positionBuffer = [];
+        <span class="keyword">this</span>.interpolationDelay = <span class="number">100</span>;  <span class="comment">// ms behind server</span>
+    }
+
+    <span class="comment">// Receive position update from server</span>
+    <span class="function">receiveServerUpdate</span>(position, timestamp) {
+        <span class="keyword">this</span>.positionBuffer.<span class="function">push</span>({
+            position: position.<span class="function">copy</span>(),
+            timestamp: timestamp
+        });
+
+        <span class="comment">// Keep only last 1 second of updates</span>
+        <span class="keyword">const</span> cutoff = timestamp - <span class="number">1000</span>;
+        <span class="keyword">this</span>.positionBuffer = <span class="keyword">this</span>.positionBuffer.<span class="function">filter</span>(
+            update => update.timestamp > cutoff
+        );
+    }
+
+    <span class="comment">// Interpolate position based on buffered updates</span>
+    <span class="function">updateInterpolation</span>(currentTime) {
+        <span class="comment">// Render time is slightly behind server</span>
+        <span class="keyword">const</span> renderTime = currentTime - <span class="keyword">this</span>.interpolationDelay;
+
+        <span class="comment">// Find two updates to interpolate between</span>
+        <span class="keyword">let</span> target = <span class="keyword">null</span>;
+        <span class="keyword">let</span> previous = <span class="keyword">null</span>;
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.positionBuffer.length; i++) {
+            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer[i].timestamp <= renderTime) {
+                previous = <span class="keyword">this</span>.positionBuffer[i];
+            }
+            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer[i].timestamp >= renderTime) {
+                target = <span class="keyword">this</span>.positionBuffer[i];
+                <span class="keyword">break</span>;
+            }
+        }
+
+        <span class="comment">// No interpolation data available</span>
+        <span class="keyword">if</span> (!previous || !target) {
+            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer.length > <span class="number">0</span>) {
+                <span class="keyword">this</span>.renderPosition = <span class="keyword">this</span>.positionBuffer[<span class="number">0</span>].position.<span class="function">copy</span>();
+            }
+            <span class="keyword">return</span>;
+        }
+
+        <span class="comment">// Interpolate between the two positions</span>
+        <span class="keyword">const</span> timeDiff = target.timestamp - previous.timestamp;
+        <span class="keyword">const</span> t = (renderTime - previous.timestamp) / timeDiff;
+
+        <span class="keyword">this</span>.renderPosition = Vector2D.<span class="function">lerp</span>(
+            previous.position,
+            target.position,
+            t
+        );
+    }
+}
+
+<span class="comment">// Client-side prediction for local player</span>
+<span class="keyword">class</span> <span class="function">PredictedPlayer</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.inputSequence = <span class="number">0</span>;
+
+        <span class="comment">// Store inputs for reconciliation</span>
+        <span class="keyword">this</span>.pendingInputs = [];
+    }
+
+    <span class="comment">// Apply input immediately (prediction)</span>
+    <span class="function">applyInput</span>(input) {
+        <span class="keyword">this</span>.inputSequence++;
+
+        <span class="comment">// Store input with sequence number</span>
+        <span class="keyword">this</span>.pendingInputs.<span class="function">push</span>({
+            input: input,
+            sequence: <span class="keyword">this</span>.inputSequence
+        });
+
+        <span class="comment">// Apply movement immediately</span>
+        <span class="keyword">this</span>.velocity.<span class="function">set</span>(input.x * <span class="number">5</span>, input.y * <span class="number">5</span>);
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Send to server</span>
+        <span class="keyword">this</span>.<span class="function">sendToServer</span>(input, <span class="keyword">this</span>.inputSequence);
+    }
+
+    <span class="comment">// Reconcile with server state</span>
+    <span class="function">reconcileWithServer</span>(serverPosition, lastProcessedInput) {
+        <span class="comment">// Remove inputs already processed by server</span>
+        <span class="keyword">this</span>.pendingInputs = <span class="keyword">this</span>.pendingInputs.<span class="function">filter</span>(
+            i => i.sequence > lastProcessedInput
+        );
+
+        <span class="comment">// Rewind to server position</span>
+        <span class="keyword">this</span>.position = serverPosition.<span class="function">copy</span>();
+
+        <span class="comment">// Replay unprocessed inputs</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> input <span class="keyword">of</span> <span class="keyword">this</span>.pendingInputs) {
+            <span class="keyword">this</span>.velocity.<span class="function">set</span>(input.input.x * <span class="number">5</span>, input.input.y * <span class="number">5</span>);
+            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        }
+    }
+
+    <span class="function">sendToServer</span>(input, sequence) {
+        <span class="comment">// Send input to server (websocket, etc.)</span>
+        <span class="comment">// server.send({ input, sequence });</span>
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Network Simulation</h3>
+            <div class="diagram">
+                <canvas id="networkDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddLatency">Add 100ms Latency</button>
+                <button id="btnTogglePrediction">Toggle Prediction</button>
+                <button id="btnPacketLoss">Simulate Packet Loss</button>
+                <button id="btnResetNetwork">Reset</button>
+            </div>
+            <div id="networkInfo" class="info-display">Use WASD to move. Compare with/without client-side prediction!</div>
+
+            <div class="thinking-prompt">
+                <h4>🤔 Advanced Topic:</h4>
+                <p>Real multiplayer games combine multiple techniques: client prediction + server reconciliation + entity interpolation + lag compensation. Games like Rocket League and Overwatch use sophisticated systems to handle 100+ ms of latency smoothly!</p>
+            </div>
         </div>
 
         <!-- Congratulations -->

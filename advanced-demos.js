@@ -736,3 +736,403 @@ if (stateCanvas) {
 
     animateStates();
 }
+
+// ===================================
+// DEMO 5: Quaternions
+// ===================================
+const quaternionCanvas = document.getElementById('quaternionDemo');
+if (quaternionCanvas) {
+    const ctx = quaternionCanvas.getContext('2d');
+    const info = document.getElementById('quaternionInfo');
+
+    // Simple 3D visualization using 2D canvas
+    let rotationX = 0, rotationY = 0, rotationZ = 0;
+    let targetRotX = 0, targetRotY = 0, targetRotZ = 0;
+    let autoRotate = false;
+
+    // Draw a 3D cube projected to 2D
+    function drawCube(ctx, rotation) {
+        const centerX = quaternionCanvas.width / 2;
+        const centerY = quaternionCanvas.height / 2;
+        const size = 100;
+
+        // Cube vertices
+        const vertices = [
+            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+        ].map(v => v.map(c => c * size));
+
+        // Rotate vertices
+        const rotated = vertices.map(v => {
+            let [x, y, z] = v;
+
+            // Rotate X
+            let temp = y;
+            y = temp * Math.cos(rotation.x) - z * Math.sin(rotation.x);
+            z = temp * Math.sin(rotation.x) + z * Math.cos(rotation.x);
+
+            // Rotate Y
+            temp = x;
+            x = temp * Math.cos(rotation.y) + z * Math.sin(rotation.y);
+            z = -temp * Math.sin(rotation.y) + z * Math.cos(rotation.y);
+
+            // Rotate Z
+            temp = x;
+            x = temp * Math.cos(rotation.z) - y * Math.sin(rotation.z);
+            y = temp * Math.sin(rotation.z) + y * Math.cos(rotation.z);
+
+            return [x, y, z];
+        });
+
+        // Project to 2D
+        const projected = rotated.map(v => [
+            centerX + v[0],
+            centerY + v[1]
+        ]);
+
+        // Draw edges
+        const edges = [
+            [0,1], [1,2], [2,3], [3,0],
+            [4,5], [5,6], [6,7], [7,4],
+            [0,4], [1,5], [2,6], [3,7]
+        ];
+
+        ctx.strokeStyle = '#42a5f5';
+        ctx.lineWidth = 3;
+        edges.forEach(([i, j]) => {
+            ctx.beginPath();
+            ctx.moveTo(projected[i][0], projected[i][1]);
+            ctx.lineTo(projected[j][0], projected[j][1]);
+            ctx.stroke();
+        });
+
+        // Draw vertices
+        projected.forEach((p, i) => {
+            ctx.fillStyle = i < 4 ? '#ff5722' : '#4caf50';
+            ctx.beginPath();
+            ctx.arc(p[0], p[1], 6, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    document.getElementById('btnRotateX').addEventListener('click', () => {
+        targetRotX += Math.PI / 4;
+        autoRotate = false;
+    });
+
+    document.getElementById('btnRotateY').addEventListener('click', () => {
+        targetRotY += Math.PI / 4;
+        autoRotate = false;
+    });
+
+    document.getElementById('btnRotateZ').addEventListener('click', () => {
+        targetRotZ += Math.PI / 4;
+        autoRotate = false;
+    });
+
+    document.getElementById('btnSlerp').addEventListener('click', () => {
+        autoRotate = !autoRotate;
+    });
+
+    function animateQuaternion() {
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, quaternionCanvas.width, quaternionCanvas.height);
+
+        // Smooth interpolation (SLERP simulation)
+        rotationX += (targetRotX - rotationX) * 0.1;
+        rotationY += (targetRotY - rotationY) * 0.1;
+        rotationZ += (targetRotZ - rotationZ) * 0.1;
+
+        if (autoRotate) {
+            targetRotX += 0.01;
+            targetRotY += 0.015;
+            targetRotZ += 0.008;
+        }
+
+        drawCube(ctx, { x: rotationX, y: rotationY, z: rotationZ });
+
+        info.textContent = `Rotation: X=${(rotationX % (Math.PI * 2)).toFixed(2)}, Y=${(rotationY % (Math.PI * 2)).toFixed(2)}, Z=${(rotationZ % (Math.PI * 2)).toFixed(2)}`;
+
+        requestAnimationFrame(animateQuaternion);
+    }
+
+    animateQuaternion();
+}
+
+// ===================================
+// DEMO 6: Inverse Kinematics
+// ===================================
+const ikCanvas = document.getElementById('ikDemo');
+if (ikCanvas) {
+    const ctx = ikCanvas.getContext('2d');
+    const info = document.getElementById('ikInfo');
+
+    const arms = [];
+    let mousePos = new Vector2D(ikCanvas.width / 2, ikCanvas.height / 2);
+
+    class TwoJointIK {
+        constructor(baseX, baseY, length1, length2) {
+            this.base = new Vector2D(baseX, baseY);
+            this.length1 = length1;
+            this.length2 = length2;
+            this.joint = new Vector2D(0, 0);
+            this.end = new Vector2D(0, 0);
+        }
+
+        solve(targetX, targetY) {
+            const target = new Vector2D(targetX, targetY);
+            const toTarget = target.subtract(this.base);
+            const distance = toTarget.length();
+
+            const maxReach = this.length1 + this.length2;
+
+            if (distance >= maxReach) {
+                const direction = toTarget.normalize();
+                this.joint = this.base.copy().add(direction.copy().multiply(this.length1));
+                this.end = this.joint.copy().add(direction.copy().multiply(this.length2));
+                return;
+            }
+
+            if (distance < Math.abs(this.length1 - this.length2)) {
+                const direction = toTarget.normalize();
+                this.joint = this.base.copy().add(direction.multiply(this.length1));
+                this.end = target.copy();
+                return;
+            }
+
+            const a = this.length1;
+            const b = this.length2;
+            const c = distance;
+
+            const angleToTarget = Math.atan2(toTarget.y, toTarget.x);
+            const cosAngle1 = (a * a + c * c - b * b) / (2 * a * c);
+            const angle1 = Math.acos(clamp(cosAngle1, -1, 1));
+
+            const jointAngle = angleToTarget + angle1;
+            this.joint.x = this.base.x + a * Math.cos(jointAngle);
+            this.joint.y = this.base.y + a * Math.sin(jointAngle);
+
+            this.end = target.copy();
+        }
+
+        draw(ctx) {
+            ctx.strokeStyle = '#42a5f5';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(this.base.x, this.base.y);
+            ctx.lineTo(this.joint.x, this.joint.y);
+            ctx.lineTo(this.end.x, this.end.y);
+            ctx.stroke();
+
+            [this.base, this.joint, this.end].forEach((joint, i) => {
+                ctx.fillStyle = i === 2 ? '#f44336' : '#66bb6a';
+                ctx.beginPath();
+                ctx.arc(joint.x, joint.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+    }
+
+    // Add initial arm
+    arms.push(new TwoJointIK(ikCanvas.width / 2, ikCanvas.height - 50, 100, 80));
+
+    ikCanvas.addEventListener('mousemove', (e) => {
+        const rect = ikCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    document.getElementById('btnAddArm').addEventListener('click', () => {
+        const x = randomFloat(100, ikCanvas.width - 100);
+        const y = randomFloat(ikCanvas.height - 100, ikCanvas.height - 50);
+        arms.push(new TwoJointIK(x, y, 100, 80));
+    });
+
+    document.getElementById('btnResetIK').addEventListener('click', () => {
+        arms.length = 0;
+        arms.push(new TwoJointIK(ikCanvas.width / 2, ikCanvas.height - 50, 100, 80));
+    });
+
+    function animateIK() {
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, ikCanvas.width, ikCanvas.height);
+
+        // Draw target
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(mousePos.x, mousePos.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Update and draw arms
+        arms.forEach(arm => {
+            arm.solve(mousePos.x, mousePos.y);
+            arm.draw(ctx);
+        });
+
+        info.textContent = `Arms: ${arms.length} | Target: (${Math.floor(mousePos.x)}, ${Math.floor(mousePos.y)})`;
+
+        requestAnimationFrame(animateIK);
+    }
+
+    animateIK();
+}
+
+// ===================================
+// DEMO 7: Shadow Casting
+// ===================================
+const shadowCanvas = document.getElementById('shadowDemo');
+if (shadowCanvas) {
+    const ctx = shadowCanvas.getContext('2d');
+    const info = document.getElementById('shadowInfo');
+
+    const walls = [];
+    let mousePos = new Vector2D(shadowCanvas.width / 2, shadowCanvas.height / 2);
+    let showRays = false;
+
+    class Wall {
+        constructor(x1, y1, x2, y2) {
+            this.p1 = new Vector2D(x1, y1);
+            this.p2 = new Vector2D(x2, y2);
+        }
+
+        draw(ctx) {
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(this.p1.x, this.p1.y);
+            ctx.lineTo(this.p2.x, this.p2.y);
+            ctx.stroke();
+        }
+    }
+
+    // Add border walls
+    const margin = 0;
+    walls.push(new Wall(margin, margin, shadowCanvas.width - margin, margin));
+    walls.push(new Wall(shadowCanvas.width - margin, margin, shadowCanvas.width - margin, shadowCanvas.height - margin));
+    walls.push(new Wall(shadowCanvas.width - margin, shadowCanvas.height - margin, margin, shadowCanvas.height - margin));
+    walls.push(new Wall(margin, shadowCanvas.height - margin, margin, margin));
+
+    // Add some obstacles
+    walls.push(new Wall(200, 150, 350, 150));
+    walls.push(new Wall(350, 150, 350, 250));
+    walls.push(new Wall(500, 300, 600, 350));
+
+    function getAngles(source) {
+        const angles = [];
+        for (const wall of walls) {
+            const angle1 = Math.atan2(wall.p1.y - source.y, wall.p1.x - source.x);
+            const angle2 = Math.atan2(wall.p2.y - source.y, wall.p2.x - source.x);
+            angles.push(angle1 - 0.0001, angle1, angle1 + 0.0001);
+            angles.push(angle2 - 0.0001, angle2, angle2 + 0.0001);
+        }
+        return angles;
+    }
+
+    function castRay(source, angle) {
+        const direction = new Vector2D(Math.cos(angle), Math.sin(angle));
+        const rayEnd = source.copy().add(direction.multiply(2000));
+
+        let closestIntersection = rayEnd;
+        let closestDistance = 2000;
+
+        for (const wall of walls) {
+            const intersection = lineIntersection(source, rayEnd, wall.p1, wall.p2);
+            if (intersection) {
+                const dist = source.distance(intersection);
+                if (dist < closestDistance) {
+                    closestDistance = dist;
+                    closestIntersection = intersection;
+                }
+            }
+        }
+
+        return closestIntersection;
+    }
+
+    function getVisibleArea(source) {
+        const angles = getAngles(source);
+        const intersections = [];
+
+        for (const angle of angles) {
+            const point = castRay(source, angle);
+            intersections.push({
+                point: point,
+                angle: Math.atan2(point.y - source.y, point.x - source.x)
+            });
+        }
+
+        intersections.sort((a, b) => a.angle - b.angle);
+        return intersections.map(i => i.point);
+    }
+
+    shadowCanvas.addEventListener('mousemove', (e) => {
+        const rect = shadowCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    document.getElementById('btnAddObstacle').addEventListener('click', () => {
+        const x = randomFloat(100, shadowCanvas.width - 200);
+        const y = randomFloat(100, shadowCanvas.height - 100);
+        const length = randomFloat(50, 150);
+        const angle = randomFloat(0, Math.PI * 2);
+        const x2 = x + Math.cos(angle) * length;
+        const y2 = y + Math.sin(angle) * length;
+        walls.push(new Wall(x, y, x2, y2));
+    });
+
+    document.getElementById('btnClearObstacles').addEventListener('click', () => {
+        walls.length = 4; // Keep border walls
+    });
+
+    document.getElementById('btnToggleRays').addEventListener('click', () => {
+        showRays = !showRays;
+    });
+
+    function animateShadow() {
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, shadowCanvas.width, shadowCanvas.height);
+
+        const visibleArea = getVisibleArea(mousePos);
+
+        // Draw visible area
+        ctx.fillStyle = 'rgba(255, 255, 150, 0.15)';
+        ctx.beginPath();
+        ctx.moveTo(mousePos.x, mousePos.y);
+        visibleArea.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw rays if enabled
+        if (showRays) {
+            ctx.strokeStyle = 'rgba(255, 255, 100, 0.3)';
+            ctx.lineWidth = 1;
+            visibleArea.forEach(p => {
+                ctx.beginPath();
+                ctx.moveTo(mousePos.x, mousePos.y);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+            });
+        }
+
+        // Draw walls
+        walls.forEach(wall => wall.draw(ctx));
+
+        // Draw light source
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.arc(mousePos.x, mousePos.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ffeb3b';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        info.textContent = `Obstacles: ${walls.length - 4} | Rays: ${showRays ? 'Visible' : 'Hidden'}`;
+
+        requestAnimationFrame(animateShadow);
+    }
+
+    animateShadow();
+}

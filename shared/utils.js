@@ -162,6 +162,14 @@ class Vector2D {
         const angle = Math.random() * Math.PI * 2;
         return Vector2D.fromAngle(angle, length);
     }
+
+    // Static method for linear interpolation
+    static lerp(start, end, t) {
+        return new Vector2D(
+            start.x + (end.x - start.x) * t,
+            start.y + (end.y - start.y) * t
+        );
+    }
 }
 
 /**
@@ -330,4 +338,53 @@ function randomInt(min, max) {
  */
 function randomFloat(min, max) {
     return Math.random() * (max - min) + min;
+}
+
+/**
+ * Line-line intersection
+ * Returns intersection point or null if lines don't intersect
+ */
+function lineIntersection(p1, p2, p3, p4) {
+    const x1 = p1.x, y1 = p1.y;
+    const x2 = p2.x, y2 = p2.y;
+    const x3 = p3.x, y3 = p3.y;
+    const x4 = p4.x, y4 = p4.y;
+
+    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+    if (Math.abs(denominator) < 0.0001) {
+        return null; // Lines are parallel
+    }
+
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
+
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        return new Vector2D(
+            x1 + t * (x2 - x1),
+            y1 + t * (y2 - y1)
+        );
+    }
+
+    return null;
+}
+
+/**
+ * Check if line intersects with rectangle
+ * Returns true if the line segment from p1 to p2 intersects the rectangle
+ */
+function lineIntersectsRect(p1, p2, rect) {
+    // Rectangle edges
+    const topLeft = new Vector2D(rect.x, rect.y);
+    const topRight = new Vector2D(rect.x + rect.width, rect.y);
+    const bottomLeft = new Vector2D(rect.x, rect.y + rect.height);
+    const bottomRight = new Vector2D(rect.x + rect.width, rect.y + rect.height);
+
+    // Check intersection with all four edges
+    if (lineIntersection(p1, p2, topLeft, topRight)) return true;
+    if (lineIntersection(p1, p2, topRight, bottomRight)) return true;
+    if (lineIntersection(p1, p2, bottomRight, bottomLeft)) return true;
+    if (lineIntersection(p1, p2, bottomLeft, topLeft)) return true;
+
+    return false;
 }
