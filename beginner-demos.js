@@ -1652,60 +1652,121 @@ if (trigCanvas) {
             info.textContent = `Using atan2(dy, dx) to face target. Angle: ${angleDeg}°`;
         }
         else if (mode === 'arc') {
-            // Projectile arc
+            // Projectile arc - calculate angle to mouse, then show parabolic trajectory
             const start = new Vector2D(100, 400);
-            const end = mousePos;
-            const launchAngle = Math.PI / 4; // 45 degrees
+            const target = mousePos;
             const gravity = 0.5;
 
-            // Calculate arc
-            const points = [];
-            const dx = end.x - start.x;
-            const dy = end.y - start.y;
-            const v0 = Math.sqrt(Math.abs(dx * gravity / Math.sin(2 * launchAngle)));
-            const vx = v0 * Math.cos(launchAngle);
-            const vy = -v0 * Math.sin(launchAngle);
+            // Calculate angle from start to target (canvas coords: Y increases down)
+            const dx = target.x - start.x;
+            const dy = target.y - start.y; // Positive if target is below start
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-            for (let t = 0; t < 100; t += 0.5) {
+            // Calculate launch angle - need to flip Y for physics calculations
+            // In physics: positive angle = upward, but in canvas: smaller Y = upward
+            let launchAngle = Math.atan2(-dy, dx); // Negate dy to convert to physics coords
+
+            // Clamp angle to realistic range (between -10° and 80° above horizontal)
+            launchAngle = Math.max(-Math.PI * 0.056, Math.min(Math.PI * 0.44, launchAngle));
+
+            // Calculate initial velocity based on distance
+            const v0 = Math.sqrt(distance * gravity * 0.8);
+            const vx = v0 * Math.cos(launchAngle);
+            const vy = -v0 * Math.sin(launchAngle); // Negate because canvas Y is inverted
+
+            // Calculate trajectory points
+            const points = [];
+            for (let t = 0; t < 150; t += 0.5) {
                 const x = start.x + vx * t;
-                const y = start.y + vy * t + 0.5 * gravity * t * t;
-                if (y > trigCanvas.height) break;
+                const y = start.y + vy * t + 0.5 * gravity * t * t; // gravity pulls down (positive Y)
+
+                // Stop if projectile goes off screen
+                if (y > trigCanvas.height || y < 0 || x > trigCanvas.width || x < 0) break;
                 points.push({ x, y });
             }
 
             // Draw arc path
-            ctx.strokeStyle = '#4fc3f7';
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.5)';
             ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
             ctx.beginPath();
             points.forEach((p, i) => {
                 if (i === 0) ctx.moveTo(p.x, p.y);
                 else ctx.lineTo(p.x, p.y);
             });
             ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Draw start
+            // Draw velocity vector (scale it for visibility)
+            const vectorScale = 15;
+            ctx.strokeStyle = '#66bb6a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(start.x + vx * vectorScale, start.y + vy * vectorScale);
+            ctx.stroke();
+
+            // Draw arrowhead on velocity vector
+            const arrowX = start.x + vx * vectorScale;
+            const arrowY = start.y + vy * vectorScale;
+            const headAngle = Math.atan2(vy, vx);
+            const headLen = 10;
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(
+                arrowX - headLen * Math.cos(headAngle - Math.PI / 6),
+                arrowY - headLen * Math.sin(headAngle - Math.PI / 6)
+            );
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(
+                arrowX - headLen * Math.cos(headAngle + Math.PI / 6),
+                arrowY - headLen * Math.sin(headAngle + Math.PI / 6)
+            );
+            ctx.stroke();
+
+            // Draw start point (launcher)
             ctx.fillStyle = '#66bb6a';
             ctx.beginPath();
-            ctx.arc(start.x, start.y, 10, 0, Math.PI * 2);
+            ctx.arc(start.x, start.y, 12, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw target
-            ctx.fillStyle = '#ef5350';
+            // Draw target crosshair
+            ctx.strokeStyle = '#ef5350';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(end.x, end.y, 10, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(target.x - 10, target.y);
+            ctx.lineTo(target.x + 10, target.y);
+            ctx.moveTo(target.x, target.y - 10);
+            ctx.lineTo(target.x, target.y + 10);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 15, 0, Math.PI * 2);
+            ctx.stroke();
 
-            // Draw projectile if animating
+            // Draw animated projectile
             if (points.length > 0) {
-                const idx = Math.floor((time * 2) % points.length);
+                const idx = Math.floor((time * 3) % points.length);
                 const proj = points[idx];
+
+                // Projectile with trail
+                for (let i = Math.max(0, idx - 5); i <= idx; i++) {
+                    const p = points[i];
+                    const alpha = (i - Math.max(0, idx - 5)) / 5;
+                    ctx.fillStyle = `rgba(255, 167, 38, ${alpha * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Main projectile
                 ctx.fillStyle = '#ffa726';
                 ctx.beginPath();
-                ctx.arc(proj.x, proj.y, 8, 0, Math.PI * 2);
+                ctx.arc(proj.x, proj.y, 10, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            info.textContent = 'Parabolic arc using trigonometry and gravity. Move mouse to change target!';
+            const angleDeg = (launchAngle * 180 / Math.PI).toFixed(1);
+            info.textContent = `Projectile arc: Launch angle ${angleDeg}°, Initial velocity ${v0.toFixed(1)}. Move mouse to aim!`;
         }
 
         requestAnimationFrame(animateTrig);
@@ -1748,13 +1809,21 @@ if (easingCanvas) {
         }
     };
 
-    // Button handlers
-    const buttons = ['Linear', 'EaseIn', 'EaseOut', 'EaseInOut', 'Elastic', 'Bounce'];
-    buttons.forEach(btn => {
+    // Button handlers - map button IDs to easing function names
+    const buttonMap = {
+        'Linear': 'linear',
+        'EaseIn': 'easeIn',
+        'EaseOut': 'easeOut',
+        'EaseInOut': 'easeInOut',
+        'Elastic': 'elastic',
+        'Bounce': 'bounce'
+    };
+
+    Object.keys(buttonMap).forEach(btn => {
         const element = document.getElementById(`btn${btn}`);
         if (element) {
             element.addEventListener('click', () => {
-                currentEasing = btn.toLowerCase();
+                currentEasing = buttonMap[btn];
                 comparing = false;
                 t = 0;
             });
