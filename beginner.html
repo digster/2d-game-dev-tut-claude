@@ -1290,6 +1290,194 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
                 </ul>
             </div>
 
+            <h3>🚀 Practical Example: Homing Missiles</h3>
+            <p>Let's build a complete homing missile system! This demonstrates vectors, seeking behavior, and rotation all working together.</p>
+
+            <div class="concept-box">
+                <h4>How Homing Missiles Work</h4>
+                <p>A homing missile constantly adjusts its direction to track a moving target. The math behind it:</p>
+                <ul>
+                    <li><strong>Calculate Direction:</strong> Vector from missile to target</li>
+                    <li><strong>Normalize & Apply Speed:</strong> Make it constant velocity</li>
+                    <li><strong>Rotate Sprite:</strong> Use atan2 to face the right direction</li>
+                    <li><strong>Add Trails:</strong> Create visual effects for polish</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Homing Missile Class</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">HomingMissile</span> {
+    <span class="keyword">constructor</span>(x, y, target) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.target = target;
+        <span class="keyword">this</span>.speed = <span class="number">3</span>;
+        <span class="keyword">this</span>.turnRate = <span class="number">0.05</span>;  <span class="comment">// How quickly it can turn</span>
+        <span class="keyword">this</span>.rotation = <span class="number">0</span>;
+        <span class="keyword">this</span>.alive = <span class="keyword">true</span>;
+        <span class="keyword">this</span>.trail = [];  <span class="comment">// For visual effect</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Calculate direction to target</span>
+        <span class="keyword">const</span> toTarget = <span class="keyword">this</span>.target.position.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+
+        <span class="comment">// Normalize and apply speed (seeking behavior)</span>
+        <span class="keyword">const</span> desired = toTarget.<span class="function">copy</span>().<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
+
+        <span class="comment">// Smooth steering (lerp toward desired velocity)</span>
+        <span class="keyword">this</span>.velocity.<span class="function">lerp</span>(desired, <span class="keyword">this</span>.turnRate);
+
+        <span class="comment">// Update position</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Update rotation to face movement direction</span>
+        <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+
+        <span class="comment">// Add to trail for visual effect</span>
+        <span class="keyword">this</span>.trail.<span class="function">push</span>(<span class="keyword">this</span>.position.<span class="function">copy</span>());
+        <span class="keyword">if</span> (<span class="keyword">this</span>.trail.length > <span class="number">20</span>) <span class="keyword">this</span>.trail.<span class="function">shift</span>();
+
+        <span class="comment">// Check if hit target</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.<span class="function">distance</span>(<span class="keyword">this</span>.target.position) < <span class="number">20</span>) {
+            <span class="keyword">this</span>.alive = <span class="keyword">false</span>;
+            <span class="comment">// Explosion effect here!</span>
+        }
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Draw trail</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.trail.length; i++) {
+            <span class="keyword">const</span> alpha = i / <span class="keyword">this</span>.trail.length;
+            ctx.fillStyle = <span class="string">`rgba(255, 165, 0, <span class="keyword">${alpha * 0.5}</span>)`</span>;
+            ctx.beginPath();
+            ctx.<span class="function">arc</span>(<span class="keyword">this</span>.trail[i].x, <span class="keyword">this</span>.trail[i].y, <span class="number">3</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+            ctx.<span class="function">fill</span>();
+        }
+
+        <span class="comment">// Draw missile body (rotated)</span>
+        ctx.save();
+        ctx.translate(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
+        ctx.rotate(<span class="keyword">this</span>.rotation);
+
+        <span class="comment">// Missile body</span>
+        ctx.fillStyle = <span class="string">'#ef5350'</span>;
+        ctx.fillRect(-<span class="number">10</span>, -<span class="number">4</span>, <span class="number">20</span>, <span class="number">8</span>);
+
+        <span class="comment">// Missile nose (pointy end)</span>
+        ctx.beginPath();
+        ctx.moveTo(<span class="number">10</span>, <span class="number">0</span>);
+        ctx.lineTo(<span class="number">15</span>, -<span class="number">4</span>);
+        ctx.lineTo(<span class="number">15</span>, <span class="number">4</span>);
+        ctx.closePath();
+        ctx.<span class="function">fill</span>();
+
+        <span class="comment">// Fins</span>
+        ctx.fillStyle = <span class="string">'#c62828'</span>;
+        ctx.fillRect(-<span class="number">8</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">4</span>);
+        ctx.fillRect(-<span class="number">8</span>, -<span class="number">8</span>, <span class="number">6</span>, <span class="number">4</span>);
+
+        ctx.restore();
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Variations & Advanced Techniques</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// VARIATION 1: Predictive Targeting (leads the target)</span>
+<span class="keyword">class</span> <span class="function">PredictiveMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
+    <span class="function">update</span>() {
+        <span class="comment">// Predict where target will be</span>
+        <span class="keyword">const</span> prediction = <span class="keyword">this</span>.target.position.<span class="function">copy</span>()
+            .<span class="function">add</span>(<span class="keyword">this</span>.target.velocity.<span class="function">copy</span>().<span class="function">multiply</span>(<span class="number">10</span>));
+
+        <span class="comment">// Aim for predicted position instead</span>
+        <span class="keyword">const</span> toTarget = prediction.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+        <span class="keyword">const</span> desired = toTarget.<span class="function">copy</span>().<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
+        <span class="keyword">this</span>.velocity.<span class="function">lerp</span>(desired, <span class="keyword">this</span>.turnRate);
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+    }
+}
+
+<span class="comment">// VARIATION 2: Limited Fuel Missile</span>
+<span class="keyword">class</span> <span class="function">FuelMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
+    <span class="keyword">constructor</span>(x, y, target) {
+        <span class="keyword">super</span>(x, y, target);
+        <span class="keyword">this</span>.fuel = <span class="number">100</span>;
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.fuel -= <span class="number">1</span>;
+
+        <span class="keyword">if</span> (<span class="keyword">this</span>.fuel > <span class="number">0</span>) {
+            <span class="comment">// Normal homing behavior</span>
+            <span class="keyword">super</span>.<span class="function">update</span>();
+        } <span class="keyword">else</span> {
+            <span class="comment">// Out of fuel - ballistic trajectory (gravity)</span>
+            <span class="keyword">this</span>.velocity.y += <span class="number">0.2</span>;  <span class="comment">// Gravity</span>
+            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+            <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+        }
+    }
+}
+
+<span class="comment">// VARIATION 3: Spiral/Corkscrew Missile</span>
+<span class="keyword">class</span> <span class="function">SpiralMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
+    <span class="keyword">constructor</span>(x, y, target) {
+        <span class="keyword">super</span>(x, y, target);
+        <span class="keyword">this</span>.spiralAngle = <span class="number">0</span>;
+        <span class="keyword">this</span>.spiralRadius = <span class="number">20</span>;
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">super</span>.<span class="function">update</span>();
+
+        <span class="comment">// Add spiral offset perpendicular to velocity</span>
+        <span class="keyword">this</span>.spiralAngle += <span class="number">0.2</span>;
+        <span class="keyword">const</span> perpendicular = <span class="keyword">this</span>.velocity.<span class="function">copy</span>().<span class="function">perpendicular</span>().<span class="function">normalize</span>();
+        <span class="keyword">const</span> offset = perpendicular.<span class="function">multiply</span>(
+            Math.<span class="function">sin</span>(<span class="keyword">this</span>.spiralAngle) * <span class="keyword">this</span>.spiralRadius
+        );
+        <span class="keyword">this</span>.position.<span class="function">add</span>(offset);
+    }
+}</code></pre>
+                </div>
+
+                <div class="key-point">
+                    <strong>💡 Pro Tip:</strong> Adjust turnRate to change missile maneuverability. Lower = slow, wide turns (realistic). Higher = tight turns (arcade-style).
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Homing Missiles</h3>
+            <div class="diagram">
+                <canvas id="homingMissileDemo" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnLaunchMissile">Launch Missile</button>
+                <button id="btnTogglePredictive">Toggle Predictive</button>
+                <button id="btnToggleFuel">Toggle Fuel Limit</button>
+                <button id="btnClearMissiles">Clear All</button>
+            </div>
+            <div id="missileInfo" class="info-display">Move your mouse to control the target! Click "Launch Missile" or press SPACE</div>
+
+            <div class="concept-box">
+                <h4>What You're Seeing:</h4>
+                <ul>
+                    <li><strong>Orange trail:</strong> Shows missile's path</li>
+                    <li><strong>Red line:</strong> Direction vector from missile to target</li>
+                    <li><strong>Green circle:</strong> Your mouse-controlled target</li>
+                    <li><strong>Rotation:</strong> Missile sprite automatically faces its velocity direction</li>
+                </ul>
+            </div>
+
+            <div class="key-point">
+                <strong>🎮 Game Uses:</strong> Heat-seeking missiles, enemy homing attacks, magic spells that follow the player, auto-targeting turrets, guided projectiles in shoot-em-ups!
+            </div>
+
         </div>
 
         <!-- MATRICES -->

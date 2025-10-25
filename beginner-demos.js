@@ -2478,3 +2478,321 @@ if (advancedTrigCanvas) {
 
     animateAdvancedTrig();
 }
+
+// ===================================
+// DEMO: Homing Missiles
+// ===================================
+const homingMissileCanvas = document.getElementById('homingMissileDemo');
+if (homingMissileCanvas) {
+    const ctx = homingMissileCanvas.getContext('2d');
+    const info = document.getElementById('missileInfo');
+    let mousePos = new Vector2D(400, 300);
+    let missiles = [];
+    let usePredictive = false;
+    let useFuel = false;
+    let explosions = [];
+
+    // Target object (controlled by mouse)
+    const target = {
+        position: new Vector2D(400, 300),
+        velocity: new Vector2D(0, 0),
+        prevPosition: new Vector2D(400, 300)
+    };
+
+    // Homing Missile Class
+    class HomingMissile {
+        constructor(x, y, targetObj, isPredictive = false, hasFuel = false) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(0, 0);
+            this.target = targetObj;
+            this.speed = 4;
+            this.turnRate = 0.08;
+            this.rotation = 0;
+            this.alive = true;
+            this.trail = [];
+            this.isPredictive = isPredictive;
+            this.hasFuel = hasFuel;
+            this.fuel = 100;
+        }
+
+        update() {
+            // Calculate target position (predictive or normal)
+            let targetPos = this.target.position.copy();
+
+            if (this.isPredictive && this.target.velocity.length() > 0.1) {
+                // Predict where target will be
+                const prediction = this.target.velocity.copy().multiply(15);
+                targetPos.add(prediction);
+            }
+
+            // Calculate direction to target
+            const toTarget = targetPos.subtract(this.position);
+            const desired = toTarget.copy().normalize().multiply(this.speed);
+
+            // Handle fuel
+            if (this.hasFuel) {
+                this.fuel -= 1;
+                if (this.fuel <= 0) {
+                    // Out of fuel - apply gravity
+                    this.velocity.y += 0.3;
+                    this.position.add(this.velocity);
+                    this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
+
+                    // Add to trail
+                    this.trail.push(this.position.copy());
+                    if (this.trail.length > 20) this.trail.shift();
+
+                    // Check if off screen
+                    if (this.position.y > homingMissileCanvas.height + 50) {
+                        this.alive = false;
+                    }
+                    return;
+                }
+            }
+
+            // Smooth steering
+            this.velocity.lerp(desired, this.turnRate);
+
+            // Update position
+            this.position.add(this.velocity);
+
+            // Update rotation
+            this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
+
+            // Add to trail
+            this.trail.push(this.position.copy());
+            if (this.trail.length > 20) this.trail.shift();
+
+            // Check if hit target
+            if (this.position.distance(this.target.position) < 25) {
+                this.alive = false;
+                // Create explosion
+                explosions.push({
+                    position: this.position.copy(),
+                    radius: 0,
+                    maxRadius: 50,
+                    alpha: 1
+                });
+            }
+
+            // Check if off screen
+            if (this.position.x < -50 || this.position.x > homingMissileCanvas.width + 50 ||
+                this.position.y < -50 || this.position.y > homingMissileCanvas.height + 50) {
+                this.alive = false;
+            }
+        }
+
+        draw(ctx) {
+            // Draw trail
+            for (let i = 0; i < this.trail.length; i++) {
+                const alpha = i / this.trail.length;
+                const fuelAlpha = this.hasFuel && this.fuel <= 0 ? 0.3 : 1;
+                ctx.fillStyle = `rgba(255, 165, 0, ${alpha * 0.5 * fuelAlpha})`;
+                ctx.beginPath();
+                ctx.arc(this.trail[i].x, this.trail[i].y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw direction line to target
+            if (this.hasFuel && this.fuel <= 0) {
+                // Don't draw line if out of fuel
+            } else {
+                ctx.strokeStyle = 'rgba(239, 83, 80, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(this.position.x, this.position.y);
+
+                let targetPos = this.target.position;
+                if (this.isPredictive) {
+                    const prediction = this.target.velocity.copy().multiply(15);
+                    targetPos = this.target.position.copy().add(prediction);
+                }
+
+                ctx.lineTo(targetPos.x, targetPos.y);
+                ctx.stroke();
+            }
+
+            // Draw missile body
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.rotation);
+
+            // Missile body
+            const bodyColor = this.hasFuel && this.fuel <= 0 ? '#9e9e9e' : '#ef5350';
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(-10, -4, 20, 8);
+
+            // Missile nose
+            ctx.beginPath();
+            ctx.moveTo(10, 0);
+            ctx.lineTo(15, -4);
+            ctx.lineTo(15, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            // Fins
+            const finColor = this.hasFuel && this.fuel <= 0 ? '#616161' : '#c62828';
+            ctx.fillStyle = finColor;
+            ctx.fillRect(-8, 4, 6, 4);
+            ctx.fillRect(-8, -8, 6, 4);
+
+            // Fuel indicator
+            if (this.hasFuel && this.fuel > 0) {
+                ctx.fillStyle = '#ffa726';
+                const fuelBarWidth = 16 * (this.fuel / 100);
+                ctx.fillRect(-8, -12, fuelBarWidth, 2);
+            }
+
+            ctx.restore();
+        }
+    }
+
+    // Mouse tracking
+    homingMissileCanvas.addEventListener('mousemove', (e) => {
+        const rect = homingMissileCanvas.getBoundingClientRect();
+        mousePos = new Vector2D(e.clientX - rect.left, e.clientY - rect.top);
+    });
+
+    // Launch missile on click or space
+    function launchMissile() {
+        const startX = randomFloat(50, homingMissileCanvas.width - 50);
+        const startY = randomFloat(50, homingMissileCanvas.height - 50);
+        missiles.push(new HomingMissile(startX, startY, target, usePredictive, useFuel));
+    }
+
+    homingMissileCanvas.addEventListener('click', launchMissile);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && homingMissileCanvas.getBoundingClientRect().top < window.innerHeight) {
+            e.preventDefault();
+            launchMissile();
+        }
+    });
+
+    // Button handlers
+    document.getElementById('btnLaunchMissile')?.addEventListener('click', launchMissile);
+
+    document.getElementById('btnTogglePredictive')?.addEventListener('click', () => {
+        usePredictive = !usePredictive;
+        const btn = document.getElementById('btnTogglePredictive');
+        btn.textContent = usePredictive ? 'Predictive: ON' : 'Predictive: OFF';
+        btn.style.background = usePredictive ? '#66bb6a' : '';
+    });
+
+    document.getElementById('btnToggleFuel')?.addEventListener('click', () => {
+        useFuel = !useFuel;
+        const btn = document.getElementById('btnToggleFuel');
+        btn.textContent = useFuel ? 'Fuel Limit: ON' : 'Fuel Limit: OFF';
+        btn.style.background = useFuel ? '#ffa726' : '';
+    });
+
+    document.getElementById('btnClearMissiles')?.addEventListener('click', () => {
+        missiles = [];
+        explosions = [];
+    });
+
+    // Animation loop
+    function animateHomingMissiles() {
+        clearCanvas(ctx, homingMissileCanvas.width, homingMissileCanvas.height);
+
+        // Update target position and velocity
+        target.prevPosition = target.position.copy();
+        target.position = mousePos.copy();
+        target.velocity = target.position.subtract(target.prevPosition);
+
+        // Draw prediction indicator if predictive mode
+        if (usePredictive && target.velocity.length() > 0.1) {
+            const prediction = target.velocity.copy().multiply(15);
+            const predictedPos = target.position.copy().add(prediction);
+
+            ctx.strokeStyle = 'rgba(255, 193, 7, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(target.position.x, target.position.y);
+            ctx.lineTo(predictedPos.x, predictedPos.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = 'rgba(255, 193, 7, 0.3)';
+            ctx.beginPath();
+            ctx.arc(predictedPos.x, predictedPos.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#ffa726';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Update and draw missiles
+        for (let i = missiles.length - 1; i >= 0; i--) {
+            missiles[i].update();
+            missiles[i].draw(ctx);
+
+            if (!missiles[i].alive) {
+                missiles.splice(i, 1);
+            }
+        }
+
+        // Update and draw explosions
+        for (let i = explosions.length - 1; i >= 0; i--) {
+            const exp = explosions[i];
+            exp.radius += 2;
+            exp.alpha -= 0.02;
+
+            if (exp.alpha > 0) {
+                // Outer ring
+                ctx.strokeStyle = `rgba(255, 165, 0, ${exp.alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(exp.position.x, exp.position.y, exp.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner fill
+                ctx.fillStyle = `rgba(255, 87, 34, ${exp.alpha * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(exp.position.x, exp.position.y, exp.radius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                explosions.splice(i, 1);
+            }
+        }
+
+        // Draw target
+        ctx.fillStyle = '#66bb6a';
+        ctx.beginPath();
+        ctx.arc(target.position.x, target.position.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Crosshair on target
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(target.position.x - 15, target.position.y);
+        ctx.lineTo(target.position.x + 15, target.position.y);
+        ctx.moveTo(target.position.x, target.position.y - 15);
+        ctx.lineTo(target.position.x, target.position.y + 15);
+        ctx.stroke();
+
+        // Info text
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Missiles: ${missiles.length}`, 10, 20);
+        ctx.fillText(`Mode: ${usePredictive ? 'PREDICTIVE' : 'NORMAL'}`, 10, 40);
+        if (useFuel) ctx.fillText('Fuel: LIMITED', 10, 60);
+
+        // Update info display
+        let modeText = usePredictive ? ' [PREDICTIVE MODE]' : '';
+        let fuelText = useFuel ? ' [FUEL LIMITED]' : '';
+        info.textContent = `Active missiles: ${missiles.length}${modeText}${fuelText} - Move mouse to control target!`;
+
+        requestAnimationFrame(animateHomingMissiles);
+    }
+
+    animateHomingMissiles();
+}
