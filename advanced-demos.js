@@ -1261,29 +1261,45 @@ if (shadowCanvas) {
     walls.push(new Wall(350, 150, 350, 250));
     walls.push(new Wall(500, 300, 600, 350));
 
+    function normalizeAngle(angle) {
+        // Normalize to [0, 2π]
+        while (angle < 0) angle += Math.PI * 2;
+        while (angle >= Math.PI * 2) angle -= Math.PI * 2;
+        return angle;
+    }
+
     function getAngles(source) {
-        const angles = new Set();
+        const angles = [];
 
         // Only get angles from OBSTACLE walls (not borders)
         for (let i = borderWallCount; i < walls.length; i++) {
             const wall = walls[i];
-            const angle1 = Math.atan2(wall.p1.y - source.y, wall.p1.x - source.x);
-            const angle2 = Math.atan2(wall.p2.y - source.y, wall.p2.x - source.x);
-            angles.add(angle1 - 0.00001);
-            angles.add(angle1);
-            angles.add(angle1 + 0.00001);
-            angles.add(angle2 - 0.00001);
-            angles.add(angle2);
-            angles.add(angle2 + 0.00001);
+            let angle1 = Math.atan2(wall.p1.y - source.y, wall.p1.x - source.x);
+            let angle2 = Math.atan2(wall.p2.y - source.y, wall.p2.x - source.x);
+
+            // Normalize to [0, 2π]
+            angle1 = normalizeAngle(angle1);
+            angle2 = normalizeAngle(angle2);
+
+            angles.push(
+                normalizeAngle(angle1 - 0.00001),
+                angle1,
+                normalizeAngle(angle1 + 0.00001)
+            );
+            angles.push(
+                normalizeAngle(angle2 - 0.00001),
+                angle2,
+                normalizeAngle(angle2 + 0.00001)
+            );
         }
 
         // Add rays in a full circle to ensure complete coverage
-        const numRays = 720; // Increased for smoother coverage
+        const numRays = 360;
         for (let i = 0; i < numRays; i++) {
-            angles.add((i / numRays) * Math.PI * 2);
+            angles.push((i / numRays) * Math.PI * 2);
         }
 
-        return Array.from(angles);
+        return angles;
     }
 
     function castRay(source, angle) {
@@ -1314,17 +1330,14 @@ if (shadowCanvas) {
 
         for (const angle of angles) {
             const point = castRay(source, angle);
-            // Normalize angle to [0, 2π]
-            let normalizedAngle = Math.atan2(point.y - source.y, point.x - source.x);
-            if (normalizedAngle < 0) normalizedAngle += Math.PI * 2;
 
             intersections.push({
                 point: point,
-                angle: normalizedAngle
+                angle: angle // Use the original angle for sorting
             });
         }
 
-        // Sort by angle
+        // Sort by angle (this naturally handles -π to π range)
         intersections.sort((a, b) => a.angle - b.angle);
 
         return intersections.map(i => i.point);
@@ -1373,9 +1386,14 @@ if (shadowCanvas) {
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.moveTo(mousePos.x, mousePos.y);
-        visibleArea.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.closePath();
+        if (visibleArea.length > 0) {
+            ctx.moveTo(visibleArea[0].x, visibleArea[0].y);
+            for (let i = 1; i < visibleArea.length; i++) {
+                ctx.lineTo(visibleArea[i].x, visibleArea[i].y);
+            }
+            // Explicitly close back to first point
+            ctx.lineTo(visibleArea[0].x, visibleArea[0].y);
+        }
         ctx.fill();
 
         // Draw rays if enabled
