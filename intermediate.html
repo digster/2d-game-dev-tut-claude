@@ -24,6 +24,7 @@
             <ul>
                 <li><a href="#lerp">Linear Interpolation (Lerp)</a></li>
                 <li><a href="#physics">Physics Systems with Forces</a></li>
+                <li><a href="#spaceship">Spaceship Controller with Gravity Wells</a></li>
                 <li><a href="#spring">Spring Physics & Damping</a></li>
                 <li><a href="#friction">Friction & Drag Systems</a></li>
                 <li><a href="#collision">Collision Detection</a></li>
@@ -174,6 +175,146 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
                 <button id="btnResetPhysics">Reset</button>
             </div>
             <div id="physicsInfo" class="info-display">Click to apply force to nearby objects</div>
+        </div>
+
+        <!-- SPACESHIP CONTROLLER -->
+        <div id="spaceship" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🚀 Spaceship Controller with Gravity Wells</h2>
+
+            <div class="concept-box">
+                <h4>Thrust-Based Movement</h4>
+                <p>Unlike direct position control, spaceships use thrust to accelerate. This creates realistic momentum and inertia:</p>
+                <ul>
+                    <li><strong>Thrust:</strong> Apply force in the direction the ship is facing</li>
+                    <li><strong>Rotation:</strong> Turn the ship to change thrust direction</li>
+                    <li><strong>Gravity Wells:</strong> Massive objects that pull the ship toward them</li>
+                    <li><strong>Orbital Mechanics:</strong> Balance thrust and gravity to achieve orbit</li>
+                </ul>
+                <div class="formula">
+                    Gravitational Force = G × (m₁ × m₂) / distance²
+                </div>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Spaceship Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Spaceship</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+
+        <span class="keyword">this</span>.angle = <span class="number">0</span>;  <span class="comment">// Direction ship is facing</span>
+        <span class="keyword">this</span>.rotation = <span class="number">0</span>;  <span class="comment">// Angular velocity</span>
+
+        <span class="keyword">this</span>.mass = <span class="number">1</span>;
+        <span class="keyword">this</span>.thrustPower = <span class="number">0.15</span>;
+        <span class="keyword">this</span>.rotationSpeed = <span class="number">0.08</span>;
+    }
+
+    <span class="function">applyForce</span>(force) {
+        <span class="comment">// F = ma, so a = F/m</span>
+        <span class="keyword">const</span> f = force.<span class="function">copy</span>().<span class="function">divide</span>(<span class="keyword">this</span>.mass);
+        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(f);
+    }
+
+    <span class="function">thrust</span>() {
+        <span class="comment">// Apply force in the direction ship is facing</span>
+        <span class="keyword">const</span> thrustForce = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.thrustPower,
+            Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.thrustPower
+        );
+        <span class="keyword">this</span>.<span class="function">applyForce</span>(thrustForce);
+    }
+
+    <span class="function">rotateLeft</span>() {
+        <span class="keyword">this</span>.rotation = -<span class="keyword">this</span>.rotationSpeed;
+    }
+
+    <span class="function">rotateRight</span>() {
+        <span class="keyword">this</span>.rotation = <span class="keyword">this</span>.rotationSpeed;
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Update rotation</span>
+        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.rotation;
+        <span class="keyword">this</span>.rotation *= <span class="number">0.9</span>;  <span class="comment">// Damping</span>
+
+        <span class="comment">// Update physics</span>
+        <span class="keyword">this</span>.velocity.<span class="function">add</span>(<span class="keyword">this</span>.acceleration);
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Reset acceleration</span>
+        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Gravity Well Physics:</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">GravityWell</span> {
+    <span class="keyword">constructor</span>(x, y, mass = <span class="number">100</span>) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.mass = mass;
+        <span class="keyword">this</span>.radius = Math.<span class="function">sqrt</span>(mass) * <span class="number">2</span>;
+    }
+
+    <span class="function">attract</span>(entity) {
+        <span class="comment">// Calculate direction to gravity well</span>
+        <span class="keyword">const</span> force = <span class="keyword">this</span>.position.<span class="function">copy</span>().<span class="function">subtract</span>(entity.position);
+        <span class="keyword">const</span> distance = <span class="function">clamp</span>(force.<span class="function">length</span>(), <span class="number">5</span>, <span class="number">100</span>);
+
+        <span class="comment">// Newton's law of gravitation: F = G × (m1 × m2) / r²</span>
+        <span class="keyword">const</span> G = <span class="number">1</span>;  <span class="comment">// Gravitational constant (simplified)</span>
+        <span class="keyword">const</span> strength = (G * <span class="keyword">this</span>.mass * entity.mass) / (distance * distance);
+
+        force.<span class="function">normalize</span>().<span class="function">multiply</span>(strength);
+        entity.<span class="function">applyForce</span>(force);
+    }
+}
+
+<span class="comment">// In game loop:</span>
+<span class="keyword">function</span> <span class="function">update</span>() {
+    <span class="comment">// Apply gravity from all wells</span>
+    gravityWells.<span class="function">forEach</span>(well => {
+        well.<span class="function">attract</span>(spaceship);
+    });
+
+    spaceship.<span class="function">update</span>();
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Spaceship with Gravity Wells</h3>
+            <div class="diagram">
+                <canvas id="spaceshipDemo" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 600px; margin: 0 auto;">
+                    <button id="btnSpaceshipThrust">🔥 Thrust (W)</button>
+                    <button id="btnSpaceshipLeft">⬅️ Rotate Left (A)</button>
+                    <button id="btnSpaceshipRight">➡️ Rotate Right (D)</button>
+                    <button id="btnAddGravityWell">➕ Add Gravity Well</button>
+                    <button id="btnRemoveGravityWell">➖ Remove Gravity Well</button>
+                    <button id="btnResetSpaceship">🔄 Reset</button>
+                </div>
+            </div>
+            <div id="spaceshipInfo" class="info-display">Use W/A/D or buttons to control the spaceship. Click to add gravity wells. Try to achieve orbit!</div>
+
+            <div class="key-point">
+                <strong>💡 Orbital Mechanics:</strong> To orbit a gravity well, you need the right speed and direction! Too slow = you'll crash. Too fast = you'll fly away. The perfect orbit is when centrifugal force (your velocity) balances gravitational pull. Try flying perpendicular to a gravity well at medium speed!
+            </div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenges:</h4>
+                <ul>
+                    <li><strong>Stable Orbit:</strong> Achieve a circular orbit around a single gravity well</li>
+                    <li><strong>Figure-8:</strong> Navigate between two gravity wells in a figure-8 pattern</li>
+                    <li><strong>Slingshot:</strong> Use a gravity well's pull to boost your speed (gravity assist maneuver)</li>
+                    <li><strong>Landing:</strong> Slow down enough to gently touch a gravity well</li>
+                </ul>
+            </div>
         </div>
 
         <!-- SPRING PHYSICS -->

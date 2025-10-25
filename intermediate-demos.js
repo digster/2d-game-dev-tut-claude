@@ -197,6 +197,265 @@ if (physicsCanvas) {
 }
 
 // ===================================
+// DEMO 2.5: Spaceship Controller with Gravity Wells
+// ===================================
+const spaceshipCanvas = document.getElementById('spaceshipDemo');
+if (spaceshipCanvas) {
+    const ctx = spaceshipCanvas.getContext('2d');
+    const info = document.getElementById('spaceshipInfo');
+
+    class Spaceship {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(0, 0);
+            this.acceleration = new Vector2D(0, 0);
+            this.angle = -Math.PI / 2; // Start pointing up
+            this.rotation = 0;
+            this.mass = 1;
+            this.thrustPower = 0.15;
+            this.rotationSpeed = 0.08;
+            this.thrusting = false;
+            this.size = 15;
+        }
+
+        applyForce(force) {
+            const f = force.copy().divide(this.mass);
+            this.acceleration.add(f);
+        }
+
+        thrust() {
+            const thrustForce = new Vector2D(
+                Math.cos(this.angle) * this.thrustPower,
+                Math.sin(this.angle) * this.thrustPower
+            );
+            this.applyForce(thrustForce);
+            this.thrusting = true;
+        }
+
+        rotateLeft() {
+            this.rotation = -this.rotationSpeed;
+        }
+
+        rotateRight() {
+            this.rotation = this.rotationSpeed;
+        }
+
+        update() {
+            // Update rotation
+            this.angle += this.rotation;
+            this.rotation *= 0.85; // Damping
+
+            // Update physics
+            this.velocity.add(this.acceleration);
+
+            // Speed limit
+            const speed = this.velocity.length();
+            if (speed > 10) {
+                this.velocity.normalize().multiply(10);
+            }
+
+            this.position.add(this.velocity);
+
+            // Reset acceleration
+            this.acceleration.multiply(0);
+
+            // Wrap around screen edges
+            if (this.position.x < 0) this.position.x = spaceshipCanvas.width;
+            if (this.position.x > spaceshipCanvas.width) this.position.x = 0;
+            if (this.position.y < 0) this.position.y = spaceshipCanvas.height;
+            if (this.position.y > spaceshipCanvas.height) this.position.y = 0;
+
+            this.thrusting = false;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.angle);
+
+            // Draw spaceship as triangle
+            ctx.fillStyle = '#4fc3f7';
+            ctx.strokeStyle = '#81d4fa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.size, 0);
+            ctx.lineTo(-this.size, -this.size * 0.7);
+            ctx.lineTo(-this.size * 0.5, 0);
+            ctx.lineTo(-this.size, this.size * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw thrust flame when thrusting
+            if (this.thrusting) {
+                ctx.fillStyle = '#ff6b35';
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.5, -this.size * 0.4);
+                ctx.lineTo(-this.size * 1.5, 0);
+                ctx.lineTo(-this.size * 0.5, this.size * 0.4);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+
+            // Draw velocity vector
+            const velEnd = new Vector2D(
+                this.position.x + this.velocity.x * 10,
+                this.position.y + this.velocity.y * 10
+            );
+            if (this.velocity.length() > 0.5) {
+                drawVector(ctx, this.position, velEnd, '#66bb6a', 2);
+            }
+        }
+    }
+
+    class GravityWell {
+        constructor(x, y, mass = 100) {
+            this.position = new Vector2D(x, y);
+            this.mass = mass;
+            this.radius = Math.sqrt(mass) * 2;
+        }
+
+        attract(entity) {
+            const force = this.position.copy().subtract(entity.position);
+            const distance = clamp(force.length(), 10, 250);
+
+            // Newton's law of gravitation
+            const G = 1;
+            const strength = (G * this.mass * entity.mass) / (distance * distance);
+
+            force.normalize().multiply(strength);
+            entity.applyForce(force);
+        }
+
+        draw(ctx) {
+            // Draw gravity well
+            ctx.fillStyle = '#9c27b0';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw gravity field rings
+            ctx.strokeStyle = 'rgba(156, 39, 176, 0.3)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 3; i++) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radius + i * 30, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Draw center
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    let spaceship = new Spaceship(400, 300);
+    const gravityWells = [
+        new GravityWell(400, 450, 150)
+    ];
+
+    // Keyboard controls
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+        keys[e.key.toLowerCase()] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+
+    // Button controls
+    document.getElementById('btnSpaceshipThrust').addEventListener('mousedown', () => {
+        keys['w'] = true;
+    });
+    document.getElementById('btnSpaceshipThrust').addEventListener('mouseup', () => {
+        keys['w'] = false;
+    });
+
+    document.getElementById('btnSpaceshipLeft').addEventListener('mousedown', () => {
+        keys['a'] = true;
+    });
+    document.getElementById('btnSpaceshipLeft').addEventListener('mouseup', () => {
+        keys['a'] = false;
+    });
+
+    document.getElementById('btnSpaceshipRight').addEventListener('mousedown', () => {
+        keys['d'] = true;
+    });
+    document.getElementById('btnSpaceshipRight').addEventListener('mouseup', () => {
+        keys['d'] = false;
+    });
+
+    document.getElementById('btnAddGravityWell').addEventListener('click', () => {
+        const x = randomFloat(100, spaceshipCanvas.width - 100);
+        const y = randomFloat(100, spaceshipCanvas.height - 100);
+        gravityWells.push(new GravityWell(x, y, randomFloat(80, 150)));
+    });
+
+    document.getElementById('btnRemoveGravityWell').addEventListener('click', () => {
+        if (gravityWells.length > 0) {
+            gravityWells.pop();
+        }
+    });
+
+    document.getElementById('btnResetSpaceship').addEventListener('click', () => {
+        spaceship = new Spaceship(400, 300);
+        gravityWells.length = 0;
+        gravityWells.push(new GravityWell(400, 450, 150));
+    });
+
+    // Click to add gravity well
+    spaceshipCanvas.addEventListener('click', (e) => {
+        const rect = spaceshipCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        gravityWells.push(new GravityWell(x, y, 120));
+    });
+
+    function animateSpaceship() {
+        clearCanvas(ctx, spaceshipCanvas.width, spaceshipCanvas.height);
+
+        // Draw starfield background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        for (let i = 0; i < 50; i++) {
+            const x = (i * 137.5) % spaceshipCanvas.width;
+            const y = (i * 217.3) % spaceshipCanvas.height;
+            ctx.fillRect(x, y, 2, 2);
+        }
+
+        // Handle input
+        if (keys['w'] || keys['arrowup']) {
+            spaceship.thrust();
+        }
+        if (keys['a'] || keys['arrowleft']) {
+            spaceship.rotateLeft();
+        }
+        if (keys['d'] || keys['arrowright']) {
+            spaceship.rotateRight();
+        }
+
+        // Apply gravity from all wells
+        gravityWells.forEach(well => {
+            well.attract(spaceship);
+            well.draw(ctx);
+        });
+
+        spaceship.update();
+        spaceship.draw(ctx);
+
+        const speed = spaceship.velocity.length();
+        info.textContent = `Speed: ${speed.toFixed(2)} | Gravity Wells: ${gravityWells.length} | Controls: W=Thrust, A/D=Rotate`;
+
+        requestAnimationFrame(animateSpaceship);
+    }
+
+    animateSpaceship();
+}
+
+// ===================================
 // DEMO 3: Collision Detection
 // ===================================
 const collisionCanvas = document.getElementById('collisionDemo');
