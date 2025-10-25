@@ -25,9 +25,12 @@
                 <li><a href="#spatial">Spatial Partitioning & QuadTree</a></li>
                 <li><a href="#pooling">Object Pooling</a></li>
                 <li><a href="#procgen">Procedural Generation</a></li>
+                <li><a href="#noise">Perlin Noise & Terrain Generation</a></li>
                 <li><a href="#tilemap">Tilemap Systems</a></li>
+                <li><a href="#ecs">Entity Component System (ECS)</a></li>
                 <li><a href="#sound">Sound Propagation</a></li>
                 <li><a href="#network">Network Interpolation</a></li>
+                <li><a href="#delta-time">Delta Time & Fixed Timestep</a></li>
             </ul>
         </div>
 
@@ -395,6 +398,178 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <div id="procgenInfo" class="info-display">Watch procedural generation create natural patterns</div>
         </div>
 
+        <!-- PERLIN NOISE & TERRAIN GENERATION -->
+        <div id="noise" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🏔️ Perlin Noise & Terrain Generation</h2>
+
+            <div class="concept-box">
+                <h4>What is Perlin Noise?</h4>
+                <p>Perlin Noise creates smooth, natural-looking randomness. Unlike pure random values that jump erratically, Perlin Noise produces coherent, organic patterns perfect for:</p>
+                <ul>
+                    <li>Terrain height maps (mountains, valleys)</li>
+                    <li>Cloud patterns</li>
+                    <li>Wood/marble textures</li>
+                    <li>Ocean waves</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Perlin Noise Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">PerlinNoise</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="comment">// Permutation table (256 values, repeated)</span>
+        <span class="keyword">this</span>.p = [];
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">256</span>; i++) {
+            <span class="keyword">this</span>.p[i] = Math.<span class="function">floor</span>(Math.<span class="function">random</span>() * <span class="number">256</span>);
+        }
+        <span class="comment">// Duplicate for overflow</span>
+        <span class="keyword">this</span>.p = <span class="keyword">this</span>.p.<span class="function">concat</span>(<span class="keyword">this</span>.p);
+    }
+
+    <span class="function">fade</span>(t) {
+        <span class="comment">// Smoothstep: 6t^5 - 15t^4 + 10t^3</span>
+        <span class="keyword">return</span> t * t * t * (t * (t * <span class="number">6</span> - <span class="number">15</span>) + <span class="number">10</span>);
+    }
+
+    <span class="function">lerp</span>(a, b, t) {
+        <span class="keyword">return</span> a + t * (b - a);
+    }
+
+    <span class="function">grad</span>(hash, x, y) {
+        <span class="comment">// Convert hash to gradient vector</span>
+        <span class="keyword">const</span> h = hash & <span class="number">3</span>;
+        <span class="keyword">const</span> u = h < <span class="number">2</span> ? x : y;
+        <span class="keyword">const</span> v = h < <span class="number">2</span> ? y : x;
+        <span class="keyword">return</span> ((h & <span class="number">1</span>) ? -u : u) + ((h & <span class="number">2</span>) ? -v : v);
+    }
+
+    <span class="function">noise</span>(x, y) {
+        <span class="comment">// Find grid cell</span>
+        <span class="keyword">const</span> X = Math.<span class="function">floor</span>(x) & <span class="number">255</span>;
+        <span class="keyword">const</span> Y = Math.<span class="function">floor</span>(y) & <span class="number">255</span>;
+
+        <span class="comment">// Relative position within cell</span>
+        x -= Math.<span class="function">floor</span>(x);
+        y -= Math.<span class="function">floor</span>(y);
+
+        <span class="comment">// Fade curves</span>
+        <span class="keyword">const</span> u = <span class="keyword">this</span>.<span class="function">fade</span>(x);
+        <span class="keyword">const</span> v = <span class="keyword">this</span>.<span class="function">fade</span>(y);
+
+        <span class="comment">// Hash coordinates of 4 cube corners</span>
+        <span class="keyword">const</span> a = <span class="keyword">this</span>.p[X] + Y;
+        <span class="keyword">const</span> aa = <span class="keyword">this</span>.p[a];
+        <span class="keyword">const</span> ab = <span class="keyword">this</span>.p[a + <span class="number">1</span>];
+        <span class="keyword">const</span> b = <span class="keyword">this</span>.p[X + <span class="number">1</span>] + Y;
+        <span class="keyword">const</span> ba = <span class="keyword">this</span>.p[b];
+        <span class="keyword">const</span> bb = <span class="keyword">this</span>.p[b + <span class="number">1</span>];
+
+        <span class="comment">// Blend results from 4 corners</span>
+        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">lerp</span>(
+            <span class="keyword">this</span>.<span class="function">lerp</span>(<span class="keyword">this</span>.<span class="function">grad</span>(aa, x, y), <span class="keyword">this</span>.<span class="function">grad</span>(ba, x - <span class="number">1</span>, y), u),
+            <span class="keyword">this</span>.<span class="function">lerp</span>(<span class="keyword">this</span>.<span class="function">grad</span>(ab, x, y - <span class="number">1</span>), <span class="keyword">this</span>.<span class="function">grad</span>(bb, x - <span class="number">1</span>, y - <span class="number">1</span>), u),
+            v
+        );
+    }
+
+    <span class="comment">// Octave noise - combine multiple frequencies</span>
+    <span class="function">octaveNoise</span>(x, y, octaves = <span class="number">4</span>, persistence = <span class="number">0.5</span>) {
+        <span class="keyword">let</span> total = <span class="number">0</span>;
+        <span class="keyword">let</span> frequency = <span class="number">1</span>;
+        <span class="keyword">let</span> amplitude = <span class="number">1</span>;
+        <span class="keyword">let</span> maxValue = <span class="number">0</span>;
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < octaves; i++) {
+            total += <span class="keyword">this</span>.<span class="function">noise</span>(x * frequency, y * frequency) * amplitude;
+            maxValue += amplitude;
+            amplitude *= persistence;
+            frequency *= <span class="number">2</span>;
+        }
+
+        <span class="keyword">return</span> total / maxValue;
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Terrain Generation Example:</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">TerrainGenerator</span> {
+    <span class="keyword">constructor</span>(width, height) {
+        <span class="keyword">this</span>.width = width;
+        <span class="keyword">this</span>.height = height;
+        <span class="keyword">this</span>.noise = <span class="keyword">new</span> <span class="function">PerlinNoise</span>();
+        <span class="keyword">this</span>.heightmap = [];
+    }
+
+    <span class="function">generate</span>(scale = <span class="number">0.05</span>) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.height; y++) {
+            <span class="keyword">this</span>.heightmap[y] = [];
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.width; x++) {
+                <span class="comment">// Get noise value (0-1)</span>
+                <span class="keyword">const</span> value = <span class="keyword">this</span>.noise.<span class="function">octaveNoise</span>(
+                    x * scale,
+                    y * scale,
+                    <span class="number">4</span>,      <span class="comment">// 4 octaves</span>
+                    <span class="number">0.5</span>     <span class="comment">// persistence</span>
+                );
+
+                <span class="comment">// Normalize to 0-1 range</span>
+                <span class="keyword">this</span>.heightmap[y][x] = (value + <span class="number">1</span>) / <span class="number">2</span>;
+            }
+        }
+    }
+
+    <span class="function">getTileType</span>(x, y) {
+        <span class="keyword">const</span> height = <span class="keyword">this</span>.heightmap[y][x];
+
+        <span class="comment">// Map height to terrain types</span>
+        <span class="keyword">if</span> (height < <span class="number">0.3</span>) <span class="keyword">return</span> <span class="string">'water'</span>;
+        <span class="keyword">if</span> (height < <span class="number">0.4</span>) <span class="keyword">return</span> <span class="string">'sand'</span>;
+        <span class="keyword">if</span> (height < <span class="number">0.7</span>) <span class="keyword">return</span> <span class="string">'grass'</span>;
+        <span class="keyword">if</span> (height < <span class="number">0.9</span>) <span class="keyword">return</span> <span class="string">'mountain'</span>;
+        <span class="keyword">return</span> <span class="string">'snow'</span>;
+    }
+
+    <span class="function">getColor</span>(tileType) {
+        <span class="keyword">const</span> colors = {
+            water: <span class="string">'#4A90E2'</span>,
+            sand: <span class="string">'#F5DEB3'</span>,
+            grass: <span class="string">'#7EC850'</span>,
+            mountain: <span class="string">'#8B7355'</span>,
+            snow: <span class="string">'#FFFFFF'</span>
+        };
+        <span class="keyword">return</span> colors[tileType];
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Terrain Generation</h3>
+            <div class="diagram">
+                <canvas id="noiseDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnNewSeed">New Seed</button>
+                <button id="btnIncreaseScale">Zoom Out</button>
+                <button id="btnDecreaseScale">Zoom In</button>
+                <button id="btnToggleHeight">Toggle Heightmap</button>
+                <button id="btnToggleContours">Toggle Contours</button>
+            </div>
+            <div id="noiseInfo" class="info-display">Click to generate new terrain!</div>
+
+            <div class="key-point">
+                <strong>💡 Octaves Explained:</strong>
+                <ul>
+                    <li><strong>1 Octave:</strong> Smooth, rolling hills</li>
+                    <li><strong>4 Octaves:</strong> Realistic terrain with detail</li>
+                    <li><strong>8 Octaves:</strong> Highly detailed, rocky landscapes</li>
+                </ul>
+                More octaves = more detail, but slower generation!
+            </div>
+        </div>
+
         <!-- TILEMAP SYSTEMS -->
         <div id="tilemap" class="section">
             <span class="level-indicator level-expert">EXPERT</span>
@@ -489,6 +664,235 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 <button id="btnClearTilemap">Clear Map</button>
             </div>
             <div id="tilemapInfo" class="info-display">Click and drag to paint tiles</div>
+        </div>
+
+        <!-- ENTITY COMPONENT SYSTEM (ECS) -->
+        <div id="ecs" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🧩 Entity Component System (ECS)</h2>
+
+            <div class="concept-box">
+                <h4>What is ECS?</h4>
+                <p>ECS is a design pattern that separates data (Components) from logic (Systems) and objects (Entities). It's used in many modern game engines for performance and flexibility.</p>
+                <p><strong>The Three Parts:</strong></p>
+                <ul>
+                    <li><strong>Entity:</strong> Just an ID - a bag to hold components</li>
+                    <li><strong>Component:</strong> Pure data (Position, Velocity, Health, etc.)</li>
+                    <li><strong>System:</strong> Logic that operates on entities with specific components</li>
+                </ul>
+                <p><strong>Why ECS?</strong></p>
+                <ul>
+                    <li>Better performance (cache-friendly data layout)</li>
+                    <li>More flexible than inheritance</li>
+                    <li>Easy to add/remove behaviors</li>
+                    <li>Used in Unity DOTS, Bevy, Flecs, etc.</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: ECS Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Components are pure data</span>
+<span class="keyword">class</span> <span class="function">Position</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Velocity</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Renderable</span> {
+    <span class="keyword">constructor</span>(sprite, color) {
+        <span class="keyword">this</span>.sprite = sprite;
+        <span class="keyword">this</span>.color = color;
+    }
+}
+
+<span class="keyword">class</span> <span class="function">Health</span> {
+    <span class="keyword">constructor</span>(max) {
+        <span class="keyword">this</span>.current = max;
+        <span class="keyword">this</span>.max = max;
+    }
+}
+
+<span class="comment">// Entity is just an ID with components</span>
+<span class="keyword">class</span> <span class="function">Entity</span> {
+    <span class="keyword">static</span> nextId = <span class="number">0</span>;
+
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.id = Entity.nextId++;
+        <span class="keyword">this</span>.components = <span class="keyword">new</span> <span class="function">Map</span>();
+    }
+
+    <span class="function">addComponent</span>(component) {
+        <span class="keyword">this</span>.components.<span class="function">set</span>(component.constructor, component);
+        <span class="keyword">return</span> <span class="keyword">this</span>;  <span class="comment">// For chaining</span>
+    }
+
+    <span class="function">getComponent</span>(componentClass) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.components.<span class="function">get</span>(componentClass);
+    }
+
+    <span class="function">hasComponent</span>(componentClass) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.components.<span class="function">has</span>(componentClass);
+    }
+
+    <span class="function">removeComponent</span>(componentClass) {
+        <span class="keyword">this</span>.components.<span class="function">delete</span>(componentClass);
+    }
+}
+
+<span class="comment">// World manages all entities</span>
+<span class="keyword">class</span> <span class="function">World</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.entities = [];
+        <span class="keyword">this</span>.systems = [];
+    }
+
+    <span class="function">createEntity</span>() {
+        <span class="keyword">const</span> entity = <span class="keyword">new</span> <span class="function">Entity</span>();
+        <span class="keyword">this</span>.entities.<span class="function">push</span>(entity);
+        <span class="keyword">return</span> entity;
+    }
+
+    <span class="function">removeEntity</span>(entity) {
+        <span class="keyword">const</span> index = <span class="keyword">this</span>.entities.<span class="function">indexOf</span>(entity);
+        <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
+            <span class="keyword">this</span>.entities.<span class="function">splice</span>(index, <span class="number">1</span>);
+        }
+    }
+
+    <span class="function">addSystem</span>(system) {
+        <span class="keyword">this</span>.systems.<span class="function">push</span>(system);
+    }
+
+    <span class="function">update</span>(deltaTime) {
+        <span class="keyword">for</span> (<span class="keyword">const</span> system <span class="keyword">of</span> <span class="keyword">this</span>.systems) {
+            system.<span class="function">update</span>(<span class="keyword">this</span>.entities, deltaTime);
+        }
+    }
+
+    <span class="comment">// Query entities with specific components</span>
+    <span class="function">query</span>(...componentClasses) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.entities.<span class="function">filter</span>(entity =>
+            componentClasses.<span class="function">every</span>(comp => entity.<span class="function">hasComponent</span>(comp))
+        );
+    }
+}
+
+<span class="comment">// Systems contain the logic</span>
+<span class="keyword">class</span> <span class="function">MovementSystem</span> {
+    <span class="function">update</span>(entities, deltaTime) {
+        <span class="comment">// Process only entities with Position and Velocity</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> entity <span class="keyword">of</span> entities) {
+            <span class="keyword">if</span> (!entity.<span class="function">hasComponent</span>(Position) ||
+                !entity.<span class="function">hasComponent</span>(Velocity)) {
+                <span class="keyword">continue</span>;
+            }
+
+            <span class="keyword">const</span> pos = entity.<span class="function">getComponent</span>(Position);
+            <span class="keyword">const</span> vel = entity.<span class="function">getComponent</span>(Velocity);
+
+            pos.x += vel.x * deltaTime;
+            pos.y += vel.y * deltaTime;
+        }
+    }
+}
+
+<span class="keyword">class</span> <span class="function">RenderSystem</span> {
+    <span class="keyword">constructor</span>(ctx) {
+        <span class="keyword">this</span>.ctx = ctx;
+    }
+
+    <span class="function">update</span>(entities) {
+        <span class="keyword">for</span> (<span class="keyword">const</span> entity <span class="keyword">of</span> entities) {
+            <span class="keyword">if</span> (!entity.<span class="function">hasComponent</span>(Position) ||
+                !entity.<span class="function">hasComponent</span>(Renderable)) {
+                <span class="keyword">continue</span>;
+            }
+
+            <span class="keyword">const</span> pos = entity.<span class="function">getComponent</span>(Position);
+            <span class="keyword">const</span> rend = entity.<span class="function">getComponent</span>(Renderable);
+
+            <span class="keyword">this</span>.ctx.fillStyle = rend.color;
+            <span class="keyword">this</span>.ctx.beginPath();
+            <span class="keyword">this</span>.ctx.<span class="function">arc</span>(pos.x, pos.y, <span class="number">10</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+            <span class="keyword">this</span>.ctx.<span class="function">fill</span>();
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using ECS:</h4>
+                    <pre><code><span class="comment">// Create world</span>
+<span class="keyword">const</span> world = <span class="keyword">new</span> <span class="function">World</span>();
+
+<span class="comment">// Add systems</span>
+world.<span class="function">addSystem</span>(<span class="keyword">new</span> <span class="function">MovementSystem</span>());
+world.<span class="function">addSystem</span>(<span class="keyword">new</span> <span class="function">RenderSystem</span>(ctx));
+
+<span class="comment">// Create a moving, visible entity (like a player)</span>
+world.<span class="function">createEntity</span>()
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Position</span>(<span class="number">100</span>, <span class="number">100</span>))
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Velocity</span>(<span class="number">2</span>, <span class="number">1</span>))
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Renderable</span>(<span class="string">'circle'</span>, <span class="string">'blue'</span>))
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Health</span>(<span class="number">100</span>));
+
+<span class="comment">// Create a static, visible entity (like a tree)</span>
+world.<span class="function">createEntity</span>()
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Position</span>(<span class="number">300</span>, <span class="number">200</span>))
+    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Renderable</span>(<span class="string">'tree'</span>, <span class="string">'green'</span>));
+    <span class="comment">// No Velocity = doesn't move!</span>
+
+<span class="comment">// Game loop</span>
+<span class="keyword">function</span> <span class="function">update</span>(deltaTime) {
+    world.<span class="function">update</span>(deltaTime);
+}
+
+<span class="comment">// Query examples</span>
+<span class="keyword">const</span> movingThings = world.<span class="function">query</span>(Position, Velocity);
+<span class="keyword">const</span> damageable = world.<span class="function">query</span>(Health);</code></pre>
+                </div>
+
+                <div class="thinking-prompt">
+                    <h4>🧠 ECS vs Traditional OOP:</h4>
+                    <p><strong>Traditional (Inheritance):</strong></p>
+                    <pre><code><span class="keyword">class</span> <span class="function">Enemy</span> <span class="keyword">extends</span> <span class="function">GameObject</span> {
+    <span class="comment">// What if we want a moving tree?</span>
+    <span class="comment">// Or a static enemy?</span>
+    <span class="comment">// Inheritance is rigid!</span>
+}</code></pre>
+                    <p><strong>ECS (Composition):</strong></p>
+                    <pre><code><span class="comment">// Mix and match components freely!</span>
+<span class="comment">// Tree that moves? Add Velocity</span>
+<span class="comment">// Enemy that's frozen? Remove Velocity</span>
+entity.<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Frozen</span>(<span class="number">5</span>));</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: ECS in Action</h3>
+            <div class="diagram">
+                <canvas id="ecsDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSpawnMoving">Spawn Moving Entity</button>
+                <button id="btnSpawnStatic">Spawn Static Entity</button>
+                <button id="btnAddVelocity">Add Velocity to All</button>
+                <button id="btnRemoveVelocity">Remove Velocity from All</button>
+                <button id="btnClearECS">Clear All</button>
+            </div>
+            <div id="ecsInfo" class="info-display">Watch how adding/removing components changes behavior!</div>
+
+            <div class="key-point">
+                <strong>💡 Performance Tip:</strong> Real ECS implementations store components in contiguous arrays (Structure of Arrays) for CPU cache efficiency. This demo uses Object-Oriented ECS for clarity, but production engines use data-oriented design!
+            </div>
         </div>
 
         <!-- SOUND PROPAGATION -->
@@ -797,6 +1201,205 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <div class="thinking-prompt">
                 <h4>🤔 Advanced Topic:</h4>
                 <p>Real multiplayer games combine multiple techniques: client prediction + server reconciliation + entity interpolation + lag compensation. Games like Rocket League and Overwatch use sophisticated systems to handle 100+ ms of latency smoothly!</p>
+            </div>
+        </div>
+
+        <!-- DELTA TIME & FIXED TIMESTEP -->
+        <div id="delta-time" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>⏱️ Delta Time & Fixed Timestep</h2>
+
+            <div class="concept-box">
+                <h4>The Problem: Frame Rate Inconsistency</h4>
+                <p>Without delta time, your game runs at different speeds on different computers! A player with 60 FPS moves twice as fast as someone with 30 FPS.</p>
+                <p><strong>The Solution:</strong> Use delta time (dt) to make movement frame-rate independent.</p>
+            </div>
+
+            <h3>Delta Time Basics</h3>
+
+            <details>
+                <summary>📝 Click to see: Delta Time Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// WRONG: Frame-rate dependent (bad!)</span>
+<span class="keyword">function</span> <span class="function">badUpdate</span>() {
+    player.x += <span class="number">5</span>;  <span class="comment">// Moves 5px per frame</span>
+    <span class="comment">// At 60fps: moves 300px/sec</span>
+    <span class="comment">// At 30fps: moves 150px/sec (half speed!)</span>
+}
+
+<span class="comment">// CORRECT: Frame-rate independent (good!)</span>
+<span class="keyword">let</span> lastTime = <span class="number">0</span>;
+
+<span class="keyword">function</span> <span class="function">goodUpdate</span>(currentTime) {
+    <span class="keyword">const</span> deltaTime = (currentTime - lastTime) / <span class="number">1000</span>;  <span class="comment">// Convert to seconds</span>
+    lastTime = currentTime;
+
+    <span class="keyword">const</span> speed = <span class="number">300</span>;  <span class="comment">// pixels per second</span>
+    player.x += speed * deltaTime;
+    <span class="comment">// At 60fps (dt≈0.016): moves 300 * 0.016 = 4.8px per frame = 300px/sec</span>
+    <span class="comment">// At 30fps (dt≈0.033): moves 300 * 0.033 = 10px per frame = 300px/sec</span>
+    <span class="comment">// Same speed regardless of framerate!</span>
+}
+
+<span class="comment">// Game loop with delta time</span>
+<span class="keyword">function</span> <span class="function">gameLoop</span>(timestamp) {
+    <span class="keyword">const</span> deltaTime = (timestamp - lastTime) / <span class="number">1000</span>;
+    lastTime = timestamp;
+
+    <span class="function">update</span>(deltaTime);
+    <span class="function">render</span>();
+
+    <span class="function">requestAnimationFrame</span>(gameLoop);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Fixed Timestep for Physics</h3>
+
+            <div class="concept-box">
+                <h4>Why Fixed Timestep?</h4>
+                <p>Variable delta time can cause physics instability! Small rounding errors accumulate, tunneling occurs, and determinism is lost.</p>
+                <p><strong>Fixed Timestep:</strong> Run physics at a constant rate (like 60Hz), regardless of frame rate. Used in most professional physics engines!</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Fixed Timestep Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">FixedTimestepGame</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.accumulator = <span class="number">0</span>;
+        <span class="keyword">this</span>.fixedTimeStep = <span class="number">1</span> / <span class="number">60</span>;  <span class="comment">// 60 Hz physics</span>
+        <span class="keyword">this</span>.lastTime = <span class="number">0</span>;
+        <span class="keyword">this</span>.maxFrameTime = <span class="number">0.25</span>;  <span class="comment">// Cap at 4 FPS to prevent spiral</span>
+    }
+
+    <span class="function">update</span>(currentTime) {
+        <span class="comment">// Calculate frame time</span>
+        <span class="keyword">let</span> frameTime = (currentTime - <span class="keyword">this</span>.lastTime) / <span class="number">1000</span>;
+        <span class="keyword">this</span>.lastTime = currentTime;
+
+        <span class="comment">// Cap frame time to prevent spiral of death</span>
+        <span class="keyword">if</span> (frameTime > <span class="keyword">this</span>.maxFrameTime) {
+            frameTime = <span class="keyword">this</span>.maxFrameTime;
+        }
+
+        <span class="comment">// Add to accumulator</span>
+        <span class="keyword">this</span>.accumulator += frameTime;
+
+        <span class="comment">// Consume accumulator in fixed-size chunks</span>
+        <span class="keyword">while</span> (<span class="keyword">this</span>.accumulator >= <span class="keyword">this</span>.fixedTimeStep) {
+            <span class="keyword">this</span>.<span class="function">fixedUpdate</span>(<span class="keyword">this</span>.fixedTimeStep);
+            <span class="keyword">this</span>.accumulator -= <span class="keyword">this</span>.fixedTimeStep;
+        }
+
+        <span class="comment">// Interpolation factor for smooth rendering</span>
+        <span class="keyword">const</span> alpha = <span class="keyword">this</span>.accumulator / <span class="keyword">this</span>.fixedTimeStep;
+        <span class="keyword">this</span>.<span class="function">render</span>(alpha);
+    }
+
+    <span class="function">fixedUpdate</span>(dt) {
+        <span class="comment">// Physics updates here (always constant dt)</span>
+        <span class="keyword">this</span>.<span class="function">updatePhysics</span>(dt);
+        <span class="keyword">this</span>.<span class="function">updateGameLogic</span>(dt);
+    }
+
+    <span class="function">render</span>(alpha) {
+        <span class="comment">// Interpolate between current and previous state</span>
+        <span class="comment">// for smooth rendering even if physics runs slower</span>
+        entities.<span class="function">forEach</span>(entity => {
+            <span class="keyword">const</span> renderPos = Vector2D.<span class="function">lerp</span>(
+                entity.previousPosition,
+                entity.position,
+                alpha
+            );
+            entity.<span class="function">draw</span>(renderPos);
+        });
+    }
+}
+
+<span class="comment">// Game loop</span>
+<span class="keyword">const</span> game = <span class="keyword">new</span> <span class="function">FixedTimestepGame</span>();
+
+<span class="keyword">function</span> <span class="function">gameLoop</span>(timestamp) {
+    game.<span class="function">update</span>(timestamp);
+    <span class="function">requestAnimationFrame</span>(gameLoop);
+}
+
+<span class="function">requestAnimationFrame</span>(gameLoop);</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 How it Works:</h4>
+                    <pre><code><span class="comment">// Example timeline:</span>
+<span class="comment">// Frame 1: dt = 16ms (60fps)</span>
+<span class="comment">//   accumulator = 16ms</span>
+<span class="comment">//   Run physics once (16.6ms consumed)</span>
+<span class="comment">//   accumulator = 0ms</span>
+
+<span class="comment">// Frame 2: dt = 33ms (30fps - slow frame!)</span>
+<span class="comment">//   accumulator = 33ms</span>
+<span class="comment">//   Run physics twice (16.6ms × 2 = 33.2ms consumed)</span>
+<span class="comment">//   accumulator = 0ms</span>
+
+<span class="comment">// Frame 3: dt = 8ms (120fps - fast frame!)</span>
+<span class="comment">//   accumulator = 8ms</span>
+<span class="comment">//   Don't run physics (not enough time)</span>
+<span class="comment">//   accumulator = 8ms (carry over)</span>
+
+<span class="comment">// Result: Physics ALWAYS runs at 60Hz,</span>
+<span class="comment">// regardless of rendering framerate!</span></code></pre>
+                </div>
+            </details>
+
+            <h3>Comparison Table</h3>
+
+            <div class="concept-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background: rgba(255,255,255,0.1);">
+                        <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Approach</th>
+                        <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Pros</th>
+                        <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Cons</th>
+                        <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Use Case</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);"><strong>No Delta Time</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Simple</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Inconsistent speed</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Never!</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);"><strong>Variable Delta Time</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Simple, smooth</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Physics instability</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Simple games, UI</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);"><strong>Fixed Timestep</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Stable physics, deterministic</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">More complex</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.2);">Physics games, multiplayer</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="key-point">
+                <strong>💡 Best Practice:</strong>
+                <ul>
+                    <li>Use <strong>Variable Delta Time</strong> for simple games, animations, and UI elements</li>
+                    <li>Use <strong>Fixed Timestep</strong> for physics, platformers, and multiplayer games</li>
+                    <li>Always cap your delta time to prevent the "spiral of death" (when the game can't keep up)</li>
+                    <li>Professional engines (Unity, Unreal) use fixed timestep for physics by default!</li>
+                </ul>
+            </div>
+
+            <div class="challenge-box">
+                <h4>🏆 Challenge: Implement Both!</h4>
+                <p>Try creating a game with:</p>
+                <ul>
+                    <li>Fixed timestep physics (60Hz) for collision and movement</li>
+                    <li>Variable delta time for particle effects and UI animations</li>
+                    <li>Interpolated rendering for smooth visuals</li>
+                </ul>
             </div>
         </div>
 

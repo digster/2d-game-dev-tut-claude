@@ -544,3 +544,597 @@ if (particleCanvas) {
 
     animateParticles();
 }
+
+// ===================================
+// DEMO: Spring Physics
+// ===================================
+const springCanvas = document.getElementById('springDemo');
+if (springCanvas) {
+    const ctx = springCanvas.getContext('2d');
+    const info = document.getElementById('springInfo');
+    let mousePos = new Vector2D(400, 250);
+    let stiffness = 0.1;
+    let damping = 0.8;
+
+    // Spring object
+    const spring = {
+        position: new Vector2D(400, 250),
+        velocity: new Vector2D(0, 0),
+        target: new Vector2D(400, 250)
+    };
+
+    springCanvas.addEventListener('mousemove', (e) => {
+        const rect = springCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+        spring.target = mousePos.copy();
+    });
+
+    // Button handlers
+    const btnTight = document.getElementById('btnTightSpring');
+    const btnLoose = document.getElementById('btnLooseSpring');
+    const btnBouncy = document.getElementById('btnBouncySpring');
+    const btnStiff = document.getElementById('btnStiffSpring');
+
+    if (btnTight) btnTight.addEventListener('click', () => { stiffness = 0.2; damping = 0.8; });
+    if (btnLoose) btnLoose.addEventListener('click', () => { stiffness = 0.05; damping = 0.9; });
+    if (btnBouncy) btnBouncy.addEventListener('click', () => { stiffness = 0.15; damping = 0.6; });
+    if (btnStiff) btnStiff.addEventListener('click', () => { stiffness = 0.3; damping = 0.95; });
+
+    function animateSpring() {
+        clearCanvas(ctx, springCanvas.width, springCanvas.height);
+
+        // Update spring physics
+        const displacement = spring.target.subtract(spring.position);
+        const springForce = displacement.multiply(stiffness);
+
+        spring.velocity.add(springForce);
+        spring.velocity.multiply(damping);
+        spring.position.add(spring.velocity);
+
+        // Draw spring line
+        ctx.strokeStyle = 'rgba(79, 195, 247, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(spring.position.x, spring.position.y);
+        ctx.lineTo(spring.target.x, spring.target.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw target (mouse)
+        ctx.fillStyle = '#ffa726';
+        ctx.beginPath();
+        ctx.arc(spring.target.x, spring.target.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw spring object
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(spring.position.x, spring.position.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw velocity indicator
+        const velScale = 5;
+        ctx.strokeStyle = '#66bb6a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(spring.position.x, spring.position.y);
+        ctx.lineTo(
+            spring.position.x + spring.velocity.x * velScale,
+            spring.position.y + spring.velocity.y * velScale
+        );
+        ctx.stroke();
+
+        // Info
+        const distance = spring.position.distance(spring.target);
+        const speed = spring.velocity.length();
+        info.textContent = `Stiffness: ${stiffness.toFixed(2)} | Damping: ${damping.toFixed(2)} | Distance: ${distance.toFixed(1)} | Speed: ${speed.toFixed(2)}`;
+
+        requestAnimationFrame(animateSpring);
+    }
+
+    animateSpring();
+}
+
+// ===================================
+// DEMO: Friction Comparison
+// ===================================
+const frictionCanvas = document.getElementById('frictionDemo');
+if (frictionCanvas) {
+    const ctx = frictionCanvas.getContext('2d');
+    const info = document.getElementById('frictionInfo');
+    let objects = [];
+    let friction = 0.92;
+
+    class FrictionObject {
+        constructor(x, y, vx, vy) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(vx, vy);
+            this.radius = 15;
+            this.color = '#4fc3f7';
+        }
+
+        update() {
+            // Apply friction
+            this.velocity.multiply(friction);
+
+            // Stop if very slow
+            if (this.velocity.length() < 0.1) {
+                this.velocity.multiply(0);
+            }
+
+            this.position.add(this.velocity);
+
+            // Bounce off walls
+            if (this.position.x - this.radius < 0 || this.position.x + this.radius > frictionCanvas.width) {
+                this.velocity.x *= -0.8;
+                this.position.x = Math.max(this.radius, Math.min(frictionCanvas.width - this.radius, this.position.x));
+            }
+            if (this.position.y - this.radius < 0 || this.position.y + this.radius > frictionCanvas.height) {
+                this.velocity.y *= -0.8;
+                this.position.y = Math.max(this.radius, Math.min(frictionCanvas.height - this.radius, this.position.y));
+            }
+        }
+
+        draw(ctx) {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw velocity line
+            if (this.velocity.length() > 0.5) {
+                ctx.strokeStyle = '#66bb6a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.position.x, this.position.y);
+                ctx.lineTo(
+                    this.position.x + this.velocity.x * 3,
+                    this.position.y + this.velocity.y * 3
+                );
+                ctx.stroke();
+            }
+        }
+    }
+
+    frictionCanvas.addEventListener('click', (e) => {
+        const rect = frictionCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 10;
+        objects.push(new FrictionObject(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed));
+    });
+
+    // Button handlers
+    const btnNo = document.getElementById('btnNoFriction');
+    const btnLow = document.getElementById('btnLowFriction');
+    const btnMedium = document.getElementById('btnMediumFriction');
+    const btnHigh = document.getElementById('btnHighFriction');
+
+    if (btnNo) btnNo.addEventListener('click', () => friction = 1.0);
+    if (btnLow) btnLow.addEventListener('click', () => friction = 0.99);
+    if (btnMedium) btnMedium.addEventListener('click', () => friction = 0.92);
+    if (btnHigh) btnHigh.addEventListener('click', () => friction = 0.80);
+
+    function animateFriction() {
+        clearCanvas(ctx, frictionCanvas.width, frictionCanvas.height);
+
+        // Draw surface types
+        const surfaceNames = {
+            1.0: 'No Friction (Space)',
+            0.99: 'Ice',
+            0.92: 'Grass',
+            0.80: 'Mud'
+        };
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(surfaceNames[friction] || 'Custom', frictionCanvas.width / 2, 30);
+
+        // Update and draw objects
+        objects.forEach(obj => {
+            obj.update();
+            obj.draw(ctx);
+        });
+
+        // Remove stopped objects after a while
+        objects = objects.filter(obj => obj.velocity.length() > 0.01 || Date.now() % 5000 < 100);
+
+        const movingCount = objects.filter(obj => obj.velocity.length() > 0.5).length;
+        info.textContent = `Friction: ${friction.toFixed(2)} | Objects: ${objects.length} | Moving: ${movingCount}`;
+
+        requestAnimationFrame(animateFriction);
+    }
+
+    animateFriction();
+}
+
+// ===================================
+// DEMO: Bouncing & Reflection
+// ===================================
+const reflectionCanvas = document.getElementById('reflectionDemo');
+if (reflectionCanvas) {
+    const ctx = reflectionCanvas.getContext('2d');
+    const info = document.getElementById('reflectionInfo');
+    let balls = [];
+    let bounciness = 0.8;
+    let mode = 'normal';
+
+    class BouncingBall {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 5 + Math.random() * 3;
+            this.velocity = new Vector2D(Math.cos(angle) * speed, Math.sin(angle) * speed);
+            this.radius = 10 + Math.random() * 10;
+            this.mass = this.radius / 10;
+            this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+        }
+
+        update() {
+            // Gravity
+            this.velocity.y += 0.3;
+
+            this.position.add(this.velocity);
+
+            // Bounce off walls
+            if (this.position.x + this.radius > reflectionCanvas.width) {
+                this.position.x = reflectionCanvas.width - this.radius;
+                this.velocity.x *= -bounciness;
+            }
+            if (this.position.x - this.radius < 0) {
+                this.position.x = this.radius;
+                this.velocity.x *= -bounciness;
+            }
+            if (this.position.y + this.radius > reflectionCanvas.height) {
+                this.position.y = reflectionCanvas.height - this.radius;
+                this.velocity.y *= -bounciness;
+            }
+            if (this.position.y - this.radius < 0) {
+                this.position.y = this.radius;
+                this.velocity.y *= -bounciness;
+            }
+        }
+
+        draw(ctx) {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        collidesWith(other) {
+            const distance = this.position.distance(other.position);
+            return distance < this.radius + other.radius;
+        }
+
+        bounceOff(other) {
+            const normal = this.position.subtract(other.position).normalize();
+            const relativeVel = this.velocity.subtract(other.velocity);
+            const speed = relativeVel.dot(normal);
+
+            if (speed > 0) return;
+
+            const impulse = (2 * speed) / (this.mass + other.mass);
+
+            this.velocity.subtract(normal.copy().multiply(impulse * other.mass * bounciness));
+            other.velocity.add(normal.copy().multiply(impulse * this.mass * bounciness));
+
+            // Separate overlapping balls
+            const overlap = (this.radius + other.radius) - this.position.distance(other.position);
+            if (overlap > 0) {
+                const separation = normal.copy().multiply(overlap / 2);
+                this.position.add(separation);
+                other.position.subtract(separation);
+            }
+        }
+    }
+
+    reflectionCanvas.addEventListener('click', (e) => {
+        const rect = reflectionCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        balls.push(new BouncingBall(x, y));
+    });
+
+    // Button handlers
+    const btnPerfect = document.getElementById('btnPerfectBounce');
+    const btnNormal = document.getElementById('btnNormalBounce');
+    const btnDead = document.getElementById('btnDeadBounce');
+    const btnCircle = document.getElementById('btnCircleBounce');
+
+    if (btnPerfect) btnPerfect.addEventListener('click', () => { bounciness = 1.0; mode = 'normal'; });
+    if (btnNormal) btnNormal.addEventListener('click', () => { bounciness = 0.8; mode = 'normal'; });
+    if (btnDead) btnDead.addEventListener('click', () => { bounciness = 0.3; mode = 'normal'; });
+    if (btnCircle) btnCircle.addEventListener('click', () => { bounciness = 0.9; mode = 'circle'; });
+
+    function animateReflection() {
+        clearCanvas(ctx, reflectionCanvas.width, reflectionCanvas.height);
+
+        // Update balls
+        balls.forEach(ball => ball.update());
+
+        // Circle-to-circle collisions
+        if (mode === 'circle') {
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    if (balls[i].collidesWith(balls[j])) {
+                        balls[i].bounceOff(balls[j]);
+                    }
+                }
+            }
+        }
+
+        // Draw balls
+        balls.forEach(ball => ball.draw(ctx));
+
+        // Info
+        info.textContent = `Bounciness: ${bounciness.toFixed(1)} | Balls: ${balls.length} | Mode: ${mode}`;
+
+        requestAnimationFrame(animateReflection);
+    }
+
+    animateReflection();
+}
+
+// ===================================
+// DEMO: Advanced Particle Effects
+// ===================================
+const advancedParticlesCanvas = document.getElementById('advancedParticlesDemo');
+if (advancedParticlesCanvas) {
+    const ctx = advancedParticlesCanvas.getContext('2d');
+    const info = document.getElementById('advancedParticlesInfo');
+    let particles = [];
+    let emitters = [];
+
+    class FireParticle {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D((Math.random() - 0.5) * 1, -Math.random() * 3 - 1);
+            this.size = Math.random() * 8 + 4;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.02 + 0.02;
+        }
+
+        update() {
+            this.life -= this.decay;
+            this.velocity.y -= 0.05; // Float upward
+            this.size *= 0.98;
+            this.position.add(this.velocity);
+            return this.life > 0;
+        }
+
+        draw(ctx) {
+            const colorIndex = Math.floor((1 - this.life) * 2);
+            const colors = [
+                { r: 255, g: 255, b: 100 },
+                { r: 255, g: 150, b: 50 },
+                { r: 255, g: 50, b: 50 }
+            ];
+            const color = colors[Math.min(colorIndex, 2)];
+
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    class SmokeParticle {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D((Math.random() - 0.5) * 0.6, -Math.random() * 0.8 - 0.3);
+            this.size = Math.random() * 12 + 8;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.01 + 0.005;
+            this.angle = Math.random() * Math.PI * 2;
+            this.swirl = (Math.random() - 0.5) * 0.04;
+        }
+
+        update() {
+            this.life -= this.decay;
+            this.angle += this.swirl;
+            this.velocity.x += Math.cos(this.angle) * 0.05;
+            this.size += 0.2;
+            this.position.add(this.velocity);
+            return this.life > 0;
+        }
+
+        draw(ctx) {
+            const gray = Math.floor(100 + this.life * 100);
+            ctx.globalAlpha = this.life * 0.4;
+            ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    class SparkleParticle {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 3 + 2;
+            this.velocity = new Vector2D(Math.cos(angle) * speed, Math.sin(angle) * speed);
+            this.size = Math.random() * 4 + 2;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.03 + 0.03;
+            this.hue = Math.random() * 360;
+            this.twinkle = 0;
+        }
+
+        update() {
+            this.life -= this.decay;
+            this.velocity.multiply(0.95);
+            this.twinkle += 0.2;
+            this.currentSize = this.size * Math.abs(Math.sin(this.twinkle));
+            this.position.add(this.velocity);
+            return this.life > 0;
+        }
+
+        draw(ctx) {
+            ctx.globalAlpha = this.life;
+            const s = this.currentSize;
+            ctx.strokeStyle = `hsl(${this.hue}, 100%, 90%)`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.position.x - s, this.position.y);
+            ctx.lineTo(this.position.x + s, this.position.y);
+            ctx.moveTo(this.position.x, this.position.y - s);
+            ctx.lineTo(this.position.x, this.position.y + s);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    class RainParticle {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D((Math.random() - 0.5) * 2, Math.random() * 5 + 5);
+            this.length = Math.random() * 10 + 10;
+        }
+
+        update() {
+            this.velocity.y += 0.2;
+            this.position.add(this.velocity);
+
+            if (this.position.y >= advancedParticlesCanvas.height - 10) {
+                // Create splash
+                for (let i = 0; i < 3; i++) {
+                    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 2;
+                    const speed = Math.random() * 2 + 1;
+                    const splash = new SparkleParticle(this.position.x, this.position.y);
+                    splash.velocity = new Vector2D(Math.cos(angle) * speed, Math.sin(angle) * speed);
+                    splash.hue = 200;
+                    splash.size = 2;
+                    particles.push(splash);
+                }
+                return false;
+            }
+            return this.position.y < advancedParticlesCanvas.height;
+        }
+
+        draw(ctx) {
+            ctx.strokeStyle = 'rgba(150, 150, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.position.x, this.position.y);
+            ctx.lineTo(this.position.x - this.velocity.x * 0.3, this.position.y - this.length);
+            ctx.stroke();
+        }
+    }
+
+    class Emitter {
+        constructor(x, y, type, rate) {
+            this.position = new Vector2D(x, y);
+            this.type = type;
+            this.rate = rate;
+            this.timer = 0;
+        }
+
+        update() {
+            this.timer++;
+            if (this.timer >= this.rate) {
+                this.timer = 0;
+                this.emit();
+            }
+        }
+
+        emit() {
+            let particle;
+            switch(this.type) {
+                case 'fire':
+                    particle = new FireParticle(this.position.x, this.position.y);
+                    break;
+                case 'smoke':
+                    particle = new SmokeParticle(this.position.x, this.position.y);
+                    break;
+                case 'sparkles':
+                    particle = new SparkleParticle(this.position.x, this.position.y);
+                    break;
+                case 'rain':
+                    particle = new RainParticle(this.position.x, this.position.y);
+                    break;
+            }
+            if (particle) particles.push(particle);
+        }
+    }
+
+    // Button handlers
+    const btnFire = document.getElementById('btnFire');
+    const btnSmoke = document.getElementById('btnSmoke');
+    const btnSparkles = document.getElementById('btnSparkles');
+    const btnRain = document.getElementById('btnRain');
+    const btnCombined = document.getElementById('btnCombined');
+    const btnClear = document.getElementById('btnClearParticles');
+
+    if (btnFire) btnFire.addEventListener('click', () => {
+        emitters = [];
+        emitters.push(new Emitter(400, 450, 'fire', 2));
+    });
+    if (btnSmoke) btnSmoke.addEventListener('click', () => {
+        emitters = [];
+        emitters.push(new Emitter(400, 450, 'smoke', 3));
+    });
+    if (btnSparkles) btnSparkles.addEventListener('click', () => {
+        emitters = [];
+        emitters.push(new Emitter(400, 250, 'sparkles', 1));
+    });
+    if (btnRain) btnRain.addEventListener('click', () => {
+        emitters = [];
+        for (let i = 0; i < 10; i++) {
+            emitters.push(new Emitter(i * 80 + 40, -10, 'rain', 5 + Math.random() * 10));
+        }
+    });
+    if (btnCombined) btnCombined.addEventListener('click', () => {
+        emitters = [];
+        emitters.push(new Emitter(400, 450, 'fire', 2));
+        emitters.push(new Emitter(400, 420, 'smoke', 4));
+        emitters.push(new Emitter(400, 450, 'sparkles', 5));
+    });
+    if (btnClear) btnClear.addEventListener('click', () => {
+        particles = [];
+        emitters = [];
+    });
+
+    advancedParticlesCanvas.addEventListener('click', (e) => {
+        const rect = advancedParticlesCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        for (let i = 0; i < 20; i++) {
+            particles.push(new SparkleParticle(x, y));
+        }
+    });
+
+    function animateAdvancedParticles() {
+        clearCanvas(ctx, advancedParticlesCanvas.width, advancedParticlesCanvas.height);
+
+        // Update emitters
+        emitters.forEach(emitter => emitter.update());
+
+        // Update and draw particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            if (!particles[i].update()) {
+                particles.splice(i, 1);
+            } else {
+                particles[i].draw(ctx);
+            }
+        }
+
+        info.textContent = `Particles: ${particles.length} | Emitters: ${emitters.length}`;
+
+        requestAnimationFrame(animateAdvancedParticles);
+    }
+
+    animateAdvancedParticles();
+}

@@ -26,9 +26,12 @@
                 <li><a href="#quaternions">Quaternions: 3D Rotations</a></li>
                 <li><a href="#bezier">Bézier Curves & Splines</a></li>
                 <li><a href="#pathfinding">A* Pathfinding</a></li>
+                <li><a href="#flow-fields">Flow Fields (Crowd Movement)</a></li>
                 <li><a href="#state-machines">State Machines</a></li>
+                <li><a href="#behavior-trees">Behavior Trees (Advanced AI)</a></li>
                 <li><a href="#ik">Inverse Kinematics</a></li>
                 <li><a href="#shadows">Shadow Casting & Vision</a></li>
+                <li><a href="#spatial-hash">Spatial Hashing (Optimization)</a></li>
             </ul>
         </div>
 
@@ -451,6 +454,205 @@
             </div>
         </div>
 
+        <!-- FLOW FIELDS -->
+        <div id="flow-fields" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🌊 Flow Fields (Crowd Movement)</h2>
+
+            <div class="concept-box">
+                <h4>What are Flow Fields?</h4>
+                <p>Flow fields enable hundreds or thousands of units to pathfind efficiently toward a goal. Instead of each unit calculating its own path, we create a "flow" map that shows every grid cell which direction to move.</p>
+                <p><strong>Perfect for:</strong></p>
+                <ul>
+                    <li>RTS games with many units moving to same location</li>
+                    <li>Tower defense with waves of enemies</li>
+                    <li>Crowd simulations</li>
+                    <li>Zombie hordes converging on player</li>
+                </ul>
+                <p><strong>How it works:</strong> Run pathfinding ONCE from the goal to create a vector field. Each unit simply follows the arrow in its current grid cell!</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Flow Field Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">FlowField</span> {
+    <span class="keyword">constructor</span>(width, height, cellSize) {
+        <span class="keyword">this</span>.width = width;
+        <span class="keyword">this</span>.height = height;
+        <span class="keyword">this</span>.cellSize = cellSize;
+        <span class="keyword">this</span>.cols = Math.<span class="function">ceil</span>(width / cellSize);
+        <span class="keyword">this</span>.rows = Math.<span class="function">ceil</span>(height / cellSize);
+
+        <span class="comment">// Cost field: how difficult to traverse each cell</span>
+        <span class="keyword">this</span>.costField = [];
+        <span class="comment">// Integration field: distance to goal</span>
+        <span class="keyword">this</span>.integrationField = [];
+        <span class="comment">// Flow field: direction to move</span>
+        <span class="keyword">this</span>.flowField = [];
+
+        <span class="keyword">this</span>.<span class="function">initializeFields</span>();
+    }
+
+    <span class="function">initializeFields</span>() {
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
+            <span class="keyword">this</span>.costField[y] = [];
+            <span class="keyword">this</span>.integrationField[y] = [];
+            <span class="keyword">this</span>.flowField[y] = [];
+
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
+                <span class="keyword">this</span>.costField[y][x] = <span class="number">1</span>;  <span class="comment">// Default cost</span>
+                <span class="keyword">this</span>.integrationField[y][x] = <span class="number">65535</span>;  <span class="comment">// Max value</span>
+                <span class="keyword">this</span>.flowField[y][x] = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+            }
+        }
+    }
+
+    <span class="function">setObstacle</span>(x, y) {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(x, y)) {
+            <span class="keyword">this</span>.costField[y][x] = <span class="number">255</span>;  <span class="comment">// Impassable</span>
+        }
+    }
+
+    <span class="function">generateFlowField</span>(goalX, goalY) {
+        <span class="comment">// Step 1: Create integration field (distance from goal)</span>
+        <span class="keyword">this</span>.<span class="function">createIntegrationField</span>(goalX, goalY);
+
+        <span class="comment">// Step 2: Create flow field (direction to move)</span>
+        <span class="keyword">this</span>.<span class="function">createFlowField</span>();
+    }
+
+    <span class="function">createIntegrationField</span>(goalX, goalY) {
+        <span class="comment">// Reset integration field</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
+                <span class="keyword">this</span>.integrationField[y][x] = <span class="number">65535</span>;
+            }
+        }
+
+        <span class="comment">// Goal has distance 0</span>
+        <span class="keyword">this</span>.integrationField[goalY][goalX] = <span class="number">0</span>;
+
+        <span class="comment">// Dijkstra's algorithm from goal</span>
+        <span class="keyword">const</span> openList = [{x: goalX, y: goalY}];
+
+        <span class="keyword">while</span> (openList.length > <span class="number">0</span>) {
+            <span class="keyword">const</span> current = openList.<span class="function">shift</span>();
+            <span class="keyword">const</span> neighbors = <span class="keyword">this</span>.<span class="function">getNeighbors</span>(current.x, current.y);
+
+            <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
+                <span class="keyword">const</span> cost = <span class="keyword">this</span>.costField[neighbor.y][neighbor.x];
+                <span class="keyword">if</span> (cost === <span class="number">255</span>) <span class="keyword">continue</span>;  <span class="comment">// Impassable</span>
+
+                <span class="keyword">const</span> newCost = <span class="keyword">this</span>.integrationField[current.y][current.x] + cost;
+
+                <span class="keyword">if</span> (newCost < <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x]) {
+                    <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x] = newCost;
+                    openList.<span class="function">push</span>(neighbor);
+                }
+            }
+        }
+    }
+
+    <span class="function">createFlowField</span>() {
+        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
+                <span class="keyword">if</span> (<span class="keyword">this</span>.costField[y][x] === <span class="number">255</span>) <span class="keyword">continue</span>;
+
+                <span class="comment">// Find neighbor with lowest integration value</span>
+                <span class="keyword">let</span> lowestCost = <span class="keyword">this</span>.integrationField[y][x];
+                <span class="keyword">let</span> bestDirection = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+
+                <span class="keyword">const</span> neighbors = <span class="keyword">this</span>.<span class="function">getNeighbors</span>(x, y);
+                <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
+                    <span class="keyword">const</span> cost = <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x];
+                    <span class="keyword">if</span> (cost < lowestCost) {
+                        lowestCost = cost;
+                        bestDirection = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+                            neighbor.x - x,
+                            neighbor.y - y
+                        ).<span class="function">normalize</span>();
+                    }
+                }
+
+                <span class="keyword">this</span>.flowField[y][x] = bestDirection;
+            }
+        }
+    }
+
+    <span class="function">getFlowDirection</span>(worldX, worldY) {
+        <span class="keyword">const</span> x = Math.<span class="function">floor</span>(worldX / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> y = Math.<span class="function">floor</span>(worldY / <span class="keyword">this</span>.cellSize);
+
+        <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(x, y)) {
+            <span class="keyword">return</span> <span class="keyword">this</span>.flowField[y][x];
+        }
+
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+    }
+
+    <span class="function">getNeighbors</span>(x, y) {
+        <span class="keyword">const</span> neighbors = [];
+        <span class="keyword">const</span> directions = [
+            {x: <span class="number">1</span>, y: <span class="number">0</span>}, {x: -<span class="number">1</span>, y: <span class="number">0</span>},
+            {x: <span class="number">0</span>, y: <span class="number">1</span>}, {x: <span class="number">0</span>, y: -<span class="number">1</span>}
+        ];
+
+        <span class="keyword">for</span> (<span class="keyword">const</span> dir <span class="keyword">of</span> directions) {
+            <span class="keyword">const</span> nx = x + dir.x;
+            <span class="keyword">const</span> ny = y + dir.y;
+            <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(nx, ny)) {
+                neighbors.<span class="function">push</span>({x: nx, y: ny});
+            }
+        }
+
+        <span class="keyword">return</span> neighbors;
+    }
+
+    <span class="function">inBounds</span>(x, y) {
+        <span class="keyword">return</span> x >= <span class="number">0</span> && x < <span class="keyword">this</span>.cols && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.rows;
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using Flow Fields:</h4>
+                    <pre><code><span class="comment">// Create flow field</span>
+<span class="keyword">const</span> flowField = <span class="keyword">new</span> <span class="function">FlowField</span>(<span class="number">800</span>, <span class="number">600</span>, <span class="number">20</span>);
+
+<span class="comment">// Add obstacles</span>
+flowField.<span class="function">setObstacle</span>(<span class="number">10</span>, <span class="number">10</span>);
+flowField.<span class="function">setObstacle</span>(<span class="number">10</span>, <span class="number">11</span>);
+
+<span class="comment">// Generate field toward goal</span>
+flowField.<span class="function">generateFlowField</span>(<span class="number">30</span>, <span class="number">20</span>);
+
+<span class="comment">// Each unit follows the flow</span>
+units.<span class="function">forEach</span>(unit => {
+    <span class="keyword">const</span> direction = flowField.<span class="function">getFlowDirection</span>(unit.x, unit.y);
+    unit.velocity = direction.<span class="function">multiply</span>(unit.maxSpeed);
+    unit.<span class="function">update</span>();
+});</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Flow Field Visualization</h3>
+            <div class="diagram">
+                <canvas id="flowFieldDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSetGoalFlow">Set Goal</button>
+                <button id="btnDrawObstacles">Draw Obstacles</button>
+                <button id="btnSpawnUnits">Spawn 50 Units</button>
+                <button id="btnClearFlowField">Clear All</button>
+                <button id="btnToggleArrows">Toggle Arrows</button>
+            </div>
+            <div id="flowFieldInfo" class="info-display">Click to set goal, drag to draw obstacles, then spawn units</div>
+
+            <div class="key-point">
+                <strong>💡 Performance:</strong> Flow fields are calculated once per goal change. 1000 units following a flow field is just as fast as 10 units! Compare this to A* where each unit needs its own path.
+            </div>
+        </div>
+
         <!-- STATE MACHINES -->
         <div id="state-machines" class="section">
             <span class="level-indicator level-advanced">ADVANCED</span>
@@ -557,6 +759,207 @@
                     <li><strong>Call for Help:</strong> Alert nearby allies when player is spotted</li>
                     <li><strong>Celebrate:</strong> Victory dance when player is defeated</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- BEHAVIOR TREES -->
+        <div id="behavior-trees" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🌳 Behavior Trees (Advanced AI)</h2>
+
+            <div class="concept-box">
+                <h4>What are Behavior Trees?</h4>
+                <p>Behavior Trees are a more flexible alternative to State Machines for AI decision-making. They organize behaviors into a tree structure that's evaluated from top to bottom.</p>
+                <p><strong>Why use Behavior Trees?</strong></p>
+                <ul>
+                    <li>More modular and reusable than state machines</li>
+                    <li>Easier to visualize and debug</li>
+                    <li>Can handle complex decision-making</li>
+                    <li>Used in many AAA games (Halo, Sp</li>ore, etc.)</li>
+                </ul>
+                <p><strong>Node Types:</strong></p>
+                <ul>
+                    <li><strong>Composite Nodes:</strong> Have children, control flow
+                        <ul>
+                            <li><strong>Sequence:</strong> Run children until one fails (AND logic)</li>
+                            <li><strong>Selector:</strong> Run children until one succeeds (OR logic)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Decorator Nodes:</strong> Modify behavior of child (Repeat, Invert, etc.)</li>
+                    <li><strong>Leaf Nodes:</strong> Actions (Move, Attack) or Conditions (IsPlayerNear?)</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Behavior Tree Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Base Node class</span>
+<span class="keyword">class</span> <span class="function">BTNode</span> {
+    <span class="comment">// Returns: SUCCESS, FAILURE, or RUNNING</span>
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+    }
+}
+
+<span class="comment">// Sequence: Runs children until one fails</span>
+<span class="keyword">class</span> <span class="function">Sequence</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
+    <span class="keyword">constructor</span>(...children) {
+        <span class="keyword">super</span>();
+        <span class="keyword">this</span>.children = children;
+        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+    }
+
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">while</span> (<span class="keyword">this</span>.currentChild < <span class="keyword">this</span>.children.length) {
+            <span class="keyword">const</span> result = <span class="keyword">this</span>.children[<span class="keyword">this</span>.currentChild].<span class="function">execute</span>(agent);
+
+            <span class="keyword">if</span> (result === <span class="string">'FAILURE'</span>) {
+                <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+                <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+            }
+
+            <span class="keyword">if</span> (result === <span class="string">'RUNNING'</span>) {
+                <span class="keyword">return</span> <span class="string">'RUNNING'</span>;
+            }
+
+            <span class="keyword">this</span>.currentChild++;
+        }
+
+        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+        <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
+    }
+}
+
+<span class="comment">// Selector: Runs children until one succeeds</span>
+<span class="keyword">class</span> <span class="function">Selector</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
+    <span class="keyword">constructor</span>(...children) {
+        <span class="keyword">super</span>();
+        <span class="keyword">this</span>.children = children;
+        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+    }
+
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">while</span> (<span class="keyword">this</span>.currentChild < <span class="keyword">this</span>.children.length) {
+            <span class="keyword">const</span> result = <span class="keyword">this</span>.children[<span class="keyword">this</span>.currentChild].<span class="function">execute</span>(agent);
+
+            <span class="keyword">if</span> (result === <span class="string">'SUCCESS'</span>) {
+                <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+                <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
+            }
+
+            <span class="keyword">if</span> (result === <span class="string">'RUNNING'</span>) {
+                <span class="keyword">return</span> <span class="string">'RUNNING'</span>;
+            }
+
+            <span class="keyword">this</span>.currentChild++;
+        }
+
+        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+        <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+    }
+}
+
+<span class="comment">// Condition Node: Checks a condition</span>
+<span class="keyword">class</span> <span class="function">Condition</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
+    <span class="keyword">constructor</span>(conditionFn) {
+        <span class="keyword">super</span>();
+        <span class="keyword">this</span>.conditionFn = conditionFn;
+    }
+
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">conditionFn</span>(agent) ? <span class="string">'SUCCESS'</span> : <span class="string">'FAILURE'</span>;
+    }
+}
+
+<span class="comment">// Action Node: Performs an action</span>
+<span class="keyword">class</span> <span class="function">Action</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
+    <span class="keyword">constructor</span>(actionFn) {
+        <span class="keyword">super</span>();
+        <span class="keyword">this</span>.actionFn = actionFn;
+    }
+
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">actionFn</span>(agent);
+    }
+}
+
+<span class="comment">// Decorator: Inverts result</span>
+<span class="keyword">class</span> <span class="function">Inverter</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
+    <span class="keyword">constructor</span>(child) {
+        <span class="keyword">super</span>();
+        <span class="keyword">this</span>.child = child;
+    }
+
+    <span class="function">execute</span>(agent) {
+        <span class="keyword">const</span> result = <span class="keyword">this</span>.child.<span class="function">execute</span>(agent);
+        <span class="keyword">if</span> (result === <span class="string">'SUCCESS'</span>) <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+        <span class="keyword">if</span> (result === <span class="string">'FAILURE'</span>) <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
+        <span class="keyword">return</span> result;
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Enemy AI Behavior Tree</h4>
+                    <pre><code><span class="comment">// Build behavior tree for enemy</span>
+<span class="keyword">const</span> enemyBehavior = <span class="keyword">new</span> <span class="function">Selector</span>(
+    <span class="comment">// Option 1: Attack if player is close</span>
+    <span class="keyword">new</span> <span class="function">Sequence</span>(
+        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.<span class="function">isPlayerNear</span>()),
+        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">attack</span>())
+    ),
+
+    <span class="comment">// Option 2: Chase if player is visible</span>
+    <span class="keyword">new</span> <span class="function">Sequence</span>(
+        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.<span class="function">canSeePlayer</span>()),
+        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">chasePlayer</span>())
+    ),
+
+    <span class="comment">// Option 3: Patrol if health is good</span>
+    <span class="keyword">new</span> <span class="function">Sequence</span>(
+        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.health > <span class="number">50</span>),
+        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">patrol</span>())
+    ),
+
+    <span class="comment">// Option 4: Flee if health is low (fallback)</span>
+    <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">flee</span>())
+);
+
+<span class="comment">// Run behavior tree each frame</span>
+<span class="keyword">function</span> <span class="function">update</span>() {
+    enemies.<span class="function">forEach</span>(enemy => {
+        enemyBehavior.<span class="function">execute</span>(enemy);
+    });
+}</code></pre>
+                </div>
+
+                <div class="thinking-prompt">
+                    <h4>🧠 How it works:</h4>
+                    <p>The Selector tries each option from top to bottom:</p>
+                    <ol>
+                        <li>Try to attack (only if player is near)</li>
+                        <li>If that fails, try to chase (only if player is visible)</li>
+                        <li>If that fails, try to patrol (only if health is good)</li>
+                        <li>If everything else fails, flee!</li>
+                    </ol>
+                    <p>This creates intelligent, prioritized decision-making!</p>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Behavior Tree Visualization</h3>
+            <div class="diagram">
+                <canvas id="behaviorTreeDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSpawnEnemy">Spawn Enemy</button>
+                <button id="btnToggleTree">Show Tree</button>
+                <button id="btnStepBehavior">Step Through</button>
+                <button id="btnResetBehavior">Reset</button>
+            </div>
+            <div id="behaviorTreeInfo" class="info-display">Use WASD to move. Watch enemies make decisions!</div>
+
+            <div class="key-point">
+                <strong>💡 Behavior Trees vs State Machines:</strong> Use State Machines for simple, well-defined states (like player movement). Use Behavior Trees for complex AI decision-making where you need priorities and fallbacks!
             </div>
         </div>
 
@@ -813,6 +1216,190 @@
             <div class="challenge-box">
                 <h4>🏆 Challenge: Field of View</h4>
                 <p>Modify the shadow caster to only show a limited field of view (like 90 degrees). This is great for stealth games where enemies have cone-shaped vision!</p>
+            </div>
+        </div>
+
+        <!-- SPATIAL HASHING -->
+        <div id="spatial-hash" class="section">
+            <span class="level-indicator level-advanced">ADVANCED</span>
+            <h2>🔍 Spatial Hashing (Optimization)</h2>
+
+            <div class="concept-box">
+                <h4>What is Spatial Hashing?</h4>
+                <p>Spatial hashing is a technique to quickly find nearby objects without checking every object. It's simpler than QuadTrees but extremely effective for many scenarios!</p>
+                <p><strong>How it works:</strong> Divide the world into a grid. Each object goes into one or more grid cells. To find nearby objects, only check the cells near you!</p>
+                <p><strong>Perfect for:</strong></p>
+                <ul>
+                    <li>Collision detection in large worlds</li>
+                    <li>Finding nearby enemies/items</li>
+                    <li>Multiplayer games with many players</li>
+                    <li>Bullet-to-enemy collision checking</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Spatial Hash Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SpatialHash</span> {
+    <span class="keyword">constructor</span>(cellSize) {
+        <span class="keyword">this</span>.cellSize = cellSize;
+        <span class="keyword">this</span>.cells = <span class="keyword">new</span> <span class="function">Map</span>();  <span class="comment">// Hash map of cell coordinates to objects</span>
+    }
+
+    <span class="comment">// Convert world position to cell key</span>
+    <span class="function">getKey</span>(x, y) {
+        <span class="keyword">const</span> cellX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> cellY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">return</span> `${cellX},${cellY}`;
+    }
+
+    <span class="comment">// Insert object into hash</span>
+    <span class="function">insert</span>(object) {
+        <span class="keyword">const</span> key = <span class="keyword">this</span>.<span class="function">getKey</span>(object.position.x, object.position.y);
+
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.cells.<span class="function">has</span>(key)) {
+            <span class="keyword">this</span>.cells.<span class="function">set</span>(key, []);
+        }
+
+        <span class="keyword">this</span>.cells.<span class="function">get</span>(key).<span class="function">push</span>(object);
+        object.cellKey = key;  <span class="comment">// Store for removal</span>
+    }
+
+    <span class="comment">// Remove object from hash</span>
+    <span class="function">remove</span>(object) {
+        <span class="keyword">if</span> (!object.cellKey) <span class="keyword">return</span>;
+
+        <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(object.cellKey);
+        <span class="keyword">if</span> (cell) {
+            <span class="keyword">const</span> index = cell.<span class="function">indexOf</span>(object);
+            <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
+                cell.<span class="function">splice</span>(index, <span class="number">1</span>);
+            }
+        }
+
+        object.cellKey = <span class="keyword">null</span>;
+    }
+
+    <span class="comment">// Update object position (remove from old cell, add to new)</span>
+    <span class="function">update</span>(object) {
+        <span class="keyword">const</span> newKey = <span class="keyword">this</span>.<span class="function">getKey</span>(object.position.x, object.position.y);
+
+        <span class="comment">// Only update if cell changed</span>
+        <span class="keyword">if</span> (object.cellKey !== newKey) {
+            <span class="keyword">this</span>.<span class="function">remove</span>(object);
+            <span class="keyword">this</span>.<span class="function">insert</span>(object);
+        }
+    }
+
+    <span class="comment">// Get all objects in nearby cells</span>
+    <span class="function">getNearby</span>(x, y, range = <span class="number">1</span>) {
+        <span class="keyword">const</span> nearby = [];
+        <span class="keyword">const</span> cellX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> cellY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
+
+        <span class="comment">// Check surrounding cells</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> dx = -range; dx <= range; dx++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> dy = -range; dy <= range; dy++) {
+                <span class="keyword">const</span> key = `${cellX + dx},${cellY + dy}`;
+                <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(key);
+
+                <span class="keyword">if</span> (cell) {
+                    nearby.<span class="function">push</span>(...cell);
+                }
+            }
+        }
+
+        <span class="keyword">return</span> nearby;
+    }
+
+    <span class="comment">// Get objects in a rectangular area</span>
+    <span class="function">queryRect</span>(x, y, width, height) {
+        <span class="keyword">const</span> objects = <span class="keyword">new</span> <span class="function">Set</span>();
+
+        <span class="keyword">const</span> startX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> startY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> endX = Math.<span class="function">ceil</span>((x + width) / <span class="keyword">this</span>.cellSize);
+        <span class="keyword">const</span> endY = Math.<span class="function">ceil</span>((y + height) / <span class="keyword">this</span>.cellSize);
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> cx = startX; cx <= endX; cx++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> cy = startY; cy <= endY; cy++) {
+                <span class="keyword">const</span> key = `${cx},${cy}`;
+                <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(key);
+
+                <span class="keyword">if</span> (cell) {
+                    cell.<span class="function">forEach</span>(obj => objects.<span class="function">add</span>(obj));
+                }
+            }
+        }
+
+        <span class="keyword">return</span> Array.<span class="function">from</span>(objects);
+    }
+
+    <span class="comment">// Clear all objects</span>
+    <span class="function">clear</span>() {
+        <span class="keyword">this</span>.cells.<span class="function">clear</span>();
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Using Spatial Hash for Collision Detection:</h4>
+                    <pre><code><span class="comment">// Create spatial hash with 50px cells</span>
+<span class="keyword">const</span> spatialHash = <span class="keyword">new</span> <span class="function">SpatialHash</span>(<span class="number">50</span>);
+
+<span class="comment">// Insert all game objects</span>
+gameObjects.<span class="function">forEach</span>(obj => spatialHash.<span class="function">insert</span>(obj));
+
+<span class="comment">// Each frame: update objects and check collisions</span>
+<span class="keyword">function</span> <span class="function">update</span>() {
+    gameObjects.<span class="function">forEach</span>(obj => {
+        <span class="comment">// Move object</span>
+        obj.<span class="function">update</span>();
+
+        <span class="comment">// Update its cell in the hash</span>
+        spatialHash.<span class="function">update</span>(obj);
+
+        <span class="comment">// Check collisions only with nearby objects</span>
+        <span class="keyword">const</span> nearby = spatialHash.<span class="function">getNearby</span>(
+            obj.position.x,
+            obj.position.y,
+            <span class="number">1</span>  <span class="comment">// Check 1 cell in each direction</span>
+        );
+
+        nearby.<span class="function">forEach</span>(other => {
+            <span class="keyword">if</span> (obj !== other && obj.<span class="function">collidesWith</span>(other)) {
+                <span class="function">handleCollision</span>(obj, other);
+            }
+        });
+    });
+}
+
+<span class="comment">// Example: Find all enemies near player</span>
+<span class="keyword">const</span> nearbyEnemies = spatialHash
+    .<span class="function">getNearby</span>(player.x, player.y, <span class="number">2</span>)
+    .<span class="function">filter</span>(obj => obj.type === <span class="string">'enemy'</span>);</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Spatial Hash Visualization</h3>
+            <div class="diagram">
+                <canvas id="spatialHashDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAdd100">Add 100 Objects</button>
+                <button id="btnToggleGrid">Toggle Grid</button>
+                <button id="btnShowNearby">Show Nearby Query</button>
+                <button id="btnClearHash">Clear All</button>
+            </div>
+            <div id="spatialHashInfo" class="info-display">Move mouse to query nearby objects. Watch collision checks!</div>
+
+            <div class="key-point">
+                <strong>💡 Performance Comparison:</strong>
+                <ul>
+                    <li><strong>Brute Force:</strong> 1000 objects = 1,000,000 checks</li>
+                    <li><strong>Spatial Hash:</strong> 1000 objects = ~5,000 checks (200x faster!)</li>
+                    <li><strong>Cell Size Tip:</strong> Make cells about 2x the size of your largest object for best performance</li>
+                </ul>
             </div>
         </div>
 

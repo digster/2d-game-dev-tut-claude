@@ -1094,3 +1094,415 @@ if (networkCanvas) {
 
     animateNetwork();
 }
+
+// ===================================
+// DEMO: Perlin Noise Terrain
+// ===================================
+const noiseCanvas = document.getElementById('noiseDemo');
+if (noiseCanvas) {
+    const ctx = noiseCanvas.getContext('2d');
+    const info = document.getElementById('noiseInfo');
+
+    let scale = 0.05;
+    let showHeightmap = false;
+    let showContours = false;
+
+    class PerlinNoise {
+        constructor() {
+            this.p = [];
+            for (let i = 0; i < 256; i++) {
+                this.p[i] = Math.floor(Math.random() * 256);
+            }
+            this.p = this.p.concat(this.p);
+        }
+
+        fade(t) {
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
+
+        lerp(a, b, t) {
+            return a + t * (b - a);
+        }
+
+        grad(hash, x, y) {
+            const h = hash & 3;
+            const u = h < 2 ? x : y;
+            const v = h < 2 ? y : x;
+            return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+        }
+
+        noise(x, y) {
+            const X = Math.floor(x) & 255;
+            const Y = Math.floor(y) & 255;
+
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+
+            const u = this.fade(x);
+            const v = this.fade(y);
+
+            const a = this.p[X] + Y;
+            const aa = this.p[a];
+            const ab = this.p[a + 1];
+            const b = this.p[X + 1] + Y;
+            const ba = this.p[b];
+            const bb = this.p[b + 1];
+
+            return this.lerp(
+                this.lerp(this.grad(aa, x, y), this.grad(ba, x - 1, y), u),
+                this.lerp(this.grad(ab, x, y - 1), this.grad(bb, x - 1, y - 1), u),
+                v
+            );
+        }
+
+        octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+            let total = 0;
+            let frequency = 1;
+            let amplitude = 1;
+            let maxValue = 0;
+
+            for (let i = 0; i < octaves; i++) {
+                total += this.noise(x * frequency, y * frequency) * amplitude;
+                maxValue += amplitude;
+                amplitude *= persistence;
+                frequency *= 2;
+            }
+
+            return total / maxValue;
+        }
+    }
+
+    let perlin = new PerlinNoise();
+
+    function getTileColor(height) {
+        if (height < 0.3) return '#4A90E2';  // Water
+        if (height < 0.4) return '#F5DEB3';  // Sand
+        if (height < 0.7) return '#7EC850';  // Grass
+        if (height < 0.9) return '#8B7355';  // Mountain
+        return '#FFFFFF';  // Snow
+    }
+
+    function generateTerrain() {
+        const imageData = ctx.createImageData(noiseCanvas.width, noiseCanvas.height);
+        const data = imageData.data;
+
+        for (let y = 0; y < noiseCanvas.height; y++) {
+            for (let x = 0; x < noiseCanvas.width; x++) {
+                const value = perlin.octaveNoise(x * scale, y * scale, 4, 0.5);
+                const height = (value + 1) / 2;  // Normalize to 0-1
+
+                const index = (y * noiseCanvas.width + x) * 4;
+
+                if (showHeightmap) {
+                    const gray = Math.floor(height * 255);
+                    data[index] = gray;
+                    data[index + 1] = gray;
+                    data[index + 2] = gray;
+                } else {
+                    const color = getTileColor(height);
+                    const rgb = hexToRgb(color);
+                    data[index] = rgb.r;
+                    data[index + 1] = rgb.g;
+                    data[index + 2] = rgb.b;
+                }
+
+                data[index + 3] = 255;  // Alpha
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
+        // Draw contour lines
+        if (showContours) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+
+            const levels = [0.3, 0.4, 0.7, 0.9];
+            levels.forEach(level => {
+                ctx.beginPath();
+                for (let y = 0; y < noiseCanvas.height - 1; y++) {
+                    for (let x = 0; x < noiseCanvas.width - 1; x++) {
+                        const value = perlin.octaveNoise(x * scale, y * scale, 4, 0.5);
+                        const height = (value + 1) / 2;
+
+                        if (Math.abs(height - level) < 0.02) {
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x + 1, y);
+                        }
+                    }
+                }
+                ctx.stroke();
+            });
+        }
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : {r: 0, g: 0, b: 0};
+    }
+
+    // Button handlers
+    const btnNewSeed = document.getElementById('btnNewSeed');
+    const btnIncreaseScale = document.getElementById('btnIncreaseScale');
+    const btnDecreaseScale = document.getElementById('btnDecreaseScale');
+    const btnToggleHeight = document.getElementById('btnToggleHeight');
+    const btnToggleContours = document.getElementById('btnToggleContours');
+
+    if (btnNewSeed) btnNewSeed.addEventListener('click', () => {
+        perlin = new PerlinNoise();
+        generateTerrain();
+    });
+    if (btnIncreaseScale) btnIncreaseScale.addEventListener('click', () => {
+        scale *= 0.8;
+        generateTerrain();
+    });
+    if (btnDecreaseScale) btnDecreaseScale.addEventListener('click', () => {
+        scale *= 1.2;
+        generateTerrain();
+    });
+    if (btnToggleHeight) btnToggleHeight.addEventListener('click', () => {
+        showHeightmap = !showHeightmap;
+        generateTerrain();
+    });
+    if (btnToggleContours) btnToggleContours.addEventListener('click', () => {
+        showContours = !showContours;
+        generateTerrain();
+    });
+
+    generateTerrain();
+
+    function animateNoise() {
+        info.textContent = `Scale: ${scale.toFixed(3)} | Heightmap: ${showHeightmap ? 'ON' : 'OFF'} | Contours: ${showContours ? 'ON' : 'OFF'}`;
+        requestAnimationFrame(animateNoise);
+    }
+
+    animateNoise();
+}
+
+// ===================================
+// DEMO: Entity Component System
+// ===================================
+const ecsCanvas = document.getElementById('ecsDemo');
+if (ecsCanvas) {
+    const ctx = ecsCanvas.getContext('2d');
+    const info = document.getElementById('ecsInfo');
+
+    // Components
+    class Position {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    class Velocity {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    class Renderable {
+        constructor(color) {
+            this.color = color;
+        }
+    }
+
+    // Entity
+    class Entity {
+        static nextId = 0;
+
+        constructor() {
+            this.id = Entity.nextId++;
+            this.components = new Map();
+        }
+
+        addComponent(component) {
+            this.components.set(component.constructor, component);
+            return this;
+        }
+
+        getComponent(componentClass) {
+            return this.components.get(componentClass);
+        }
+
+        hasComponent(componentClass) {
+            return this.components.has(componentClass);
+        }
+
+        removeComponent(componentClass) {
+            this.components.delete(componentClass);
+            return this;
+        }
+    }
+
+    // World
+    class World {
+        constructor() {
+            this.entities = [];
+            this.systems = [];
+        }
+
+        createEntity() {
+            const entity = new Entity();
+            this.entities.push(entity);
+            return entity;
+        }
+
+        removeEntity(entity) {
+            const index = this.entities.indexOf(entity);
+            if (index !== -1) {
+                this.entities.splice(index, 1);
+            }
+        }
+
+        addSystem(system) {
+            this.systems.push(system);
+        }
+
+        update(deltaTime) {
+            for (const system of this.systems) {
+                system.update(this.entities, deltaTime);
+            }
+        }
+
+        query(...componentClasses) {
+            return this.entities.filter(entity =>
+                componentClasses.every(comp => entity.hasComponent(comp))
+            );
+        }
+    }
+
+    // Systems
+    class MovementSystem {
+        update(entities) {
+            for (const entity of entities) {
+                if (!entity.hasComponent(Position) || !entity.hasComponent(Velocity)) {
+                    continue;
+                }
+
+                const pos = entity.getComponent(Position);
+                const vel = entity.getComponent(Velocity);
+
+                pos.x += vel.x;
+                pos.y += vel.y;
+
+                // Bounce off walls
+                if (pos.x < 10 || pos.x > ecsCanvas.width - 10) {
+                    vel.x *= -1;
+                    pos.x = Math.max(10, Math.min(ecsCanvas.width - 10, pos.x));
+                }
+                if (pos.y < 10 || pos.y > ecsCanvas.height - 10) {
+                    vel.y *= -1;
+                    pos.y = Math.max(10, Math.min(ecsCanvas.height - 10, pos.y));
+                }
+            }
+        }
+    }
+
+    class RenderSystem {
+        update(entities) {
+            for (const entity of entities) {
+                if (!entity.hasComponent(Position) || !entity.hasComponent(Renderable)) {
+                    continue;
+                }
+
+                const pos = entity.getComponent(Position);
+                const rend = entity.getComponent(Renderable);
+
+                ctx.fillStyle = rend.color;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw velocity indicator if present
+                if (entity.hasComponent(Velocity)) {
+                    const vel = entity.getComponent(Velocity);
+                    ctx.strokeStyle = '#66bb6a';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    ctx.lineTo(pos.x + vel.x * 3, pos.y + vel.y * 3);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // Create world and systems
+    const world = new World();
+    world.addSystem(new MovementSystem());
+    world.addSystem(new RenderSystem());
+
+    // Button handlers
+    const btnSpawnMoving = document.getElementById('btnSpawnMoving');
+    const btnSpawnStatic = document.getElementById('btnSpawnStatic');
+    const btnAddVelocity = document.getElementById('btnAddVelocity');
+    const btnRemoveVelocity = document.getElementById('btnRemoveVelocity');
+    const btnClearECS = document.getElementById('btnClearECS');
+
+    if (btnSpawnMoving) btnSpawnMoving.addEventListener('click', () => {
+        world.createEntity()
+            .addComponent(new Position(Math.random() * ecsCanvas.width, Math.random() * ecsCanvas.height))
+            .addComponent(new Velocity((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4))
+            .addComponent(new Renderable(`hsl(${Math.random() * 360}, 70%, 60%)`));
+    });
+
+    if (btnSpawnStatic) btnSpawnStatic.addEventListener('click', () => {
+        world.createEntity()
+            .addComponent(new Position(Math.random() * ecsCanvas.width, Math.random() * ecsCanvas.height))
+            .addComponent(new Renderable('#999'));
+    });
+
+    if (btnAddVelocity) btnAddVelocity.addEventListener('click', () => {
+        world.entities.forEach(entity => {
+            if (!entity.hasComponent(Velocity)) {
+                entity.addComponent(new Velocity((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4));
+            }
+        });
+    });
+
+    if (btnRemoveVelocity) btnRemoveVelocity.addEventListener('click', () => {
+        world.entities.forEach(entity => {
+            entity.removeComponent(Velocity);
+        });
+    });
+
+    if (btnClearECS) btnClearECS.addEventListener('click', () => {
+        world.entities = [];
+        Entity.nextId = 0;
+    });
+
+    // Spawn initial entities
+    for (let i = 0; i < 5; i++) {
+        world.createEntity()
+            .addComponent(new Position(Math.random() * ecsCanvas.width, Math.random() * ecsCanvas.height))
+            .addComponent(new Velocity((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4))
+            .addComponent(new Renderable(`hsl(${Math.random() * 360}, 70%, 60%)`));
+    }
+
+    for (let i = 0; i < 3; i++) {
+        world.createEntity()
+            .addComponent(new Position(Math.random() * ecsCanvas.width, Math.random() * ecsCanvas.height))
+            .addComponent(new Renderable('#999'));
+    }
+
+    function animateECS() {
+        clearCanvas(ctx, ecsCanvas.width, ecsCanvas.height);
+
+        world.update(1);
+
+        const movingEntities = world.query(Position, Velocity).length;
+        const staticEntities = world.entities.filter(e => e.hasComponent(Position) && !e.hasComponent(Velocity)).length;
+
+        info.textContent = `Total Entities: ${world.entities.length} | Moving: ${movingEntities} | Static: ${staticEntities}`;
+
+        requestAnimationFrame(animateECS);
+    }
+
+    animateECS();
+}

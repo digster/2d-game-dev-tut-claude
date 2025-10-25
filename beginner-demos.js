@@ -1493,3 +1493,388 @@ if (powerupCanvas) {
 
     animatePowerup();
 }
+
+// ===================================
+// DEMO: Trigonometry in Action
+// ===================================
+const trigCanvas = document.getElementById('trigDemo');
+if (trigCanvas) {
+    const ctx = trigCanvas.getContext('2d');
+    const info = document.getElementById('trigInfo');
+    let mode = 'orbit';
+    let time = 0;
+    let mousePos = new Vector2D(400, 250);
+
+    trigCanvas.addEventListener('mousemove', (e) => {
+        const rect = trigCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    // Button handlers
+    const btnOrbit = document.getElementById('btnOrbit');
+    const btnWave = document.getElementById('btnWave');
+    const btnFaceTarget = document.getElementById('btnFaceTarget');
+    const btnArc = document.getElementById('btnArc');
+
+    if (btnOrbit) btnOrbit.addEventListener('click', () => mode = 'orbit');
+    if (btnWave) btnWave.addEventListener('click', () => mode = 'wave');
+    if (btnFaceTarget) btnFaceTarget.addEventListener('click', () => mode = 'face');
+    if (btnArc) btnArc.addEventListener('click', () => mode = 'arc');
+
+    // Orbiting objects
+    const orbitObjects = [
+        { angle: 0, radius: 80, speed: 0.02, color: '#4fc3f7' },
+        { angle: Math.PI, radius: 80, speed: 0.02, color: '#66bb6a' },
+        { angle: Math.PI / 2, radius: 120, speed: 0.015, color: '#ffa726' }
+    ];
+
+    // Wave objects
+    const waveObjects = [];
+    for (let i = 0; i < 10; i++) {
+        waveObjects.push({
+            x: 100 + i * 60,
+            baseY: 250,
+            amplitude: 40,
+            frequency: 2,
+            phase: i * 0.5
+        });
+    }
+
+    function animateTrig() {
+        clearCanvas(ctx, trigCanvas.width, trigCanvas.height);
+        time += 0.05;
+
+        const center = new Vector2D(400, 250);
+
+        if (mode === 'orbit') {
+            // Draw center
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw orbiting objects
+            orbitObjects.forEach(obj => {
+                obj.angle += obj.speed;
+                const x = center.x + Math.cos(obj.angle) * obj.radius;
+                const y = center.y + Math.sin(obj.angle) * obj.radius;
+
+                // Draw orbit path
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, obj.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw object
+                ctx.fillStyle = obj.color;
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw line to center
+                ctx.strokeStyle = obj.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(center.x, center.y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            });
+
+            info.textContent = 'Circular orbit using cos(angle) for X and sin(angle) for Y';
+        }
+        else if (mode === 'wave') {
+            // Draw wave objects
+            waveObjects.forEach(obj => {
+                const offset = Math.sin((time + obj.phase) * obj.frequency) * obj.amplitude;
+                const y = obj.baseY + offset;
+
+                // Draw baseline
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.moveTo(obj.x, obj.baseY - 5);
+                ctx.lineTo(obj.x, obj.baseY + 5);
+                ctx.stroke();
+
+                // Draw object
+                ctx.fillStyle = '#4fc3f7';
+                ctx.beginPath();
+                ctx.arc(obj.x, y, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw vertical line
+                ctx.strokeStyle = 'rgba(79, 195, 247, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(obj.x, obj.baseY);
+                ctx.lineTo(obj.x, y);
+                ctx.stroke();
+            });
+
+            info.textContent = 'Wave motion using sin(time * frequency) for smooth up/down movement';
+        }
+        else if (mode === 'face') {
+            // Draw object that faces mouse
+            const objPos = new Vector2D(400, 250);
+            const direction = mousePos.subtract(objPos);
+            const angle = Math.atan2(direction.y, direction.x);
+
+            // Draw object (triangle)
+            ctx.save();
+            ctx.translate(objPos.x, objPos.y);
+            ctx.rotate(angle);
+            ctx.fillStyle = '#66bb6a';
+            ctx.beginPath();
+            ctx.moveTo(20, 0);
+            ctx.lineTo(-10, -10);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // Draw line to mouse
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(objPos.x, objPos.y);
+            ctx.lineTo(mousePos.x, mousePos.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw mouse position
+            ctx.fillStyle = '#ffa726';
+            ctx.beginPath();
+            ctx.arc(mousePos.x, mousePos.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            const angleDeg = (angle * 180 / Math.PI).toFixed(1);
+            info.textContent = `Using atan2(dy, dx) to face target. Angle: ${angleDeg}°`;
+        }
+        else if (mode === 'arc') {
+            // Projectile arc
+            const start = new Vector2D(100, 400);
+            const end = mousePos;
+            const launchAngle = Math.PI / 4; // 45 degrees
+            const gravity = 0.5;
+
+            // Calculate arc
+            const points = [];
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const v0 = Math.sqrt(Math.abs(dx * gravity / Math.sin(2 * launchAngle)));
+            const vx = v0 * Math.cos(launchAngle);
+            const vy = -v0 * Math.sin(launchAngle);
+
+            for (let t = 0; t < 100; t += 0.5) {
+                const x = start.x + vx * t;
+                const y = start.y + vy * t + 0.5 * gravity * t * t;
+                if (y > trigCanvas.height) break;
+                points.push({ x, y });
+            }
+
+            // Draw arc path
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+
+            // Draw start
+            ctx.fillStyle = '#66bb6a';
+            ctx.beginPath();
+            ctx.arc(start.x, start.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw target
+            ctx.fillStyle = '#ef5350';
+            ctx.beginPath();
+            ctx.arc(end.x, end.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw projectile if animating
+            if (points.length > 0) {
+                const idx = Math.floor((time * 2) % points.length);
+                const proj = points[idx];
+                ctx.fillStyle = '#ffa726';
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            info.textContent = 'Parabolic arc using trigonometry and gravity. Move mouse to change target!';
+        }
+
+        requestAnimationFrame(animateTrig);
+    }
+
+    animateTrig();
+}
+
+// ===================================
+// DEMO: Easing Functions
+// ===================================
+const easingCanvas = document.getElementById('easingDemo');
+if (easingCanvas) {
+    const ctx = easingCanvas.getContext('2d');
+    const info = document.getElementById('easingInfo');
+    let currentEasing = 'linear';
+    let t = 0;
+    let comparing = false;
+
+    // Easing functions
+    const easingFunctions = {
+        linear: t => t,
+        easeIn: t => t * t,
+        easeOut: t => t * (2 - t),
+        easeInOut: t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+        elastic: t => {
+            const p = 0.3;
+            return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+        },
+        bounce: t => {
+            if (t < 1 / 2.75) {
+                return 7.5625 * t * t;
+            } else if (t < 2 / 2.75) {
+                return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
+            } else if (t < 2.5 / 2.75) {
+                return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+            } else {
+                return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
+            }
+        }
+    };
+
+    // Button handlers
+    const buttons = ['Linear', 'EaseIn', 'EaseOut', 'EaseInOut', 'Elastic', 'Bounce'];
+    buttons.forEach(btn => {
+        const element = document.getElementById(`btn${btn}`);
+        if (element) {
+            element.addEventListener('click', () => {
+                currentEasing = btn.toLowerCase();
+                comparing = false;
+                t = 0;
+            });
+        }
+    });
+
+    const compareBtn = document.getElementById('btnCompareAll');
+    if (compareBtn) {
+        compareBtn.addEventListener('click', () => {
+            comparing = true;
+            t = 0;
+        });
+    }
+
+    function animateEasing() {
+        clearCanvas(ctx, easingCanvas.width, easingCanvas.height);
+
+        // Increment time
+        t += 0.005;
+        if (t > 1) t = 0;
+
+        const startX = 100;
+        const endX = 700;
+        const y = 250;
+
+        if (comparing) {
+            // Show all easing functions
+            const colors = ['#4fc3f7', '#66bb6a', '#ffa726', '#ef5350', '#ab47bc', '#ffeb3b'];
+            const names = ['linear', 'easeIn', 'easeOut', 'easeInOut', 'elastic', 'bounce'];
+
+            names.forEach((name, i) => {
+                const easedT = easingFunctions[name](t);
+                const x = startX + (endX - startX) * easedT;
+                const yPos = 100 + i * 60;
+
+                // Draw path
+                ctx.strokeStyle = colors[i];
+                ctx.globalAlpha = 0.2;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(startX, yPos);
+                ctx.lineTo(endX, yPos);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                // Draw object
+                ctx.fillStyle = colors[i];
+                ctx.beginPath();
+                ctx.arc(x, yPos, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px monospace';
+                ctx.fillText(name, 10, yPos + 5);
+            });
+
+            info.textContent = `Comparing all easing functions. Progress: ${(t * 100).toFixed(0)}%`;
+        } else {
+            // Show single easing function
+            const easedT = easingFunctions[currentEasing](t);
+            const x = startX + (endX - startX) * easedT;
+
+            // Draw graph
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const progress = i / 100;
+                const eased = easingFunctions[currentEasing](progress);
+                const gx = startX + (endX - startX) * progress;
+                const gy = 400 - eased * 150;
+                if (i === 0) ctx.moveTo(gx, gy);
+                else ctx.lineTo(gx, gy);
+            }
+            ctx.stroke();
+
+            // Draw path
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.globalAlpha = 0.3;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(startX, y);
+            ctx.lineTo(endX, y);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Draw start and end markers
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(startX, y, 8, 0, Math.PI * 2);
+            ctx.arc(endX, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw moving object
+            ctx.fillStyle = '#4fc3f7';
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw progress bar
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(100, 350, 600, 20);
+            ctx.fillStyle = '#66bb6a';
+            ctx.fillRect(100, 350, 600 * t, 20);
+
+            // Labels
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(currentEasing.toUpperCase(), 400, 50);
+            ctx.font = '12px monospace';
+            ctx.fillText(`Progress: ${(t * 100).toFixed(0)}%`, 400, 380);
+            ctx.fillText(`Eased: ${(easedT * 100).toFixed(0)}%`, 400, 395);
+
+            info.textContent = `${currentEasing}: See how the movement feels different with easing!`;
+        }
+
+        requestAnimationFrame(animateEasing);
+    }
+
+    animateEasing();
+}

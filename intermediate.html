@@ -24,9 +24,13 @@
             <ul>
                 <li><a href="#lerp">Linear Interpolation (Lerp)</a></li>
                 <li><a href="#physics">Physics Systems with Forces</a></li>
+                <li><a href="#spring">Spring Physics & Damping</a></li>
+                <li><a href="#friction">Friction & Drag Systems</a></li>
                 <li><a href="#collision">Collision Detection</a></li>
+                <li><a href="#reflection">Bouncing & Reflection</a></li>
                 <li><a href="#raycasting">Raycasting & Line of Sight</a></li>
                 <li><a href="#particles">Particle Systems</a></li>
+                <li><a href="#advanced-particles">Advanced Particle Effects</a></li>
             </ul>
         </div>
 
@@ -172,6 +176,202 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <div id="physicsInfo" class="info-display">Click to apply force to nearby objects</div>
         </div>
 
+        <!-- SPRING PHYSICS -->
+        <div id="spring" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🔄 Spring Physics & Damping</h2>
+
+            <div class="concept-box">
+                <h4>What are Springs?</h4>
+                <p>Springs create smooth, bouncy motion that feels natural and responsive. They're perfect for:</p>
+                <ul>
+                    <li>Camera following (smooth but snappy)</li>
+                    <li>UI animations (buttons, menus)</li>
+                    <li>Rope/chain physics</li>
+                    <li>Elastic connections between objects</li>
+                </ul>
+                <p><strong>Hooke's Law:</strong> Force = -stiffness × displacement</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Spring Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Spring</span> {
+    <span class="keyword">constructor</span>(stiffness = <span class="number">0.1</span>, damping = <span class="number">0.8</span>) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.target = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+
+        <span class="keyword">this</span>.stiffness = stiffness;  <span class="comment">// How tight the spring is</span>
+        <span class="keyword">this</span>.damping = damping;      <span class="comment">// How much it slows down</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Calculate spring force</span>
+        <span class="keyword">const</span> displacement = <span class="keyword">this</span>.target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+        <span class="keyword">const</span> springForce = displacement.<span class="function">multiply</span>(<span class="keyword">this</span>.stiffness);
+
+        <span class="comment">// Apply force to velocity</span>
+        <span class="keyword">this</span>.velocity.<span class="function">add</span>(springForce);
+
+        <span class="comment">// Apply damping (friction)</span>
+        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="keyword">this</span>.damping);
+
+        <span class="comment">// Update position</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+    }
+
+    <span class="function">setTarget</span>(x, y) {
+        <span class="keyword">this</span>.target.<span class="function">set</span>(x, y);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Smooth Camera Follow</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">Camera</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.spring = <span class="keyword">new</span> <span class="function">Spring</span>(<span class="number">0.08</span>, <span class="number">0.85</span>);
+    }
+
+    <span class="function">follow</span>(player) {
+        <span class="comment">// Set target to player position</span>
+        <span class="keyword">this</span>.spring.<span class="function">setTarget</span>(player.x, player.y);
+
+        <span class="comment">// Update spring physics</span>
+        <span class="keyword">this</span>.spring.<span class="function">update</span>();
+
+        <span class="comment">// Camera position is spring position</span>
+        <span class="keyword">this</span>.x = <span class="keyword">this</span>.spring.position.x;
+        <span class="keyword">this</span>.y = <span class="keyword">this</span>.spring.position.y;
+    }
+}
+
+<span class="comment">// Higher stiffness = tighter follow (0.2)</span>
+<span class="comment">// Lower damping = more bouncy (0.7)</span>
+<span class="comment">// Lower stiffness = looser follow (0.05)</span>
+<span class="comment">// Higher damping = less bouncy (0.95)</span></code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Spring Physics</h3>
+            <div class="diagram">
+                <canvas id="springDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnTightSpring">Tight Spring (0.2, 0.8)</button>
+                <button id="btnLooseSpring">Loose Spring (0.05, 0.9)</button>
+                <button id="btnBouncySpring">Bouncy Spring (0.15, 0.6)</button>
+                <button id="btnStiffSpring">Stiff Spring (0.3, 0.95)</button>
+            </div>
+            <div id="springInfo" class="info-display">Move your mouse to see the spring follow with different settings</div>
+
+            <div class="key-point">
+                <strong>💡 Tuning Springs:</strong> Stiffness controls how quickly it moves toward the target. Damping controls how much it oscillates. Find the sweet spot for your game's feel!
+            </div>
+        </div>
+
+        <!-- FRICTION & DRAG -->
+        <div id="friction" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>💨 Friction & Drag Systems</h2>
+
+            <div class="concept-box">
+                <h4>Why Friction Matters</h4>
+                <p>Without friction, objects would slide forever! Friction makes movement feel grounded and realistic.</p>
+                <p><strong>Two types:</strong></p>
+                <ul>
+                    <li><strong>Linear Friction:</strong> Simple multiplier (velocity × 0.98)</li>
+                    <li><strong>Drag Force:</strong> Proportional to velocity squared (more realistic)</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Friction Implementations</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Simple Linear Friction</span>
+<span class="keyword">class</span> <span class="function">LinearFriction</span> {
+    <span class="keyword">constructor</span>(coefficient = <span class="number">0.98</span>) {
+        <span class="keyword">this</span>.coefficient = coefficient;  <span class="comment">// 0.98 = 2% speed loss per frame</span>
+    }
+
+    <span class="function">apply</span>(entity) {
+        entity.velocity.<span class="function">multiply</span>(<span class="keyword">this</span>.coefficient);
+
+        <span class="comment">// Stop if moving very slowly (prevent infinite drift)</span>
+        <span class="keyword">if</span> (entity.velocity.<span class="function">length</span>() < <span class="number">0.01</span>) {
+            entity.velocity.<span class="function">multiply</span>(<span class="number">0</span>);
+        }
+    }
+}
+
+<span class="comment">// Air/Fluid Drag (more realistic)</span>
+<span class="keyword">class</span> <span class="function">DragForce</span> {
+    <span class="keyword">constructor</span>(coefficient = <span class="number">0.01</span>) {
+        <span class="keyword">this</span>.coefficient = coefficient;
+    }
+
+    <span class="function">apply</span>(entity) {
+        <span class="comment">// Drag = -coefficient × velocity²</span>
+        <span class="keyword">const</span> speed = entity.velocity.<span class="function">length</span>();
+        <span class="keyword">const</span> dragMagnitude = <span class="keyword">this</span>.coefficient * speed * speed;
+
+        <span class="comment">// Apply drag in opposite direction of movement</span>
+        <span class="keyword">const</span> dragForce = entity.velocity.<span class="function">copy</span>()
+            .<span class="function">normalize</span>()
+            .<span class="function">multiply</span>(-dragMagnitude);
+
+        entity.<span class="function">applyForce</span>(dragForce);
+    }
+}
+
+<span class="comment">// Ground Friction (only when touching ground)</span>
+<span class="keyword">class</span> <span class="function">GroundFriction</span> {
+    <span class="keyword">constructor</span>(coefficient = <span class="number">0.15</span>) {
+        <span class="keyword">this</span>.coefficient = coefficient;
+    }
+
+    <span class="function">apply</span>(entity) {
+        <span class="keyword">if</span> (entity.onGround) {
+            <span class="comment">// Friction opposes horizontal movement</span>
+            <span class="keyword">const</span> friction = -entity.velocity.x * <span class="keyword">this</span>.coefficient;
+            entity.velocity.x += friction;
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Ice vs Grass vs Mud</h4>
+                    <pre><code><span class="comment">// Different surfaces have different friction</span>
+<span class="keyword">const</span> surfaces = {
+    ice: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.99</span>),    <span class="comment">// Very slippery</span>
+    grass: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.92</span>),  <span class="comment">// Normal friction</span>
+    mud: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.80</span>)    <span class="comment">// High friction</span>
+};
+
+<span class="keyword">function</span> <span class="function">update</span>(player, currentSurface) {
+    <span class="comment">// Apply appropriate friction</span>
+    surfaces[currentSurface].<span class="function">apply</span>(player);
+
+    player.position.<span class="function">add</span>(player.velocity);
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Friction Comparison</h3>
+            <div class="diagram">
+                <canvas id="frictionDemo" width="800" height="400"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnNoFriction">No Friction</button>
+                <button id="btnLowFriction">Low Friction (Ice)</button>
+                <button id="btnMediumFriction">Medium Friction (Grass)</button>
+                <button id="btnHighFriction">High Friction (Mud)</button>
+            </div>
+            <div id="frictionInfo" class="info-display">Click to launch objects and compare friction</div>
+        </div>
+
         <!-- COLLISION DETECTION -->
         <div id="collision" class="section">
             <span class="level-indicator level-intermediate">INTERMEDIATE</span>
@@ -236,6 +436,143 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
                     <li>Transfer momentum between colliding objects</li>
                     <li>Create "sticky" collisions that join objects together</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- BOUNCING & REFLECTION -->
+        <div id="reflection" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>⚡ Bouncing & Reflection</h2>
+
+            <div class="concept-box">
+                <h4>Making Things Bounce</h4>
+                <p>Bouncing and reflection make physics feel satisfying! Essential for:</p>
+                <ul>
+                    <li>Balls bouncing off walls</li>
+                    <li>Bullets ricocheting</li>
+                    <li>Character wall-jumping</li>
+                    <li>Pinball-style gameplay</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Reflection Implementations</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Simple Axis-Aligned Reflection (walls parallel to axes)</span>
+<span class="keyword">function</span> <span class="function">bounceOffWalls</span>(object, bounds, bounciness = <span class="number">0.8</span>) {
+    <span class="comment">// Right wall</span>
+    <span class="keyword">if</span> (object.position.x + object.radius > bounds.right) {
+        object.position.x = bounds.right - object.radius;
+        object.velocity.x *= -bounciness;  <span class="comment">// Reverse and reduce</span>
+    }
+
+    <span class="comment">// Left wall</span>
+    <span class="keyword">if</span> (object.position.x - object.radius < bounds.left) {
+        object.position.x = bounds.left + object.radius;
+        object.velocity.x *= -bounciness;
+    }
+
+    <span class="comment">// Bottom wall</span>
+    <span class="keyword">if</span> (object.position.y + object.radius > bounds.bottom) {
+        object.position.y = bounds.bottom - object.radius;
+        object.velocity.y *= -bounciness;
+    }
+
+    <span class="comment">// Top wall</span>
+    <span class="keyword">if</span> (object.position.y - object.radius < bounds.top) {
+        object.position.y = bounds.top + object.radius;
+        object.velocity.y *= -bounciness;
+    }
+}
+
+<span class="comment">// Reflection Off Any Surface (using surface normal)</span>
+<span class="keyword">function</span> <span class="function">reflect</span>(velocity, surfaceNormal) {
+    <span class="comment">// Formula: v' = v - 2(v · n)n</span>
+    <span class="comment">// Where n is the surface normal (unit vector)</span>
+    <span class="keyword">const</span> dotProduct = velocity.<span class="function">dot</span>(surfaceNormal);
+    <span class="keyword">const</span> reflection = surfaceNormal
+        .<span class="function">copy</span>()
+        .<span class="function">multiply</span>(<span class="number">2</span> * dotProduct);
+
+    <span class="keyword">return</span> velocity.<span class="function">subtract</span>(reflection);
+}
+
+<span class="comment">// Circle Bouncing Off Circle</span>
+<span class="keyword">function</span> <span class="function">bounceCircles</span>(a, b, elasticity = <span class="number">0.9</span>) {
+    <span class="comment">// Get collision normal (from b to a)</span>
+    <span class="keyword">const</span> normal = a.position.<span class="function">subtract</span>(b.position).<span class="function">normalize</span>();
+
+    <span class="comment">// Relative velocity</span>
+    <span class="keyword">const</span> relativeVel = a.velocity.<span class="function">subtract</span>(b.velocity);
+
+    <span class="comment">// Velocity along collision normal</span>
+    <span class="keyword">const</span> speed = relativeVel.<span class="function">dot</span>(normal);
+
+    <span class="comment">// Don't bounce if moving apart</span>
+    <span class="keyword">if</span> (speed > <span class="number">0</span>) <span class="keyword">return</span>;
+
+    <span class="comment">// Calculate impulse (considering mass)</span>
+    <span class="keyword">const</span> impulse = (<span class="number">2</span> * speed) / (a.mass + b.mass);
+
+    <span class="comment">// Apply impulse to both objects</span>
+    a.velocity.<span class="function">subtract</span>(normal.<span class="function">copy</span>().<span class="function">multiply</span>(impulse * b.mass * elasticity));
+    b.velocity.<span class="function">add</span>(normal.<span class="function">copy</span>().<span class="function">multiply</span>(impulse * a.mass * elasticity));
+
+    <span class="comment">// Separate objects to prevent overlap</span>
+    <span class="keyword">const</span> overlap = (a.radius + b.radius) - a.position.<span class="function">distance</span>(b.position);
+    <span class="keyword">if</span> (overlap > <span class="number">0</span>) {
+        <span class="keyword">const</span> separation = normal.<span class="function">copy</span>().<span class="function">multiply</span>(overlap / <span class="number">2</span>);
+        a.position.<span class="function">add</span>(separation);
+        b.position.<span class="function">subtract</span>(separation);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Breakout/Pong Ball</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">Ball</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, <span class="number">5</span>);
+        <span class="keyword">this</span>.radius = <span class="number">10</span>;
+        <span class="keyword">this</span>.bounciness = <span class="number">1.0</span>;  <span class="comment">// Perfect bounce</span>
+    }
+
+    <span class="function">update</span>(bounds) {
+        <span class="comment">// Move ball</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Bounce off walls</span>
+        <span class="function">bounceOffWalls</span>(<span class="keyword">this</span>, bounds, <span class="keyword">this</span>.bounciness);
+    }
+
+    <span class="function">hitPaddle</span>(paddle) {
+        <span class="comment">// Reflect based on where it hit the paddle</span>
+        <span class="keyword">const</span> relativeHit = (<span class="keyword">this</span>.position.x - paddle.x) / (paddle.width / <span class="number">2</span>);
+        <span class="keyword">const</span> angle = relativeHit * (Math.PI / <span class="number">4</span>);  <span class="comment">// Max 45 degrees</span>
+
+        <span class="keyword">const</span> speed = <span class="keyword">this</span>.velocity.<span class="function">length</span>();
+        <span class="keyword">this</span>.velocity.x = Math.<span class="function">sin</span>(angle) * speed;
+        <span class="keyword">this</span>.velocity.y = -Math.<span class="function">abs</span>(Math.<span class="function">cos</span>(angle) * speed);
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Bouncing Physics</h3>
+            <div class="diagram">
+                <canvas id="reflectionDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnPerfectBounce">Perfect Bounce (1.0)</button>
+                <button id="btnNormalBounce">Normal Bounce (0.8)</button>
+                <button id="btnDeadBounce">Dead Bounce (0.3)</button>
+                <button id="btnCircleBounce">Circle Collisions</button>
+            </div>
+            <div id="reflectionInfo" class="info-display">Click to add bouncing balls</div>
+
+            <div class="key-point">
+                <strong>💡 Bounciness Values:</strong> 1.0 = perfect elastic collision (no energy loss), 0.5 = loses half the energy, 0.0 = no bounce (sticks to surface). Real materials: rubber ≈ 0.8, wood ≈ 0.5, clay ≈ 0.1
             </div>
         </div>
 
@@ -379,6 +716,258 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
                 <h4>🤔 Think About It:</h4>
                 <p>What happens if you create thousands of particles? How would you optimize the system to handle many effects at once?</p>
                 <p><em>Hint: Check out the Expert guide's section on Object Pooling!</em></p>
+            </div>
+        </div>
+
+        <!-- ADVANCED PARTICLE EFFECTS -->
+        <div id="advanced-particles" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🌟 Advanced Particle Effects</h2>
+
+            <div class="concept-box">
+                <h4>Creating Specific Effects</h4>
+                <p>Different particle behaviors create different visual effects. Let's build systems for common game effects!</p>
+            </div>
+
+            <h3>Effect Types</h3>
+
+            <details>
+                <summary>📝 Effect 1: Fire & Flames</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">FireParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">super</span>(x, y);
+
+        <span class="comment">// Fire rises and spreads</span>
+        <span class="keyword">this</span>.velocity.y = -<span class="function">random</span>(<span class="number">1</span>, <span class="number">3</span>);  <span class="comment">// Upward</span>
+        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">0.5</span>, <span class="number">0.5</span>);  <span class="comment">// Slight spread</span>
+
+        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">4</span>, <span class="number">12</span>);
+        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
+        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.02</span>, <span class="number">0.04</span>);
+
+        <span class="comment">// Color transitions: yellow → orange → red → transparent</span>
+        <span class="keyword">this</span>.colors = [
+            { r: <span class="number">255</span>, g: <span class="number">255</span>, b: <span class="number">100</span> },  <span class="comment">// Bright yellow</span>
+            { r: <span class="number">255</span>, g: <span class="number">150</span>, b: <span class="number">50</span> },   <span class="comment">// Orange</span>
+            { r: <span class="number">255</span>, g: <span class="number">50</span>, b: <span class="number">50</span> }     <span class="comment">// Red</span>
+        ];
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+
+        <span class="comment">// Accelerate upward (heat rises!)</span>
+        <span class="keyword">this</span>.velocity.y -= <span class="number">0.05</span>;
+
+        <span class="comment">// Shrink as it burns out</span>
+        <span class="keyword">this</span>.size *= <span class="number">0.98</span>;
+
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Interpolate color based on life</span>
+        <span class="keyword">const</span> colorIndex = Math.<span class="function">floor</span>((<span class="number">1</span> - <span class="keyword">this</span>.life) * <span class="number">2</span>);
+        <span class="keyword">const</span> color = <span class="keyword">this</span>.colors[Math.<span class="function">min</span>(colorIndex, <span class="number">2</span>)];
+
+        ctx.globalAlpha = <span class="keyword">this</span>.life;
+        ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y,
+                 <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+        ctx.globalAlpha = <span class="number">1</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Effect 2: Smoke</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SmokeParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">super</span>(x, y);
+
+        <span class="comment">// Smoke drifts slowly upward</span>
+        <span class="keyword">this</span>.velocity.y = -<span class="function">random</span>(<span class="number">0.3</span>, <span class="number">0.8</span>);
+        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">0.3</span>, <span class="number">0.3</span>);
+
+        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">8</span>, <span class="number">20</span>);
+        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
+        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.005</span>, <span class="number">0.015</span>);  <span class="comment">// Lasts longer</span>
+
+        <span class="comment">// Swirl effect</span>
+        <span class="keyword">this</span>.angle = <span class="function">random</span>(<span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        <span class="keyword">this</span>.swirl = <span class="function">random</span>(-<span class="number">0.02</span>, <span class="number">0.02</span>);
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+
+        <span class="comment">// Swirl motion</span>
+        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.swirl;
+        <span class="keyword">this</span>.velocity.x += Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="number">0.05</span>;
+
+        <span class="comment">// Expand as it dissipates</span>
+        <span class="keyword">this</span>.size += <span class="number">0.2</span>;
+
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Gray smoke, fades with life</span>
+        <span class="keyword">const</span> gray = Math.<span class="function">floor</span>(<span class="number">100</span> + <span class="keyword">this</span>.life * <span class="number">100</span>);
+        ctx.globalAlpha = <span class="keyword">this</span>.life * <span class="number">0.4</span>;  <span class="comment">// Semi-transparent</span>
+        ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y,
+                 <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+        ctx.globalAlpha = <span class="number">1</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Effect 3: Sparkles/Magic</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SparkleParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">super</span>(x, y);
+
+        <span class="comment">// Sparkles burst outward</span>
+        <span class="keyword">const</span> angle = <span class="function">random</span>(<span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        <span class="keyword">const</span> speed = <span class="function">random</span>(<span class="number">2</span>, <span class="number">5</span>);
+        <span class="keyword">this</span>.velocity.x = Math.<span class="function">cos</span>(angle) * speed;
+        <span class="keyword">this</span>.velocity.y = Math.<span class="function">sin</span>(angle) * speed;
+
+        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">2</span>, <span class="number">6</span>);
+        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
+        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.03</span>, <span class="number">0.06</span>);
+
+        <span class="comment">// Random bright color</span>
+        <span class="keyword">this</span>.hue = <span class="function">random</span>(<span class="number">0</span>, <span class="number">360</span>);
+
+        <span class="comment">// Twinkle effect</span>
+        <span class="keyword">this</span>.twinkle = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+
+        <span class="comment">// Slow down over time</span>
+        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="number">0.95</span>);
+
+        <span class="comment">// Twinkle animation</span>
+        <span class="keyword">this</span>.twinkle += <span class="number">0.2</span>;
+        <span class="keyword">const</span> scale = Math.<span class="function">abs</span>(Math.<span class="function">sin</span>(<span class="keyword">this</span>.twinkle));
+
+        <span class="keyword">this</span>.currentSize = <span class="keyword">this</span>.size * scale;
+
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        ctx.globalAlpha = <span class="keyword">this</span>.life;
+        ctx.fillStyle = `hsl(${<span class="keyword">this</span>.hue}, 100%, 70%)`;
+
+        <span class="comment">// Draw as a star/cross shape</span>
+        <span class="keyword">const</span> s = <span class="keyword">this</span>.currentSize;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x - s, <span class="keyword">this</span>.position.y);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.position.x + s, <span class="keyword">this</span>.position.y);
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y - s);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y + s);
+        ctx.lineWidth = <span class="number">2</span>;
+        ctx.strokeStyle = `hsl(${<span class="keyword">this</span>.hue}, 100%, 90%)`;
+        ctx.<span class="function">stroke</span>();
+
+        ctx.globalAlpha = <span class="number">1</span>;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Effect 4: Rain & Water</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">RainParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">super</span>(x, y);
+
+        <span class="comment">// Rain falls down with slight wind</span>
+        <span class="keyword">this</span>.velocity.y = <span class="function">random</span>(<span class="number">5</span>, <span class="number">10</span>);
+        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">1</span>, <span class="number">1</span>);  <span class="comment">// Wind effect</span>
+
+        <span class="keyword">this</span>.length = <span class="function">random</span>(<span class="number">10</span>, <span class="number">20</span>);
+        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
+        <span class="keyword">this</span>.decay = <span class="number">0</span>;  <span class="comment">// Doesn't fade until hitting ground</span>
+    }
+
+    <span class="function">update</span>(groundY = <span class="number">600</span>) {
+        <span class="comment">// Accelerate (gravity)</span>
+        <span class="keyword">this</span>.velocity.y += <span class="number">0.2</span>;
+
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Hit ground - create splash!</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y >= groundY) {
+            <span class="keyword">this</span>.<span class="function">createSplash</span>();
+            <span class="keyword">return</span> <span class="keyword">false</span>;  <span class="comment">// Remove raindrop</span>
+        }
+
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        ctx.strokeStyle = <span class="string">'rgba(150, 150, 255, 0.5)'</span>;
+        ctx.lineWidth = <span class="number">2</span>;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
+        ctx.<span class="function">lineTo</span>(
+            <span class="keyword">this</span>.position.x - <span class="keyword">this</span>.velocity.x * <span class="number">0.3</span>,
+            <span class="keyword">this</span>.position.y - <span class="keyword">this</span>.length
+        );
+        ctx.<span class="function">stroke</span>();
+    }
+
+    <span class="function">createSplash</span>() {
+        <span class="comment">// Create small splash particles (handled by particle system)</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">5</span>; i++) {
+            <span class="keyword">const</span> angle = <span class="function">random</span>(-Math.PI, <span class="number">0</span>);  <span class="comment">// Upward hemisphere</span>
+            <span class="keyword">const</span> speed = <span class="function">random</span>(<span class="number">1</span>, <span class="number">3</span>);
+            <span class="comment">// Emit splash particles...</span>
+        }
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Particle Effect Showcase</h3>
+            <div class="diagram">
+                <canvas id="advancedParticlesDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnFire">🔥 Fire</button>
+                <button id="btnSmoke">💨 Smoke</button>
+                <button id="btnSparkles">✨ Sparkles</button>
+                <button id="btnRain">🌧️ Rain</button>
+                <button id="btnCombined">🎆 Combined Effects</button>
+                <button id="btnClearParticles">Clear All</button>
+            </div>
+            <div id="advancedParticlesInfo" class="info-display">Click to create different particle effects!</div>
+
+            <div class="key-point">
+                <strong>💡 Pro Tip:</strong> Combine multiple particle types for complex effects! A campfire = fire particles + smoke particles + occasional sparkles. An explosion = fast-moving sparkles + fire burst + smoke trail!
             </div>
         </div>
 

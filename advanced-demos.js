@@ -1386,3 +1386,695 @@ if (shadowCanvas) {
 
     animateShadow();
 }
+
+// ===================================
+// DEMO: Flow Field
+// ===================================
+const flowFieldCanvas = document.getElementById('flowFieldDemo');
+if (flowFieldCanvas) {
+    const ctx = flowFieldCanvas.getContext('2d');
+    const info = document.getElementById('flowFieldInfo');
+
+    const cellSize = 20;
+    const cols = Math.floor(flowFieldCanvas.width / cellSize);
+    const rows = Math.floor(flowFieldCanvas.height / cellSize);
+
+    let costField = [];
+    let integrationField = [];
+    let flowField = [];
+    let goalX = Math.floor(cols / 2);
+    let goalY = Math.floor(rows / 2);
+    let obstacles = [];
+    let units = [];
+    let showArrows = true;
+    let mode = 'goal';
+
+    // Initialize fields
+    function initFields() {
+        for (let y = 0; y < rows; y++) {
+            costField[y] = [];
+            integrationField[y] = [];
+            flowField[y] = [];
+            for (let x = 0; x < cols; x++) {
+                costField[y][x] = 1;
+                integrationField[y][x] = 65535;
+                flowField[y][x] = new Vector2D(0, 0);
+            }
+        }
+    }
+
+    function generateFlowField() {
+        // Reset integration field
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                integrationField[y][x] = 65535;
+            }
+        }
+
+        integrationField[goalY][goalX] = 0;
+
+        // Dijkstra's algorithm
+        const openList = [{x: goalX, y: goalY}];
+
+        while (openList.length > 0) {
+            const current = openList.shift();
+            const neighbors = getNeighbors(current.x, current.y);
+
+            for (const neighbor of neighbors) {
+                const cost = costField[neighbor.y][neighbor.x];
+                if (cost === 255) continue;
+
+                const newCost = integrationField[current.y][current.x] + cost;
+
+                if (newCost < integrationField[neighbor.y][neighbor.x]) {
+                    integrationField[neighbor.y][neighbor.x] = newCost;
+                    openList.push(neighbor);
+                }
+            }
+        }
+
+        // Create flow field
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (costField[y][x] === 255) continue;
+
+                let lowestCost = integrationField[y][x];
+                let bestDirection = new Vector2D(0, 0);
+
+                const neighbors = getNeighbors(x, y);
+                for (const neighbor of neighbors) {
+                    const cost = integrationField[neighbor.y][neighbor.x];
+                    if (cost < lowestCost) {
+                        lowestCost = cost;
+                        bestDirection = new Vector2D(neighbor.x - x, neighbor.y - y).normalize();
+                    }
+                }
+
+                flowField[y][x] = bestDirection;
+            }
+        }
+    }
+
+    function getNeighbors(x, y) {
+        const neighbors = [];
+        const directions = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+
+        for (const dir of directions) {
+            const nx = x + dir.x;
+            const ny = y + dir.y;
+            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+                neighbors.push({x: nx, y: ny});
+            }
+        }
+        return neighbors;
+    }
+
+    class Unit {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.radius = 5;
+            this.maxSpeed = 2;
+            this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+        }
+
+        update() {
+            const cellX = Math.floor(this.position.x / cellSize);
+            const cellY = Math.floor(this.position.y / cellSize);
+
+            if (cellX >= 0 && cellX < cols && cellY >= 0 && cellY < rows) {
+                const direction = flowField[cellY][cellX];
+                this.position.x += direction.x * this.maxSpeed;
+                this.position.y += direction.y * this.maxSpeed;
+            }
+
+            // Keep in bounds
+            this.position.x = Math.max(this.radius, Math.min(flowFieldCanvas.width - this.radius, this.position.x));
+            this.position.y = Math.max(this.radius, Math.min(flowFieldCanvas.height - this.radius, this.position.y));
+        }
+
+        draw(ctx) {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    flowFieldCanvas.addEventListener('click', (e) => {
+        const rect = flowFieldCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / cellSize);
+        const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+        if (mode === 'goal') {
+            goalX = x;
+            goalY = y;
+            generateFlowField();
+        } else if (mode === 'obstacle') {
+            costField[y][x] = 255;
+            generateFlowField();
+        }
+    });
+
+    flowFieldCanvas.addEventListener('mousemove', (e) => {
+        if (e.buttons === 1 && mode === 'obstacle') {
+            const rect = flowFieldCanvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) / cellSize);
+            if (x >= 0 && x < cols && y >= 0 && y < rows) {
+                costField[y][x] = 255;
+                generateFlowField();
+            }
+        }
+    });
+
+    // Button handlers
+    const btnSetGoal = document.getElementById('btnSetGoalFlow');
+    const btnDrawObstacles = document.getElementById('btnDrawObstacles');
+    const btnSpawnUnits = document.getElementById('btnSpawnUnits');
+    const btnClear = document.getElementById('btnClearFlowField');
+    const btnToggleArrows = document.getElementById('btnToggleArrows');
+
+    if (btnSetGoal) btnSetGoal.addEventListener('click', () => mode = 'goal');
+    if (btnDrawObstacles) btnDrawObstacles.addEventListener('click', () => mode = 'obstacle');
+    if (btnSpawnUnits) btnSpawnUnits.addEventListener('click', () => {
+        for (let i = 0; i < 50; i++) {
+            units.push(new Unit(Math.random() * flowFieldCanvas.width, Math.random() * flowFieldCanvas.height));
+        }
+    });
+    if (btnClear) btnClear.addEventListener('click', () => {
+        units = [];
+        initFields();
+        generateFlowField();
+    });
+    if (btnToggleArrows) btnToggleArrows.addEventListener('click', () => showArrows = !showArrows);
+
+    initFields();
+    generateFlowField();
+
+    function animateFlowField() {
+        clearCanvas(ctx, flowFieldCanvas.width, flowFieldCanvas.height);
+
+        // Draw cells
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                const px = x * cellSize;
+                const py = y * cellSize;
+
+                // Color based on distance
+                if (costField[y][x] === 255) {
+                    ctx.fillStyle = '#333';
+                } else {
+                    const value = integrationField[y][x];
+                    const normalized = Math.min(value / 100, 1);
+                    const hue = 200 - normalized * 100;
+                    ctx.fillStyle = `hsl(${hue}, 50%, 30%)`;
+                }
+
+                ctx.fillRect(px, py, cellSize, cellSize);
+
+                // Draw arrows
+                if (showArrows && costField[y][x] !== 255) {
+                    const dir = flowField[y][x];
+                    if (dir.length() > 0) {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        const cx = px + cellSize / 2;
+                        const cy = py + cellSize / 2;
+                        const arrowLen = cellSize / 3;
+
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(cx + dir.x * arrowLen, cy + dir.y * arrowLen);
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw grid
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px, py, cellSize, cellSize);
+            }
+        }
+
+        // Draw goal
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(goalX * cellSize + cellSize / 2, goalY * cellSize + cellSize / 2, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Update and draw units
+        units.forEach(unit => {
+            unit.update();
+            unit.draw(ctx);
+        });
+
+        info.textContent = `Mode: ${mode} | Units: ${units.length} | Arrows: ${showArrows ? 'ON' : 'OFF'}`;
+
+        requestAnimationFrame(animateFlowField);
+    }
+
+    animateFlowField();
+}
+
+// ===================================
+// DEMO: Behavior Tree
+// ===================================
+const behaviorTreeCanvas = document.getElementById('behaviorTreeDemo');
+if (behaviorTreeCanvas) {
+    const ctx = behaviorTreeCanvas.getContext('2d');
+    const info = document.getElementById('behaviorTreeInfo');
+
+    // Player controlled by WASD
+    const player = {
+        position: new Vector2D(400, 250),
+        radius: 15,
+        speed: 3
+    };
+
+    const keys = {w: false, a: false, s: false, d: false};
+
+    // BT Node classes
+    class BTNode {
+        execute(agent) { return 'FAILURE'; }
+    }
+
+    class Sequence extends BTNode {
+        constructor(...children) {
+            super();
+            this.children = children;
+        }
+        execute(agent) {
+            for (const child of this.children) {
+                const result = child.execute(agent);
+                if (result !== 'SUCCESS') return result;
+            }
+            return 'SUCCESS';
+        }
+    }
+
+    class Selector extends BTNode {
+        constructor(...children) {
+            super();
+            this.children = children;
+        }
+        execute(agent) {
+            for (const child of this.children) {
+                const result = child.execute(agent);
+                if (result !== 'FAILURE') return result;
+            }
+            return 'FAILURE';
+        }
+    }
+
+    class Condition extends BTNode {
+        constructor(conditionFn) {
+            super();
+            this.conditionFn = conditionFn;
+        }
+        execute(agent) {
+            return this.conditionFn(agent) ? 'SUCCESS' : 'FAILURE';
+        }
+    }
+
+    class Action extends BTNode {
+        constructor(actionFn) {
+            super();
+            this.actionFn = actionFn;
+        }
+        execute(agent) {
+            return this.actionFn(agent);
+        }
+    }
+
+    class Enemy {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(0, 0);
+            this.radius = 12;
+            this.health = 100;
+            this.state = 'patrol';
+            this.patrolTarget = new Vector2D(Math.random() * behaviorTreeCanvas.width, Math.random() * behaviorTreeCanvas.height);
+
+            // Build behavior tree
+            this.behaviorTree = new Selector(
+                new Sequence(
+                    new Condition(agent => agent.isPlayerNear()),
+                    new Action(agent => agent.attack())
+                ),
+                new Sequence(
+                    new Condition(agent => agent.canSeePlayer()),
+                    new Action(agent => agent.chasePlayer())
+                ),
+                new Sequence(
+                    new Condition(agent => agent.health > 50),
+                    new Action(agent => agent.patrol())
+                ),
+                new Action(agent => agent.flee())
+            );
+        }
+
+        isPlayerNear() {
+            return this.position.distance(player.position) < 50;
+        }
+
+        canSeePlayer() {
+            return this.position.distance(player.position) < 200;
+        }
+
+        attack() {
+            this.state = 'attack';
+            this.velocity.multiply(0);
+            return 'SUCCESS';
+        }
+
+        chasePlayer() {
+            this.state = 'chase';
+            const direction = player.position.subtract(this.position).normalize();
+            this.velocity = direction.multiply(2);
+            return 'SUCCESS';
+        }
+
+        patrol() {
+            this.state = 'patrol';
+            if (this.position.distance(this.patrolTarget) < 20) {
+                this.patrolTarget = new Vector2D(Math.random() * behaviorTreeCanvas.width, Math.random() * behaviorTreeCanvas.height);
+            }
+            const direction = this.patrolTarget.subtract(this.position).normalize();
+            this.velocity = direction.multiply(1);
+            return 'SUCCESS';
+        }
+
+        flee() {
+            this.state = 'flee';
+            const direction = this.position.subtract(player.position).normalize();
+            this.velocity = direction.multiply(2.5);
+            return 'SUCCESS';
+        }
+
+        update() {
+            this.behaviorTree.execute(this);
+            this.position.add(this.velocity);
+
+            // Keep in bounds
+            this.position.x = Math.max(this.radius, Math.min(behaviorTreeCanvas.width - this.radius, this.position.x));
+            this.position.y = Math.max(this.radius, Math.min(behaviorTreeCanvas.height - this.radius, this.position.y));
+        }
+
+        draw(ctx) {
+            const colors = {
+                patrol: '#66bb6a',
+                chase: '#ffa726',
+                attack: '#ef5350',
+                flee: '#ab47bc'
+            };
+
+            ctx.fillStyle = colors[this.state];
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw state label
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.state.toUpperCase(), this.position.x, this.position.y - 20);
+
+            // Draw detection range
+            if (this.state === 'chase') {
+                ctx.strokeStyle = 'rgba(255, 167, 38, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 200, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+
+    let enemies = [];
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (key in keys) keys[key] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        if (key in keys) keys[key] = false;
+    });
+
+    // Button handlers
+    const btnSpawnEnemy = document.getElementById('btnSpawnEnemy');
+    const btnReset = document.getElementById('btnResetBehavior');
+
+    if (btnSpawnEnemy) btnSpawnEnemy.addEventListener('click', () => {
+        enemies.push(new Enemy(Math.random() * behaviorTreeCanvas.width, Math.random() * behaviorTreeCanvas.height));
+    });
+    if (btnReset) btnReset.addEventListener('click', () => {
+        enemies = [];
+        player.position = new Vector2D(400, 250);
+    });
+
+    // Spawn initial enemies
+    for (let i = 0; i < 3; i++) {
+        enemies.push(new Enemy(Math.random() * behaviorTreeCanvas.width, Math.random() * behaviorTreeCanvas.height));
+    }
+
+    function animateBehaviorTree() {
+        clearCanvas(ctx, behaviorTreeCanvas.width, behaviorTreeCanvas.height);
+
+        // Update player
+        if (keys.w) player.position.y -= player.speed;
+        if (keys.s) player.position.y += player.speed;
+        if (keys.a) player.position.x -= player.speed;
+        if (keys.d) player.position.x += player.speed;
+
+        player.position.x = Math.max(player.radius, Math.min(behaviorTreeCanvas.width - player.radius, player.position.x));
+        player.position.y = Math.max(player.radius, Math.min(behaviorTreeCanvas.height - player.radius, player.position.y));
+
+        // Draw player
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(player.position.x, player.position.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Update and draw enemies
+        enemies.forEach(enemy => {
+            enemy.update();
+            enemy.draw(ctx);
+        });
+
+        // State counts
+        const stateCounts = {patrol: 0, chase: 0, attack: 0, flee: 0};
+        enemies.forEach(e => stateCounts[e.state]++);
+
+        info.textContent = `Enemies: ${enemies.length} | Patrol: ${stateCounts.patrol} | Chase: ${stateCounts.chase} | Attack: ${stateCounts.attack} | Flee: ${stateCounts.flee}`;
+
+        requestAnimationFrame(animateBehaviorTree);
+    }
+
+    animateBehaviorTree();
+}
+
+// ===================================
+// DEMO: Spatial Hash
+// ===================================
+const spatialHashCanvas = document.getElementById('spatialHashDemo');
+if (spatialHashCanvas) {
+    const ctx = spatialHashCanvas.getContext('2d');
+    const info = document.getElementById('spatialHashInfo');
+
+    const cellSize = 50;
+    let objects = [];
+    let showGrid = true;
+    let showNearby = false;
+    let mousePos = new Vector2D(0, 0);
+
+    class SpatialHash {
+        constructor(cellSize) {
+            this.cellSize = cellSize;
+            this.cells = new Map();
+        }
+
+        getKey(x, y) {
+            const cellX = Math.floor(x / this.cellSize);
+            const cellY = Math.floor(y / this.cellSize);
+            return `${cellX},${cellY}`;
+        }
+
+        insert(object) {
+            const key = this.getKey(object.position.x, object.position.y);
+            if (!this.cells.has(key)) {
+                this.cells.set(key, []);
+            }
+            this.cells.get(key).push(object);
+            object.cellKey = key;
+        }
+
+        remove(object) {
+            if (!object.cellKey) return;
+            const cell = this.cells.get(object.cellKey);
+            if (cell) {
+                const index = cell.indexOf(object);
+                if (index !== -1) {
+                    cell.splice(index, 1);
+                }
+            }
+            object.cellKey = null;
+        }
+
+        update(object) {
+            const newKey = this.getKey(object.position.x, object.position.y);
+            if (object.cellKey !== newKey) {
+                this.remove(object);
+                this.insert(object);
+            }
+        }
+
+        getNearby(x, y, range = 1) {
+            const nearby = [];
+            const cellX = Math.floor(x / this.cellSize);
+            const cellY = Math.floor(y / this.cellSize);
+
+            for (let dx = -range; dx <= range; dx++) {
+                for (let dy = -range; dy <= range; dy++) {
+                    const key = `${cellX + dx},${cellY + dy}`;
+                    const cell = this.cells.get(key);
+                    if (cell) {
+                        nearby.push(...cell);
+                    }
+                }
+            }
+            return nearby;
+        }
+
+        clear() {
+            this.cells.clear();
+        }
+    }
+
+    class HashObject {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+            this.radius = 8;
+            this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            this.cellKey = null;
+        }
+
+        update() {
+            this.position.add(this.velocity);
+
+            // Bounce off walls
+            if (this.position.x < this.radius || this.position.x > spatialHashCanvas.width - this.radius) {
+                this.velocity.x *= -1;
+                this.position.x = Math.max(this.radius, Math.min(spatialHashCanvas.width - this.radius, this.position.x));
+            }
+            if (this.position.y < this.radius || this.position.y > spatialHashCanvas.height - this.radius) {
+                this.velocity.y *= -1;
+                this.position.y = Math.max(this.radius, Math.min(spatialHashCanvas.height - this.radius, this.position.y));
+            }
+        }
+
+        draw(ctx, highlight = false) {
+            ctx.fillStyle = highlight ? '#ffeb3b' : this.color;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const spatialHash = new SpatialHash(cellSize);
+
+    spatialHashCanvas.addEventListener('mousemove', (e) => {
+        const rect = spatialHashCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    // Button handlers
+    const btnAdd100 = document.getElementById('btnAdd100');
+    const btnToggleGrid = document.getElementById('btnToggleGrid');
+    const btnShowNearby = document.getElementById('btnShowNearby');
+    const btnClearHash = document.getElementById('btnClearHash');
+
+    if (btnAdd100) btnAdd100.addEventListener('click', () => {
+        for (let i = 0; i < 100; i++) {
+            const obj = new HashObject(
+                Math.random() * spatialHashCanvas.width,
+                Math.random() * spatialHashCanvas.height
+            );
+            objects.push(obj);
+            spatialHash.insert(obj);
+        }
+    });
+    if (btnToggleGrid) btnToggleGrid.addEventListener('click', () => showGrid = !showGrid);
+    if (btnShowNearby) btnShowNearby.addEventListener('click', () => showNearby = !showNearby);
+    if (btnClearHash) btnClearHash.addEventListener('click', () => {
+        objects = [];
+        spatialHash.clear();
+    });
+
+    function animateSpatialHash() {
+        clearCanvas(ctx, spatialHashCanvas.width, spatialHashCanvas.height);
+
+        // Draw grid
+        if (showGrid) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= spatialHashCanvas.width; x += cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, spatialHashCanvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= spatialHashCanvas.height; y += cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(spatialHashCanvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Get nearby objects
+        let nearby = [];
+        if (showNearby) {
+            nearby = spatialHash.getNearby(mousePos.x, mousePos.y, 1);
+
+            // Highlight query cells
+            const cellX = Math.floor(mousePos.x / cellSize);
+            const cellY = Math.floor(mousePos.y / cellSize);
+            ctx.fillStyle = 'rgba(79, 195, 247, 0.1)';
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    ctx.fillRect((cellX + dx) * cellSize, (cellY + dy) * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        // Update and draw objects
+        objects.forEach(obj => {
+            obj.update();
+            spatialHash.update(obj);
+            obj.draw(ctx, nearby.includes(obj));
+        });
+
+        // Draw mouse position
+        if (showNearby) {
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mousePos.x, mousePos.y, 100, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        const bruteForceChecks = objects.length * objects.length;
+        const spatialHashChecks = objects.length * 9; // Average 9 nearby cells
+        const efficiency = bruteForceChecks > 0 ? (bruteForceChecks / spatialHashChecks).toFixed(1) : 0;
+
+        info.textContent = `Objects: ${objects.length} | Nearby: ${nearby.length} | Efficiency: ${efficiency}x faster | Grid: ${showGrid ? 'ON' : 'OFF'}`;
+
+        requestAnimationFrame(animateSpatialHash);
+    }
+
+    animateSpatialHash();
+}
