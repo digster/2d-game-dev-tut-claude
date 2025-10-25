@@ -553,21 +553,186 @@ if (springCanvas) {
     const ctx = springCanvas.getContext('2d');
     const info = document.getElementById('springInfo');
     let mousePos = new Vector2D(400, 250);
-    let stiffness = 0.1;
-    let damping = 0.8;
+    let mode = 'single'; // 'single' or 'compare'
 
-    // Spring object
-    const spring = {
-        position: new Vector2D(400, 250),
-        velocity: new Vector2D(0, 0),
-        target: new Vector2D(400, 250)
-    };
+    // Helper function to draw a spring coil
+    function drawSpringCoil(ctx, start, end, color = '#4fc3f7') {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+
+        ctx.save();
+        ctx.translate(start.x, start.y);
+        ctx.rotate(angle);
+
+        // Draw coiled spring
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        const coils = 10;
+        const amplitude = 8;
+        for (let i = 0; i <= 100; i++) {
+            const t = i / 100;
+            const x = distance * t;
+            const y = Math.sin(t * coils * Math.PI * 2) * amplitude;
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // Spring object class
+    class SpringObject {
+        constructor(x, y, stiffness, damping, color, label) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(0, 0);
+            this.target = new Vector2D(x, y);
+            this.stiffness = stiffness;
+            this.damping = damping;
+            this.color = color;
+            this.label = label;
+            this.trail = [];
+            this.maxTrailLength = 30;
+        }
+
+        update() {
+            // Hooke's Law: F = -k * x (displacement)
+            const displacement = this.target.subtract(this.position);
+            const springForce = displacement.multiply(this.stiffness);
+
+            // Add force to velocity
+            this.velocity.add(springForce);
+
+            // Apply damping
+            this.velocity.multiply(this.damping);
+
+            // Update position
+            this.position.add(this.velocity);
+
+            // Update trail
+            this.trail.push(this.position.copy());
+            if (this.trail.length > this.maxTrailLength) {
+                this.trail.shift();
+            }
+        }
+
+        draw(ctx, showForces = true) {
+            // Draw trail
+            if (this.trail.length > 1) {
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                this.trail.forEach((pos, i) => {
+                    if (i === 0) ctx.moveTo(pos.x, pos.y);
+                    else ctx.lineTo(pos.x, pos.y);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw spring coil
+            drawSpringCoil(ctx, this.position, this.target, this.color);
+
+            // Draw force vectors if enabled
+            if (showForces) {
+                const displacement = this.target.subtract(this.position);
+                const springForce = displacement.multiply(this.stiffness);
+                const forceScale = 50;
+
+                // Draw spring force (blue)
+                ctx.strokeStyle = '#4fc3f7';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(this.position.x, this.position.y);
+                ctx.lineTo(
+                    this.position.x + springForce.x * forceScale,
+                    this.position.y + springForce.y * forceScale
+                );
+                ctx.stroke();
+
+                // Draw velocity vector (green)
+                const velScale = 5;
+                ctx.strokeStyle = '#66bb6a';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(this.position.x, this.position.y);
+                ctx.lineTo(
+                    this.position.x + this.velocity.x * velScale,
+                    this.position.y + this.velocity.y * velScale
+                );
+                ctx.stroke();
+            }
+
+            // Draw spring object
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw label
+            if (this.label) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.label, this.position.x, this.position.y - 30);
+            }
+        }
+
+        drawTarget(ctx) {
+            // Draw target anchor point
+            ctx.fillStyle = '#ffa726';
+            ctx.beginPath();
+            ctx.arc(this.target.x, this.target.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw crosshair
+            ctx.strokeStyle = '#ffa726';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.target.x - 12, this.target.y);
+            ctx.lineTo(this.target.x + 12, this.target.y);
+            ctx.moveTo(this.target.x, this.target.y - 12);
+            ctx.lineTo(this.target.x, this.target.y + 12);
+            ctx.stroke();
+        }
+    }
+
+    // Single spring for single mode
+    let currentSpring = new SpringObject(400, 250, 0.1, 0.8, '#4fc3f7', null);
+
+    // Multiple springs for comparison mode
+    const comparisonSprings = [
+        new SpringObject(200, 100, 0.2, 0.8, '#4fc3f7', 'Tight'),
+        new SpringObject(400, 100, 0.05, 0.9, '#66bb6a', 'Loose'),
+        new SpringObject(600, 100, 0.15, 0.6, '#ffa726', 'Bouncy'),
+        new SpringObject(400, 300, 0.3, 0.95, '#ef5350', 'Stiff')
+    ];
 
     springCanvas.addEventListener('mousemove', (e) => {
         const rect = springCanvas.getBoundingClientRect();
         mousePos.x = e.clientX - rect.left;
         mousePos.y = e.clientY - rect.top;
-        spring.target = mousePos.copy();
+
+        if (mode === 'single') {
+            currentSpring.target = mousePos.copy();
+        } else {
+            // In comparison mode, all springs follow the same target
+            comparisonSprings.forEach(spring => {
+                spring.target = mousePos.copy();
+            });
+        }
     });
 
     // Button handlers
@@ -576,63 +741,72 @@ if (springCanvas) {
     const btnBouncy = document.getElementById('btnBouncySpring');
     const btnStiff = document.getElementById('btnStiffSpring');
 
-    if (btnTight) btnTight.addEventListener('click', () => { stiffness = 0.2; damping = 0.8; });
-    if (btnLoose) btnLoose.addEventListener('click', () => { stiffness = 0.05; damping = 0.9; });
-    if (btnBouncy) btnBouncy.addEventListener('click', () => { stiffness = 0.15; damping = 0.6; });
-    if (btnStiff) btnStiff.addEventListener('click', () => { stiffness = 0.3; damping = 0.95; });
+    if (btnTight) btnTight.addEventListener('click', () => {
+        mode = 'single';
+        currentSpring = new SpringObject(400, 250, 0.2, 0.8, '#4fc3f7', 'Tight Spring');
+        currentSpring.target = mousePos.copy();
+    });
+    if (btnLoose) btnLoose.addEventListener('click', () => {
+        mode = 'single';
+        currentSpring = new SpringObject(400, 250, 0.05, 0.9, '#66bb6a', 'Loose Spring');
+        currentSpring.target = mousePos.copy();
+    });
+    if (btnBouncy) btnBouncy.addEventListener('click', () => {
+        mode = 'single';
+        currentSpring = new SpringObject(400, 250, 0.15, 0.6, '#ffa726', 'Bouncy Spring');
+        currentSpring.target = mousePos.copy();
+    });
+    if (btnStiff) btnStiff.addEventListener('click', () => {
+        mode = 'compare';
+        comparisonSprings.forEach(spring => {
+            spring.target = mousePos.copy();
+            spring.trail = [];
+        });
+    });
 
     function animateSpring() {
         clearCanvas(ctx, springCanvas.width, springCanvas.height);
 
-        // Update spring physics
-        const displacement = spring.target.subtract(spring.position);
-        const springForce = displacement.multiply(stiffness);
+        if (mode === 'single') {
+            // Update and draw single spring
+            currentSpring.update();
+            currentSpring.drawTarget(ctx);
+            currentSpring.draw(ctx, true);
 
-        spring.velocity.add(springForce);
-        spring.velocity.multiply(damping);
-        spring.position.add(spring.velocity);
+            // Info display
+            const distance = currentSpring.position.distance(currentSpring.target);
+            const speed = currentSpring.velocity.length();
+            const energy = speed * speed * 0.5; // Kinetic energy approximation
 
-        // Draw spring line
-        ctx.strokeStyle = 'rgba(79, 195, 247, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(spring.position.x, spring.position.y);
-        ctx.lineTo(spring.target.x, spring.target.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
+            info.textContent = `${currentSpring.label || 'Spring'} - Stiffness: ${currentSpring.stiffness.toFixed(2)} | Damping: ${currentSpring.damping.toFixed(2)} | Distance: ${distance.toFixed(1)}px | Speed: ${speed.toFixed(2)} | Energy: ${energy.toFixed(2)}`;
 
-        // Draw target (mouse)
-        ctx.fillStyle = '#ffa726';
-        ctx.beginPath();
-        ctx.arc(spring.target.x, spring.target.y, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+            // Draw legend
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Blue arrow = Spring Force', 10, 20);
+            ctx.fillText('Green arrow = Velocity', 10, 40);
 
-        // Draw spring object
-        ctx.fillStyle = '#4fc3f7';
-        ctx.beginPath();
-        ctx.arc(spring.position.x, spring.position.y, 20, 0, Math.PI * 2);
-        ctx.fill();
+        } else {
+            // Update and draw all comparison springs
+            comparisonSprings.forEach((spring, i) => {
+                spring.update();
+                if (i === 0) spring.drawTarget(ctx); // Draw target once
+                spring.draw(ctx, false); // Don't show individual force vectors in comparison
+            });
 
-        // Draw velocity indicator
-        const velScale = 5;
-        ctx.strokeStyle = '#66bb6a';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(spring.position.x, spring.position.y);
-        ctx.lineTo(
-            spring.position.x + spring.velocity.x * velScale,
-            spring.position.y + spring.velocity.y * velScale
-        );
-        ctx.stroke();
+            // Info display
+            info.textContent = 'Comparison Mode - Move mouse to see how different spring settings respond. Notice the different oscillation patterns!';
 
-        // Info
-        const distance = spring.position.distance(spring.target);
-        const speed = spring.velocity.length();
-        info.textContent = `Stiffness: ${stiffness.toFixed(2)} | Damping: ${damping.toFixed(2)} | Distance: ${distance.toFixed(1)} | Speed: ${speed.toFixed(2)}`;
+            // Draw legend
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Tight (k=0.2, d=0.8) - Fast response, stable', 10, 20);
+            ctx.fillText('Loose (k=0.05, d=0.9) - Slow, very smooth', 10, 40);
+            ctx.fillText('Bouncy (k=0.15, d=0.6) - Oscillates more', 10, 60);
+            ctx.fillText('Stiff (k=0.3, d=0.95) - Very fast, no overshoot', 10, 80);
+        }
 
         requestAnimationFrame(animateSpring);
     }
