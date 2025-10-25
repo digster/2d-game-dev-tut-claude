@@ -26,6 +26,7 @@
                 <li><a href="#physics">Physics Systems with Forces</a></li>
                 <li><a href="#spaceship">Spaceship Controller with Gravity Wells</a></li>
                 <li><a href="#spring">Spring Physics & Damping</a></li>
+                <li><a href="#procedural-animation">Procedural Animation</a></li>
                 <li><a href="#friction">Friction & Drag Systems</a></li>
                 <li><a href="#collision">Collision Detection</a></li>
                 <li><a href="#reflection">Bouncing & Reflection</a></li>
@@ -409,6 +410,144 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
 
             <div class="key-point">
                 <strong>💡 Understanding Spring Force:</strong> The launcher demonstrates Hooke's Law (F = -k × displacement). Higher stiffness (k) means stronger force for the same pull distance. Try different stiffness values to see how they affect launch power and trajectory!
+            </div>
+        </div>
+
+        <!-- PROCEDURAL ANIMATION -->
+        <div id="procedural-animation" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🎬 Procedural Animation</h2>
+
+            <div class="concept-box">
+                <h4>What is Procedural Animation?</h4>
+                <p>Instead of using pre-made keyframe animations, procedural animation generates movement through code and math! This creates organic, dynamic animations that respond to the game state.</p>
+                <p><strong>Common Uses:</strong></p>
+                <ul>
+                    <li><strong>Idle animations:</strong> Breathing, hovering, swaying</li>
+                    <li><strong>Reactive movement:</strong> Tentacles, ropes, chains</li>
+                    <li><strong>Natural motion:</strong> Combining sine/cosine waves</li>
+                    <li><strong>Character effects:</strong> Head bobbing, leaning</li>
+                </ul>
+            </div>
+
+            <div class="concept-box">
+                <h4>Core Techniques</h4>
+                <p><strong>1. Sine Waves for Rhythm:</strong></p>
+                <div class="formula">
+                    offset = sin(time × frequency) × amplitude
+                </div>
+                <p><strong>2. Following Chain (Delayed Movement):</strong></p>
+                <div class="formula">
+                    segment[i].position.lerp(segment[i-1].position, smoothing)
+                </div>
+                <p><strong>3. Combining Multiple Waves:</strong></p>
+                <div class="formula">
+                    y = sin(t) × amplitude1 + sin(t × 2 + offset) × amplitude2
+                </div>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Procedural Animation Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Butterfly - Wing flapping with figure-8 flight pattern</span>
+<span class="keyword">class</span> <span class="function">Butterfly</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.time = <span class="number">0</span>;
+        <span class="keyword">this</span>.wingPhase = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="keyword">this</span>.time += dt;
+        <span class="keyword">this</span>.wingPhase += dt * <span class="number">12</span>; <span class="comment">// Wing flapping speed</span>
+
+        <span class="comment">// Figure-8 flight pattern using Lissajous curve</span>
+        <span class="keyword">this</span>.position.x += Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="number">0.8</span>) * <span class="number">0.5</span>;
+        <span class="keyword">this</span>.position.y += Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="number">1.6</span>) * <span class="number">0.3</span>;
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Wing flapping animation</span>
+        <span class="keyword">const</span> wingAngle = Math.<span class="function">sin</span>(<span class="keyword">this</span>.wingPhase) * <span class="number">0.5</span>;
+        <span class="comment">// Draw wings with rotating angles...</span>
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🐟 Fish - Swimming with tail wagging:</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">Fish</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.tailPhase = <span class="number">0</span>;
+        <span class="keyword">this</span>.targetAngle = <span class="number">0</span>;
+        <span class="keyword">this</span>.currentAngle = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="keyword">this</span>.tailPhase += dt * <span class="number">8</span>;
+
+        <span class="comment">// Smoothly rotate toward target direction</span>
+        <span class="keyword">let</span> angleDiff = <span class="keyword">this</span>.targetAngle - <span class="keyword">this</span>.currentAngle;
+        <span class="keyword">this</span>.currentAngle += angleDiff * dt * <span class="number">2</span>;
+
+        <span class="comment">// Move in current direction</span>
+        <span class="keyword">this</span>.velocity.x = Math.<span class="function">cos</span>(<span class="keyword">this</span>.currentAngle) * speed * dt;
+        <span class="keyword">this</span>.velocity.y = Math.<span class="function">sin</span>(<span class="keyword">this</span>.currentAngle) * speed * dt;
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+
+        <span class="comment">// Tail wagging for swimming effect</span>
+        <span class="keyword">const</span> tailWag = Math.<span class="function">sin</span>(<span class="keyword">this</span>.tailPhase) * <span class="number">0.4</span>;
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎐 Jellyfish - Pulsing with tentacle chains:</h4>
+                    <pre><code><span class="keyword">class</span> <span class="function">Jellyfish</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.tentacles = []; <span class="comment">// Array of segment chains</span>
+        <span class="keyword">this</span>.pulsePhase = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="keyword">this</span>.pulsePhase += dt * <span class="number">4</span>;
+
+        <span class="comment">// Pulsing propulsion - only push when contracting</span>
+        <span class="keyword">const</span> pulse = Math.<span class="function">sin</span>(<span class="keyword">this</span>.pulsePhase);
+        <span class="keyword">if</span> (pulse > <span class="number">0</span>) {
+            <span class="keyword">this</span>.velocity.y -= pulse * <span class="number">0.3</span>;
+        }
+
+        <span class="comment">// Update tentacles with chain following</span>
+        <span class="keyword">this</span>.tentacles.<span class="function">forEach</span>(segments => {
+            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j < segments.length; j++) {
+                <span class="comment">// Each segment follows previous with delay</span>
+                segments[j].<span class="function">lerp</span>(segments[j - <span class="number">1</span>], <span class="number">0.15</span>);
+            }
+        });
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Bringing Math to Life</h3>
+            <p>Combine everything! Use curves for paths, noise for variation, and easing for natural motion. This creates dynamic, procedural animations that feel alive and unique every time.</p>
+            <div class="diagram">
+                <canvas id="proceduralDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddButterfly">🦋 Add Butterfly</button>
+                <button id="btnAddFish">🐟 Add Fish</button>
+                <button id="btnAddJellyfish">🎐 Add Jellyfish</button>
+                <button id="btnClearCreatures">Clear All</button>
+            </div>
+            <div id="proceduralInfo" class="info-display">Watch the procedural animation magic! Click to add creatures.</div>
+
+            <div class="key-point">
+                <strong>💡 Pro Tip:</strong> Procedural animation shines when you need infinite variation or reactive behavior. Combine it with spring physics for even more organic results! Try using different frequencies and amplitudes to create unique movement patterns. Adding random phase offsets (starting positions in the sine wave) prevents entities from moving in perfect sync.
             </div>
         </div>
 

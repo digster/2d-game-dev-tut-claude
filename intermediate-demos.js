@@ -1136,6 +1136,332 @@ if (springCanvas) {
 }
 
 // ===================================
+// DEMO: Procedural Animation - Living Creatures
+// ===================================
+const proceduralCanvas = document.getElementById('proceduralDemo');
+if (proceduralCanvas) {
+    const ctx = proceduralCanvas.getContext('2d');
+    const info = document.getElementById('proceduralInfo');
+
+    // Butterfly - Uses figure-8 pattern and wing flapping
+    class Butterfly {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.time = Math.random() * Math.PI * 2;
+            this.speed = randomFloat(0.8, 1.5);
+            this.size = randomFloat(20, 30);
+            this.color = `hsl(${Math.random() * 60 + 280}, 70%, 65%)`;
+            this.pathScale = randomFloat(80, 120);
+            this.wingPhase = 0;
+        }
+
+        update(dt) {
+            this.time += dt * this.speed;
+            this.wingPhase += dt * 12;
+
+            // Figure-8 flight pattern (Lissajous curve)
+            this.position.x += Math.sin(this.time * 0.8) * 0.5;
+            this.position.y += Math.sin(this.time * 1.6) * 0.3;
+
+            // Wrap around screen
+            if (this.position.x > proceduralCanvas.width + 50) this.position.x = -50;
+            if (this.position.x < -50) this.position.x = proceduralCanvas.width + 50;
+            if (this.position.y > proceduralCanvas.height + 50) this.position.y = -50;
+            if (this.position.y < -50) this.position.y = proceduralCanvas.height + 50;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+
+            const angle = Math.atan2(Math.sin(this.time * 1.6), Math.sin(this.time * 0.8));
+            ctx.rotate(angle);
+
+            // Wing flapping animation
+            const wingAngle = Math.sin(this.wingPhase) * 0.5;
+
+            // Left wing
+            ctx.save();
+            ctx.rotate(-wingAngle);
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.ellipse(-this.size * 0.3, 0, this.size, this.size * 0.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+
+            // Right wing
+            ctx.save();
+            ctx.rotate(wingAngle);
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.ellipse(this.size * 0.3, 0, this.size, this.size * 0.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+
+            // Body
+            ctx.fillStyle = '#212121';
+            ctx.fillRect(-this.size * 0.15, -this.size * 0.6, this.size * 0.3, this.size * 1.2);
+
+            ctx.restore();
+        }
+    }
+
+    // Fish - Swimming motion with tail wagging
+    class Fish {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(randomFloat(-1, 1), randomFloat(-1, 1));
+            this.time = Math.random() * Math.PI * 2;
+            this.size = randomFloat(25, 40);
+            this.color = `hsl(${Math.random() * 60 + 180}, 70%, 60%)`;
+            this.tailPhase = 0;
+            this.targetAngle = 0;
+            this.currentAngle = 0;
+            this.changeDirectionTimer = randomFloat(2, 4);
+        }
+
+        update(dt) {
+            this.time += dt;
+            this.tailPhase += dt * 8;
+            this.changeDirectionTimer -= dt;
+
+            // Change direction occasionally
+            if (this.changeDirectionTimer <= 0) {
+                this.targetAngle = Math.random() * Math.PI * 2;
+                this.changeDirectionTimer = randomFloat(2, 4);
+            }
+
+            // Smoothly rotate toward target direction
+            let angleDiff = this.targetAngle - this.currentAngle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            this.currentAngle += angleDiff * dt * 2;
+
+            // Move forward in current direction
+            const speed = 50;
+            this.velocity.x = Math.cos(this.currentAngle) * speed * dt;
+            this.velocity.y = Math.sin(this.currentAngle) * speed * dt;
+
+            this.position.add(this.velocity);
+
+            // Wrap around screen
+            if (this.position.x > proceduralCanvas.width + 50) this.position.x = -50;
+            if (this.position.x < -50) this.position.x = proceduralCanvas.width + 50;
+            if (this.position.y > proceduralCanvas.height + 50) this.position.y = -50;
+            if (this.position.y < -50) this.position.y = proceduralCanvas.height + 50;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate(this.currentAngle);
+
+            // Body
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.size, this.size * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tail wagging
+            const tailWag = Math.sin(this.tailPhase) * 0.4;
+            ctx.save();
+            ctx.translate(-this.size, 0);
+            ctx.rotate(tailWag);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-this.size * 0.5, -this.size * 0.4);
+            ctx.lineTo(-this.size * 0.5, this.size * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // Eye
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.size * 0.4, -this.size * 0.15, this.size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#212121';
+            ctx.beginPath();
+            ctx.arc(this.size * 0.45, -this.size * 0.15, this.size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    // Jellyfish - Pulsing body with trailing tentacles
+    class Jellyfish {
+        constructor(x, y) {
+            this.position = new Vector2D(x, y);
+            this.velocity = new Vector2D(0, 0);
+            this.time = Math.random() * Math.PI * 2;
+            this.size = randomFloat(30, 50);
+            this.color = `hsl(${Math.random() * 60 + 280}, 60%, 65%)`;
+            this.pulsePhase = 0;
+            this.tentacles = [];
+
+            // Create tentacle segments
+            const tentacleCount = 8;
+            for (let i = 0; i < tentacleCount; i++) {
+                const segments = [];
+                for (let j = 0; j < 6; j++) {
+                    segments.push(new Vector2D(x, y + j * 10));
+                }
+                this.tentacles.push(segments);
+            }
+        }
+
+        update(dt) {
+            this.time += dt;
+            this.pulsePhase += dt * 4;
+
+            // Pulsing movement
+            const pulse = Math.sin(this.pulsePhase);
+            if (pulse > 0) {
+                this.velocity.y -= pulse * 0.3;
+            }
+
+            // Drift horizontally
+            this.velocity.x += Math.sin(this.time * 0.5) * 0.05;
+
+            // Apply velocity
+            this.position.add(this.velocity);
+
+            // Damping
+            this.velocity.multiply(0.98);
+
+            // Update tentacles (follow with delay)
+            this.tentacles.forEach((segments, i) => {
+                const angle = (i / this.tentacles.length) * Math.PI * 2;
+                const baseX = this.position.x + Math.cos(angle) * this.size * 0.3;
+                const baseY = this.position.y + this.size * 0.5;
+
+                segments[0].x += (baseX - segments[0].x) * 0.2;
+                segments[0].y += (baseY - segments[0].y) * 0.2;
+
+                for (let j = 1; j < segments.length; j++) {
+                    segments[j].x += (segments[j - 1].x - segments[j].x) * 0.15;
+                    segments[j].y += (segments[j - 1].y - segments[j].y) * 0.15;
+
+                    // Add wave motion
+                    segments[j].x += Math.sin(this.time * 3 + j * 0.5 + i) * 0.5;
+                }
+            });
+
+            // Wrap around screen
+            if (this.position.x > proceduralCanvas.width + 100) this.position.x = -100;
+            if (this.position.x < -100) this.position.x = proceduralCanvas.width + 100;
+            if (this.position.y > proceduralCanvas.height + 100) this.position.y = -100;
+            if (this.position.y < -100) this.position.y = proceduralCanvas.height + 100;
+        }
+
+        draw(ctx) {
+            // Draw tentacles first
+            this.tentacles.forEach(segments => {
+                ctx.strokeStyle = this.color.replace('65%', '45%');
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(segments[0].x, segments[0].y);
+                for (let i = 1; i < segments.length; i++) {
+                    ctx.lineTo(segments[i].x, segments[i].y);
+                }
+                ctx.stroke();
+            });
+
+            // Draw body
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+
+            const pulse = Math.abs(Math.sin(this.pulsePhase)) * 0.2 + 0.8;
+            ctx.scale(pulse, pulse);
+
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner circle
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    let creatures = [];
+    let lastTime = performance.now();
+
+    // Controls
+    document.getElementById('btnAddButterfly').addEventListener('click', () => {
+        const x = randomFloat(100, proceduralCanvas.width - 100);
+        const y = randomFloat(100, proceduralCanvas.height - 100);
+        creatures.push(new Butterfly(x, y));
+    });
+
+    document.getElementById('btnAddFish').addEventListener('click', () => {
+        const x = randomFloat(100, proceduralCanvas.width - 100);
+        const y = randomFloat(100, proceduralCanvas.height - 100);
+        creatures.push(new Fish(x, y));
+    });
+
+    document.getElementById('btnAddJellyfish').addEventListener('click', () => {
+        const x = randomFloat(100, proceduralCanvas.width - 100);
+        const y = randomFloat(100, proceduralCanvas.height - 100);
+        creatures.push(new Jellyfish(x, y));
+    });
+
+    document.getElementById('btnClearCreatures').addEventListener('click', () => {
+        creatures = [];
+    });
+
+    // Add some initial creatures
+    for (let i = 0; i < 2; i++) {
+        creatures.push(new Butterfly(randomFloat(100, 700), randomFloat(100, 400)));
+    }
+    creatures.push(new Fish(randomFloat(100, 700), randomFloat(100, 400)));
+
+    function animateProcedural(currentTime) {
+        const dt = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        clearCanvas(ctx, proceduralCanvas.width, proceduralCanvas.height);
+        drawGrid(ctx, proceduralCanvas.width, proceduralCanvas.height);
+
+        // Update and draw all creatures
+        creatures.forEach(creature => {
+            creature.update(dt);
+            creature.draw(ctx);
+        });
+
+        // Draw info
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Watch the procedural animation magic!', proceduralCanvas.width / 2, 30);
+
+        const butterflyCount = creatures.filter(c => c instanceof Butterfly).length;
+        const fishCount = creatures.filter(c => c instanceof Fish).length;
+        const jellyfishCount = creatures.filter(c => c instanceof Jellyfish).length;
+
+        info.textContent = `Creatures: ${creatures.length} (🦋 ${butterflyCount} | 🐟 ${fishCount} | 🎐 ${jellyfishCount})`;
+
+        requestAnimationFrame(animateProcedural);
+    }
+
+    animateProcedural(performance.now());
+}
+
+// ===================================
 // DEMO: Friction Comparison
 // ===================================
 const frictionCanvas = document.getElementById('frictionDemo');
