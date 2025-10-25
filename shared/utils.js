@@ -149,6 +149,29 @@ class Vector2D {
         return new Vector2D(-this.y, this.x);
     }
 
+    // Project this vector onto another vector
+    project(onto) {
+        const dotProduct = this.dot(onto);
+        const ontoLengthSq = onto.lengthSquared();
+
+        if (ontoLengthSq === 0) return new Vector2D(0, 0);
+
+        const scalar = dotProduct / ontoLengthSq;
+        return new Vector2D(
+            onto.x * scalar,
+            onto.y * scalar
+        );
+    }
+
+    // Reflect this vector across a surface normal
+    reflect(normal) {
+        const dot = this.dot(normal);
+        return new Vector2D(
+            this.x - 2 * dot * normal.x,
+            this.y - 2 * dot * normal.y
+        );
+    }
+
     // Static method to create from angle and length
     static fromAngle(angle, length = 1) {
         return new Vector2D(

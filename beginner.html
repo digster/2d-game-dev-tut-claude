@@ -300,6 +300,303 @@ player.<span class="function">add</span>(direction);</code></pre>
                 <canvas id="dotProductDemo" width="800" height="400"></canvas>
             </div>
             <div id="dotInfo" class="info-display">Move your mouse to see the dot product change</div>
+
+            <h3>3. Vector Subtraction (Finding Direction)</h3>
+            <div class="concept-box">
+                <p><strong>What it does:</strong> Gives you the direction from one point to another.</p>
+                <p><strong>Formula:</strong> direction = target - current</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Vector Subtraction Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="function">subtract</span>(other) {
+    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+        <span class="keyword">this</span>.x - other.x,
+        <span class="keyword">this</span>.y - other.y
+    );
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Enemy Chasing Player</h4>
+                    <pre><code><span class="comment">// Get direction from enemy to player</span>
+<span class="keyword">const</span> direction = player.position.<span class="function">subtract</span>(enemy.position);
+
+<span class="comment">// Normalize and apply enemy speed</span>
+direction.<span class="function">normalize</span>().<span class="function">multiply</span>(enemySpeed);
+
+<span class="comment">// Move enemy toward player</span>
+enemy.position.<span class="function">add</span>(direction);
+
+<span class="comment">// Now enemy moves toward player at constant speed!</span></code></pre>
+                </div>
+            </details>
+
+            <h3>4. Cross Product (Which Side?)</h3>
+            <div class="concept-box">
+                <p><strong>What it tells you:</strong> In 2D, the cross product tells you if something is on the left or right side of a vector.</p>
+                <ul>
+                    <li><strong>Positive:</strong> Point is on the left side</li>
+                    <li><strong>Zero:</strong> Point is on the line</li>
+                    <li><strong>Negative:</strong> Point is on the right side</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Cross Product Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// 2D cross product returns a scalar (z-component of 3D cross product)</span>
+<span class="function">cross</span>(other) {
+    <span class="keyword">return</span> <span class="keyword">this</span>.x * other.y - <span class="keyword">this</span>.y * other.x;
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Determine Turn Direction</h4>
+                    <pre><code><span class="comment">// Player is facing a direction</span>
+<span class="keyword">const</span> forward = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">1</span>, <span class="number">0</span>);
+
+<span class="comment">// Direction to target</span>
+<span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(player.position).<span class="function">normalize</span>();
+
+<span class="comment">// Which way to turn?</span>
+<span class="keyword">const</span> crossProduct = forward.<span class="function">cross</span>(toTarget);
+
+<span class="keyword">if</span> (crossProduct > <span class="number">0</span>) {
+    console.<span class="function">log</span>(<span class="string">"Turn left!"</span>);
+} <span class="keyword">else</span> <span class="keyword">if</span> (crossProduct < <span class="number">0</span>) {
+    console.<span class="function">log</span>(<span class="string">"Turn right!"</span>);
+} <span class="keyword">else</span> {
+    console.<span class="function">log</span>(<span class="string">"Go straight!"</span>);
+}</code></pre>
+                </div>
+
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> AI pathfinding, determining if an object is "ahead" or "behind", steering behaviors!
+                </div>
+            </details>
+
+            <h3>5. Vector Projection (Sliding Along Surfaces)</h3>
+            <div class="concept-box">
+                <p><strong>What it does:</strong> Projects one vector onto another, useful for sliding along walls or surfaces.</p>
+                <p>Imagine shining a light perpendicular to a surface - the shadow of your vector is the projection!</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Vector Projection Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Project this vector onto another vector</span>
+<span class="function">project</span>(onto) {
+    <span class="keyword">const</span> dotProduct = <span class="keyword">this</span>.<span class="function">dot</span>(onto);
+    <span class="keyword">const</span> ontoLengthSq = onto.x * onto.x + onto.y * onto.y;
+
+    <span class="keyword">if</span> (ontoLengthSq === <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+
+    <span class="keyword">const</span> scalar = dotProduct / ontoLengthSq;
+    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+        onto.x * scalar,
+        onto.y * scalar
+    );
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Sliding Along Walls</h4>
+                    <pre><code><span class="comment">// Player trying to move in a direction</span>
+<span class="keyword">const</span> desiredMovement = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, <span class="number">3</span>);
+
+<span class="comment">// Wall is horizontal (normal points up)</span>
+<span class="keyword">const</span> wallNormal = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">1</span>);
+
+<span class="comment">// Remove component of movement into wall</span>
+<span class="keyword">const</span> intoWall = desiredMovement.<span class="function">project</span>(wallNormal);
+<span class="keyword">const</span> alongWall = desiredMovement.<span class="function">subtract</span>(intoWall);
+
+<span class="comment">// Move player along wall instead of into it</span>
+player.position.<span class="function">add</span>(alongWall);
+
+<span class="comment">// Player now slides smoothly along walls!</span></code></pre>
+                </div>
+
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Character controllers, smooth wall sliding, slope movement, physics collisions!
+                </div>
+            </details>
+
+            <h3>6. Vector Reflection (Bouncing)</h3>
+            <div class="concept-box">
+                <p><strong>What it does:</strong> Reflects a vector across a surface, like a ball bouncing off a wall.</p>
+                <p><strong>Physics Rule:</strong> Angle of incidence = Angle of reflection</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Vector Reflection Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Reflect this vector across a surface (given surface normal)</span>
+<span class="function">reflect</span>(normal) {
+    <span class="comment">// Formula: reflection = vector - 2 * (vector · normal) * normal</span>
+    <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(normal);
+    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+        <span class="keyword">this</span>.x - <span class="number">2</span> * dot * normal.x,
+        <span class="keyword">this</span>.y - <span class="number">2</span> * dot * normal.y
+    );
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Example: Ball Bouncing Off Walls</h4>
+                    <pre><code><span class="comment">// Ball's velocity</span>
+<span class="keyword">let</span> velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, -<span class="number">3</span>);
+
+<span class="comment">// Hit bottom wall (normal points up)</span>
+<span class="keyword">const</span> wallNormal = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">1</span>);
+
+<span class="comment">// Reflect velocity</span>
+velocity = velocity.<span class="function">reflect</span>(wallNormal);
+
+<span class="comment">// Apply some energy loss (optional)</span>
+velocity.<span class="function">multiply</span>(<span class="number">0.8</span>);  <span class="comment">// 80% of original speed</span>
+
+<span class="comment">// Ball now bounces realistically!</span></code></pre>
+                </div>
+
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Bouncing balls, bullets ricocheting, pong paddles, breakout bricks!
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Advanced Vector Operations</h3>
+            <div class="diagram">
+                <canvas id="advancedVectorDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnChaseDemo">Enemy Chase Player</button>
+                <button id="btnCrossDemo">Cross Product (Turning)</button>
+                <button id="btnProjectDemo">Wall Sliding</button>
+                <button id="btnReflectDemo">Bouncing Ball</button>
+            </div>
+            <div id="advVectorInfo" class="info-display">Click buttons to see different vector operations in action!</div>
+
+            <h3>Complete Vector Class</h3>
+            <details>
+                <summary>📝 Click to see: Full Vector2D Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
+    <span class="keyword">constructor</span>(x = <span class="number">0</span>, y = <span class="number">0</span>) {
+        <span class="keyword">this</span>.x = x;
+        <span class="keyword">this</span>.y = y;
+    }
+
+    <span class="comment">// Basic operations</span>
+    <span class="function">add</span>(v) {
+        <span class="keyword">this</span>.x += v.x;
+        <span class="keyword">this</span>.y += v.y;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="function">subtract</span>(v) {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="keyword">this</span>.x - v.x, <span class="keyword">this</span>.y - v.y);
+    }
+
+    <span class="function">multiply</span>(scalar) {
+        <span class="keyword">this</span>.x *= scalar;
+        <span class="keyword">this</span>.y *= scalar;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="function">divide</span>(scalar) {
+        <span class="keyword">if</span> (scalar !== <span class="number">0</span>) {
+            <span class="keyword">this</span>.x /= scalar;
+            <span class="keyword">this</span>.y /= scalar;
+        }
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="comment">// Length and normalization</span>
+    <span class="function">length</span>() {
+        <span class="keyword">return</span> Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y);
+    }
+
+    <span class="function">lengthSquared</span>() {
+        <span class="keyword">return</span> <span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y;
+    }
+
+    <span class="function">normalize</span>() {
+        <span class="keyword">const</span> len = <span class="keyword">this</span>.<span class="function">length</span>();
+        <span class="keyword">if</span> (len > <span class="number">0</span>) {
+            <span class="keyword">this</span>.x /= len;
+            <span class="keyword">this</span>.y /= len;
+        }
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="comment">// Distance</span>
+    <span class="function">distance</span>(v) {
+        <span class="keyword">const</span> dx = v.x - <span class="keyword">this</span>.x;
+        <span class="keyword">const</span> dy = v.y - <span class="keyword">this</span>.y;
+        <span class="keyword">return</span> Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+    }
+
+    <span class="comment">// Dot product</span>
+    <span class="function">dot</span>(v) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.x * v.x + <span class="keyword">this</span>.y * v.y;
+    }
+
+    <span class="comment">// Cross product (2D returns scalar)</span>
+    <span class="function">cross</span>(v) {
+        <span class="keyword">return</span> <span class="keyword">this</span>.x * v.y - <span class="keyword">this</span>.y * v.x;
+    }
+
+    <span class="comment">// Project this vector onto another</span>
+    <span class="function">project</span>(v) {
+        <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(v);
+        <span class="keyword">const</span> lenSq = v.<span class="function">lengthSquared</span>();
+        <span class="keyword">if</span> (lenSq === <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">const</span> scalar = dot / lenSq;
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(v.x * scalar, v.y * scalar);
+    }
+
+    <span class="comment">// Reflect across a normal</span>
+    <span class="function">reflect</span>(normal) {
+        <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(normal);
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.x - <span class="number">2</span> * dot * normal.x,
+            <span class="keyword">this</span>.y - <span class="number">2</span> * dot * normal.y
+        );
+    }
+
+    <span class="comment">// Angle of this vector</span>
+    <span class="function">angle</span>() {
+        <span class="keyword">return</span> Math.<span class="function">atan2</span>(<span class="keyword">this</span>.y, <span class="keyword">this</span>.x);
+    }
+
+    <span class="comment">// Rotate by an angle</span>
+    <span class="function">rotate</span>(angle) {
+        <span class="keyword">const</span> cos = Math.<span class="function">cos</span>(angle);
+        <span class="keyword">const</span> sin = Math.<span class="function">sin</span>(angle);
+        <span class="keyword">const</span> newX = <span class="keyword">this</span>.x * cos - <span class="keyword">this</span>.y * sin;
+        <span class="keyword">const</span> newY = <span class="keyword">this</span>.x * sin + <span class="keyword">this</span>.y * cos;
+        <span class="keyword">this</span>.x = newX;
+        <span class="keyword">this</span>.y = newY;
+        <span class="keyword">return</span> <span class="keyword">this</span>;
+    }
+
+    <span class="comment">// Copy</span>
+    <span class="function">copy</span>() {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="keyword">this</span>.x, <span class="keyword">this</span>.y);
+    }
+
+    <span class="comment">// Static methods</span>
+    <span class="keyword">static</span> <span class="function">fromAngle</span>(angle, length = <span class="number">1</span>) {
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            Math.<span class="function">cos</span>(angle) * length,
+            Math.<span class="function">sin</span>(angle) * length
+        );
+    }
+}</code></pre>
+                </div>
+            </details>
         </div>
 
         <!-- TRIGONOMETRY -->
@@ -469,6 +766,337 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
                 <button id="btnArc">Projectile Arc</button>
             </div>
             <div id="trigInfo" class="info-display">Move your mouse to see objects react using trigonometry!</div>
+
+            <div class="key-point">
+                <strong>💡 Pro Tip:</strong> JavaScript uses radians, not degrees! To convert: degrees × (π / 180) = radians. Most game engines work in radians too!
+            </div>
+
+            <h3>More Advanced Trigonometry Patterns</h3>
+
+            <details>
+                <summary>📝 Pattern 4: Spiral Motion</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">SpiralObject</span> {
+    <span class="keyword">constructor</span>(centerX, centerY) {
+        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
+        <span class="keyword">this</span>.angle = <span class="number">0</span>;
+        <span class="keyword">this</span>.radius = <span class="number">0</span>;
+        <span class="keyword">this</span>.angleSpeed = <span class="number">0.05</span>;
+        <span class="keyword">this</span>.radiusGrowth = <span class="number">0.5</span>;  <span class="comment">// How fast spiral expands</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Increment angle and radius</span>
+        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.angleSpeed;
+        <span class="keyword">this</span>.radius += <span class="keyword">this</span>.radiusGrowth;
+
+        <span class="comment">// Calculate position on expanding spiral</span>
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.center.x + Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius,
+            <span class="keyword">this</span>.center.y + Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius
+        );
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Whirlpool effects, drill attacks, spiral particle patterns, galaxy arms!
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Pattern 5: Pendulum/Swing Motion</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Pendulum</span> {
+    <span class="keyword">constructor</span>(pivotX, pivotY, length) {
+        <span class="keyword">this</span>.pivot = <span class="keyword">new</span> <span class="function">Vector2D</span>(pivotX, pivotY);
+        <span class="keyword">this</span>.length = length;
+        <span class="keyword">this</span>.angle = Math.PI / <span class="number">4</span>;  <span class="comment">// Starting angle (45 degrees)</span>
+        <span class="keyword">this</span>.angleVelocity = <span class="number">0</span>;
+        <span class="keyword">this</span>.angleAcceleration = <span class="number">0</span>;
+        <span class="keyword">this</span>.gravity = <span class="number">0.5</span>;
+        <span class="keyword">this</span>.damping = <span class="number">0.995</span>;  <span class="comment">// Energy loss</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Physics calculation for pendulum</span>
+        <span class="keyword">this</span>.angleAcceleration = (-<span class="keyword">this</span>.gravity / <span class="keyword">this</span>.length) * Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle);
+        <span class="keyword">this</span>.angleVelocity += <span class="keyword">this</span>.angleAcceleration;
+        <span class="keyword">this</span>.angleVelocity *= <span class="keyword">this</span>.damping;  <span class="comment">// Apply damping</span>
+        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.angleVelocity;
+
+        <span class="comment">// Calculate bob position</span>
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.pivot.x + Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.length,
+            <span class="keyword">this</span>.pivot.y + Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.length
+        );
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Swinging ropes, hanging chains, swing sets, wrecking balls, grappling hooks!
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Pattern 6: Figure-8 / Lissajous Curves</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Lissajous</span> {
+    <span class="keyword">constructor</span>(centerX, centerY, radiusX, radiusY) {
+        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
+        <span class="keyword">this</span>.radiusX = radiusX;
+        <span class="keyword">this</span>.radiusY = radiusY;
+        <span class="keyword">this</span>.time = <span class="number">0</span>;
+        <span class="keyword">this</span>.freqX = <span class="number">3</span>;  <span class="comment">// Frequency ratio for X</span>
+        <span class="keyword">this</span>.freqY = <span class="number">2</span>;  <span class="comment">// Frequency ratio for Y</span>
+        <span class="keyword">this</span>.phase = Math.PI / <span class="number">2</span>;  <span class="comment">// Phase shift</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">this</span>.time += <span class="number">0.02</span>;
+
+        <span class="comment">// Create complex patterns using different frequencies</span>
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.center.x + Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="keyword">this</span>.freqX) * <span class="keyword">this</span>.radiusX,
+            <span class="keyword">this</span>.center.y + Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="keyword">this</span>.freqY + <span class="keyword">this</span>.phase) * <span class="keyword">this</span>.radiusY
+        );
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Complex movement patterns, boss attack patterns, decorative animations, portal effects!
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Pattern 7: Angle Interpolation (Smooth Rotation)</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Interpolate between two angles (handles wraparound)</span>
+<span class="keyword">function</span> <span class="function">lerpAngle</span>(start, end, t) {
+    <span class="comment">// Normalize angles to -π to π range</span>
+    <span class="keyword">let</span> diff = end - start;
+
+    <span class="comment">// Take shortest path around circle</span>
+    <span class="keyword">while</span> (diff > Math.PI) diff -= <span class="number">2</span> * Math.PI;
+    <span class="keyword">while</span> (diff < -Math.PI) diff += <span class="number">2</span> * Math.PI;
+
+    <span class="keyword">return</span> start + diff * t;
+}
+
+<span class="keyword">class</span> <span class="function">RotatingEntity</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.currentAngle = <span class="number">0</span>;
+        <span class="keyword">this</span>.targetAngle = <span class="number">0</span>;
+        <span class="keyword">this</span>.rotationSpeed = <span class="number">0.1</span>;  <span class="comment">// 10% per frame</span>
+    }
+
+    <span class="function">faceDirection</span>(target) {
+        <span class="comment">// Calculate angle to target</span>
+        <span class="keyword">const</span> dx = target.x - <span class="keyword">this</span>.position.x;
+        <span class="keyword">const</span> dy = target.y - <span class="keyword">this</span>.position.y;
+        <span class="keyword">this</span>.targetAngle = Math.<span class="function">atan2</span>(dy, dx);
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Smoothly rotate toward target</span>
+        <span class="keyword">this</span>.currentAngle = <span class="function">lerpAngle</span>(
+            <span class="keyword">this</span>.currentAngle,
+            <span class="keyword">this</span>.targetAngle,
+            <span class="keyword">this</span>.rotationSpeed
+        );
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Turrets tracking targets, smooth camera rotation, character facing direction, vehicle steering!
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Pattern 8: Field of View (FOV) Detection</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Enemy</span> {
+    <span class="keyword">constructor</span>(x, y) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.facingAngle = <span class="number">0</span>;
+        <span class="keyword">this</span>.fovAngle = Math.PI / <span class="number">3</span>;  <span class="comment">// 60 degree FOV</span>
+        <span class="keyword">this</span>.viewDistance = <span class="number">200</span>;
+    }
+
+    <span class="function">canSee</span>(target) {
+        <span class="comment">// Calculate direction to target</span>
+        <span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+        <span class="keyword">const</span> distance = toTarget.<span class="function">length</span>();
+
+        <span class="comment">// Check if within view distance</span>
+        <span class="keyword">if</span> (distance > <span class="keyword">this</span>.viewDistance) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+        <span class="comment">// Calculate angle to target</span>
+        <span class="keyword">const</span> angleToTarget = Math.<span class="function">atan2</span>(toTarget.y, toTarget.x);
+
+        <span class="comment">// Calculate angle difference</span>
+        <span class="keyword">let</span> angleDiff = angleToTarget - <span class="keyword">this</span>.facingAngle;
+
+        <span class="comment">// Normalize to -π to π</span>
+        <span class="keyword">while</span> (angleDiff > Math.PI) angleDiff -= <span class="number">2</span> * Math.PI;
+        <span class="keyword">while</span> (angleDiff < -Math.PI) angleDiff += <span class="number">2</span> * Math.PI;
+
+        <span class="comment">// Check if within FOV cone</span>
+        <span class="keyword">return</span> Math.<span class="function">abs</span>(angleDiff) < <span class="keyword">this</span>.fovAngle / <span class="number">2</span>;
+    }
+
+    <span class="function">drawFOV</span>(ctx) {
+        ctx.save();
+        ctx.translate(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
+        ctx.rotate(<span class="keyword">this</span>.facingAngle);
+
+        <span class="comment">// Draw FOV cone</span>
+        ctx.fillStyle = <span class="string">'rgba(255, 255, 0, 0.2)'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="number">0</span>, <span class="number">0</span>);
+        ctx.<span class="function">arc</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="keyword">this</span>.viewDistance,
+            -<span class="keyword">this</span>.fovAngle / <span class="number">2</span>, <span class="keyword">this</span>.fovAngle / <span class="number">2</span>);
+        ctx.<span class="function">closePath</span>();
+        ctx.<span class="function">fill</span>();
+        ctx.<span class="function">restore</span>();
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Stealth games, enemy detection, spotlight mechanics, radar systems, guard AI!
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Pattern 9: 8-Directional Sprite Selection</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Convert angle to one of 8 directions for sprite selection</span>
+<span class="keyword">function</span> <span class="function">angleToDirection8</span>(angle) {
+    <span class="comment">// Normalize angle to 0-2π</span>
+    <span class="keyword">let</span> normalized = angle % (<span class="number">2</span> * Math.PI);
+    <span class="keyword">if</span> (normalized < <span class="number">0</span>) normalized += <span class="number">2</span> * Math.PI;
+
+    <span class="comment">// Divide circle into 8 sections (45 degrees each)</span>
+    <span class="keyword">const</span> section = Math.<span class="function">round</span>(normalized / (Math.PI / <span class="number">4</span>)) % <span class="number">8</span>;
+
+    <span class="keyword">const</span> directions = [
+        <span class="string">'right'</span>,      <span class="comment">// 0°</span>
+        <span class="string">'down-right'</span>, <span class="comment">// 45°</span>
+        <span class="string">'down'</span>,       <span class="comment">// 90°</span>
+        <span class="string">'down-left'</span>,  <span class="comment">// 135°</span>
+        <span class="string">'left'</span>,       <span class="comment">// 180°</span>
+        <span class="string">'up-left'</span>,    <span class="comment">// 225°</span>
+        <span class="string">'up'</span>,         <span class="comment">// 270°</span>
+        <span class="string">'up-right'</span>    <span class="comment">// 315°</span>
+    ];
+
+    <span class="keyword">return</span> directions[section];
+}
+
+<span class="keyword">class</span> <span class="function">Character</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.currentSprite = <span class="string">'idle-down'</span>;
+    }
+
+    <span class="function">update</span>() {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.velocity.<span class="function">length</span>() > <span class="number">0.1</span>) {
+            <span class="comment">// Get movement angle</span>
+            <span class="keyword">const</span> angle = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+
+            <span class="comment">// Get direction</span>
+            <span class="keyword">const</span> direction = <span class="function">angleToDirection8</span>(angle);
+
+            <span class="comment">// Set appropriate sprite</span>
+            <span class="keyword">this</span>.currentSprite = <span class="string">`walk-<span class="keyword">${direction}</span>`</span>;
+        } <span class="keyword">else</span> {
+            <span class="keyword">this</span>.currentSprite = <span class="string">'idle-down'</span>;
+        }
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Top-down RPGs, strategy games, isometric games - selecting correct character sprite based on movement direction!
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Advanced Trigonometry</h3>
+            <div class="diagram">
+                <canvas id="advancedTrigDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnSpiralDemo">Spiral Motion</button>
+                <button id="btnPendulumDemo">Pendulum</button>
+                <button id="btnLissajousDemo">Lissajous Curve</button>
+                <button id="btnFOVDemo">Field of View</button>
+                <button id="btnDirectionDemo">8-Direction Sprites</button>
+            </div>
+            <div id="advTrigInfo" class="info-display">Explore advanced trigonometry patterns!</div>
+
+            <h3>Practical Game System: Radar/Minimap</h3>
+            <details>
+                <summary>📝 Click to see: Complete Radar System</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Radar</span> {
+    <span class="keyword">constructor</span>(centerX, centerY, radius) {
+        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
+        <span class="keyword">this</span>.radius = radius;
+        <span class="keyword">this</span>.scale = <span class="number">0.1</span>;  <span class="comment">// World scale to radar scale</span>
+    }
+
+    <span class="function">worldToRadar</span>(worldPos, playerPos) {
+        <span class="comment">// Get position relative to player</span>
+        <span class="keyword">const</span> relative = worldPos.<span class="function">subtract</span>(playerPos);
+
+        <span class="comment">// Scale down to radar size</span>
+        <span class="keyword">const</span> scaled = relative.<span class="function">copy</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.scale);
+
+        <span class="comment">// Translate to radar center</span>
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+            <span class="keyword">this</span>.center.x + scaled.x,
+            <span class="keyword">this</span>.center.y + scaled.y
+        );
+    }
+
+    <span class="function">draw</span>(ctx, entities, player) {
+        <span class="comment">// Draw radar background</span>
+        ctx.fillStyle = <span class="string">'rgba(0, 0, 0, 0.7)'</span>;
+        ctx.beginPath();
+        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y, <span class="keyword">this</span>.radius, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+        ctx.<span class="function">fill</span>();
+
+        <span class="comment">// Draw border</span>
+        ctx.strokeStyle = <span class="string">'#0f0'</span>;
+        ctx.lineWidth = <span class="number">2</span>;
+        ctx.<span class="function">stroke</span>();
+
+        <span class="comment">// Draw crosshairs</span>
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.center.x - <span class="number">5</span>, <span class="keyword">this</span>.center.y);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.center.x + <span class="number">5</span>, <span class="keyword">this</span>.center.y);
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y - <span class="number">5</span>);
+        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y + <span class="number">5</span>);
+        ctx.<span class="function">stroke</span>();
+
+        <span class="comment">// Draw entities</span>
+        entities.<span class="function">forEach</span>(entity => {
+            <span class="keyword">const</span> radarPos = <span class="keyword">this</span>.<span class="function">worldToRadar</span>(entity.position, player.position);
+
+            <span class="comment">// Only draw if within radar range</span>
+            <span class="keyword">const</span> dist = radarPos.<span class="function">distance</span>(<span class="keyword">this</span>.center);
+            <span class="keyword">if</span> (dist < <span class="keyword">this</span>.radius) {
+                ctx.fillStyle = entity.isEnemy ? <span class="string">'#f00'</span> : <span class="string">'#0f0'</span>;
+                ctx.beginPath();
+                ctx.<span class="function">arc</span>(radarPos.x, radarPos.y, <span class="number">3</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+                ctx.<span class="function">fill</span>();
+            }
+        });
+    }
+}</code></pre>
+                </div>
+                <div class="key-point">
+                    <strong>💡 Use case:</strong> Minimaps, radar systems, strategy games, awareness indicators!
+                </div>
+            </details>
 
             <div class="key-point">
                 <strong>💡 Pro Tip:</strong> JavaScript uses radians, not degrees! To convert: degrees × (π / 180) = radians. Most game engines work in radians too!
