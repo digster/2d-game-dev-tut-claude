@@ -254,20 +254,20 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
                 </div>
             </details>
 
-            <h3>Interactive Demo: Spring Physics</h3>
+            <h3>Interactive Demo: Spring Launcher</h3>
             <div class="diagram">
                 <canvas id="springDemo" width="800" height="500"></canvas>
             </div>
             <div class="controls">
-                <button id="btnTightSpring">Tight Spring</button>
-                <button id="btnLooseSpring">Loose Spring</button>
-                <button id="btnBouncySpring">Bouncy Spring</button>
-                <button id="btnStiffSpring">Compare All Springs</button>
+                <button id="btnTightSpring">Strong Spring (k=0.2)</button>
+                <button id="btnLooseSpring">Weak Spring (k=0.08)</button>
+                <button id="btnBouncySpring">Medium Spring (k=0.15)</button>
+                <button id="btnStiffSpring">Very Strong (k=0.25)</button>
             </div>
-            <div id="springInfo" class="info-display">Move your mouse to see springs with realistic coil visualization, force vectors, and motion trails!</div>
+            <div id="springInfo" class="info-display">Click and drag near the launcher to pull back the spring and launch projectiles at the targets!</div>
 
             <div class="key-point">
-                <strong>💡 Tuning Springs:</strong> Stiffness controls how quickly it moves toward the target. Damping controls how much it oscillates. Find the sweet spot for your game's feel!
+                <strong>💡 Understanding Spring Force:</strong> The launcher demonstrates Hooke's Law (F = -k × displacement). Higher stiffness (k) means stronger force for the same pull distance. Try different stiffness values to see how they affect launch power and trajectory!
             </div>
         </div>
 
