@@ -1244,38 +1244,46 @@ if (shadowCanvas) {
             this.p1 = new Vector2D(x1, y1);
             this.p2 = new Vector2D(x2, y2);
         }
-
-        draw(ctx) {
-            ctx.strokeStyle = '#666';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.moveTo(this.p1.x, this.p1.y);
-            ctx.lineTo(this.p2.x, this.p2.y);
-            ctx.stroke();
-        }
     }
 
     // Add border walls
-    const margin = 0;
+    const margin = 1;
     walls.push(new Wall(margin, margin, shadowCanvas.width - margin, margin));
     walls.push(new Wall(shadowCanvas.width - margin, margin, shadowCanvas.width - margin, shadowCanvas.height - margin));
     walls.push(new Wall(shadowCanvas.width - margin, shadowCanvas.height - margin, margin, shadowCanvas.height - margin));
     walls.push(new Wall(margin, shadowCanvas.height - margin, margin, margin));
 
-    // Add some obstacles
+    // Store number of border walls
+    const borderWallCount = walls.length;
+
+    // Add some initial obstacles
     walls.push(new Wall(200, 150, 350, 150));
     walls.push(new Wall(350, 150, 350, 250));
     walls.push(new Wall(500, 300, 600, 350));
 
     function getAngles(source) {
-        const angles = [];
-        for (const wall of walls) {
+        const angles = new Set();
+
+        // Only get angles from OBSTACLE walls (not borders)
+        for (let i = borderWallCount; i < walls.length; i++) {
+            const wall = walls[i];
             const angle1 = Math.atan2(wall.p1.y - source.y, wall.p1.x - source.x);
             const angle2 = Math.atan2(wall.p2.y - source.y, wall.p2.x - source.x);
-            angles.push(angle1 - 0.0001, angle1, angle1 + 0.0001);
-            angles.push(angle2 - 0.0001, angle2, angle2 + 0.0001);
+            angles.add(angle1 - 0.00001);
+            angles.add(angle1);
+            angles.add(angle1 + 0.00001);
+            angles.add(angle2 - 0.00001);
+            angles.add(angle2);
+            angles.add(angle2 + 0.00001);
         }
-        return angles;
+
+        // Add rays in a full circle to ensure complete coverage
+        const numRays = 720; // Increased for smoother coverage
+        for (let i = 0; i < numRays; i++) {
+            angles.add((i / numRays) * Math.PI * 2);
+        }
+
+        return Array.from(angles);
     }
 
     function castRay(source, angle) {
@@ -1285,6 +1293,7 @@ if (shadowCanvas) {
         let closestIntersection = rayEnd;
         let closestDistance = 2000;
 
+        // Check intersection with ALL walls (including borders)
         for (const wall of walls) {
             const intersection = lineIntersection(source, rayEnd, wall.p1, wall.p2);
             if (intersection) {
@@ -1305,13 +1314,19 @@ if (shadowCanvas) {
 
         for (const angle of angles) {
             const point = castRay(source, angle);
+            // Normalize angle to [0, 2π]
+            let normalizedAngle = Math.atan2(point.y - source.y, point.x - source.x);
+            if (normalizedAngle < 0) normalizedAngle += Math.PI * 2;
+
             intersections.push({
                 point: point,
-                angle: Math.atan2(point.y - source.y, point.x - source.x)
+                angle: normalizedAngle
             });
         }
 
+        // Sort by angle
         intersections.sort((a, b) => a.angle - b.angle);
+
         return intersections.map(i => i.point);
     }
 
@@ -1321,7 +1336,11 @@ if (shadowCanvas) {
         mousePos.y = e.clientY - rect.top;
     });
 
-    document.getElementById('btnAddObstacle').addEventListener('click', () => {
+    const btnAddObstacle = document.getElementById('btnAddObstacle');
+    const btnClearObstacles = document.getElementById('btnClearObstacles');
+    const btnToggleRays = document.getElementById('btnToggleRays');
+
+    if (btnAddObstacle) btnAddObstacle.addEventListener('click', () => {
         const x = randomFloat(100, shadowCanvas.width - 200);
         const y = randomFloat(100, shadowCanvas.height - 100);
         const length = randomFloat(50, 150);
@@ -1331,12 +1350,13 @@ if (shadowCanvas) {
         walls.push(new Wall(x, y, x2, y2));
     });
 
-    document.getElementById('btnClearObstacles').addEventListener('click', () => {
-        walls.length = 4; // Keep border walls
+    if (btnClearObstacles) btnClearObstacles.addEventListener('click', () => {
+        walls.length = borderWallCount; // Keep only border walls
     });
 
-    document.getElementById('btnToggleRays').addEventListener('click', () => {
+    if (btnToggleRays) btnToggleRays.addEventListener('click', () => {
         showRays = !showRays;
+        btnToggleRays.textContent = showRays ? 'Hide Rays' : 'Show Rays';
     });
 
     function animateShadow() {
@@ -1345,8 +1365,13 @@ if (shadowCanvas) {
 
         const visibleArea = getVisibleArea(mousePos);
 
-        // Draw visible area
-        ctx.fillStyle = 'rgba(255, 255, 150, 0.15)';
+        // Draw visible area with gradient
+        const gradient = ctx.createRadialGradient(mousePos.x, mousePos.y, 0, mousePos.x, mousePos.y, 400);
+        gradient.addColorStop(0, 'rgba(255, 255, 150, 0.3)');
+        gradient.addColorStop(0.5, 'rgba(255, 255, 150, 0.15)');
+        gradient.addColorStop(1, 'rgba(255, 255, 150, 0.02)');
+
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.moveTo(mousePos.x, mousePos.y);
         visibleArea.forEach(p => ctx.lineTo(p.x, p.y));
@@ -1355,7 +1380,7 @@ if (shadowCanvas) {
 
         // Draw rays if enabled
         if (showRays) {
-            ctx.strokeStyle = 'rgba(255, 255, 100, 0.3)';
+            ctx.strokeStyle = 'rgba(255, 255, 100, 0.2)';
             ctx.lineWidth = 1;
             visibleArea.forEach(p => {
                 ctx.beginPath();
@@ -1365,8 +1390,40 @@ if (shadowCanvas) {
             });
         }
 
-        // Draw walls
-        walls.forEach(wall => wall.draw(ctx));
+        // Draw ALL walls on top (so they're always visible)
+        walls.forEach((wall, i) => {
+            if (i < borderWallCount) {
+                // Border walls - subtle
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(wall.p1.x, wall.p1.y);
+                ctx.lineTo(wall.p2.x, wall.p2.y);
+                ctx.stroke();
+            } else {
+                // Obstacle walls - highly visible
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 10;
+                ctx.beginPath();
+                ctx.moveTo(wall.p1.x, wall.p1.y);
+                ctx.lineTo(wall.p2.x, wall.p2.y);
+                ctx.stroke();
+
+                // Bright inner highlight
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Draw endpoints
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(wall.p1.x, wall.p1.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(wall.p2.x, wall.p2.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
 
         // Draw light source
         ctx.fillStyle = '#ffeb3b';
@@ -1379,7 +1436,7 @@ if (shadowCanvas) {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        info.textContent = `Obstacles: ${walls.length - 4} | Rays: ${showRays ? 'Visible' : 'Hidden'}`;
+        info.textContent = `Obstacles: ${walls.length - borderWallCount} | Rays cast: ${visibleArea.length} | Rays: ${showRays ? 'Visible' : 'Hidden'}`;
 
         requestAnimationFrame(animateShadow);
     }
