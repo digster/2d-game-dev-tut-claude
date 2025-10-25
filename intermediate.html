@@ -26,6 +26,7 @@
                 <li><a href="#physics">Physics Systems with Forces</a></li>
                 <li><a href="#spaceship">Spaceship Controller with Gravity Wells</a></li>
                 <li><a href="#spring">Spring Physics & Damping</a></li>
+                <li><a href="#verlet">Verlet Physics & Constraints</a></li>
                 <li><a href="#procedural-animation">Procedural Animation</a></li>
                 <li><a href="#friction">Friction & Drag Systems</a></li>
                 <li><a href="#collision">Collision Detection</a></li>
@@ -410,6 +411,290 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
 
             <div class="key-point">
                 <strong>💡 Understanding Spring Force:</strong> The launcher demonstrates Hooke's Law (F = -k × displacement). Higher stiffness (k) means stronger force for the same pull distance. Try different stiffness values to see how they affect launch power and trajectory!
+            </div>
+        </div>
+
+        <!-- VERLET PHYSICS -->
+        <div id="verlet" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🔗 Verlet Physics & Constraints</h2>
+
+            <div class="concept-box">
+                <h4>What is Verlet Integration?</h4>
+                <p>Verlet integration is a simple but powerful physics technique that's perfect for simulating ropes, chains, cloth, and soft bodies. Unlike traditional force-based physics, Verlet uses position and previous position to calculate velocity implicitly.</p>
+
+                <p><strong>Why use Verlet?</strong></p>
+                <ul>
+                    <li><strong>Simple:</strong> No separate velocity variable needed!</li>
+                    <li><strong>Stable:</strong> More resistant to numerical errors than Euler integration</li>
+                    <li><strong>Constraint-friendly:</strong> Perfect for ropes, chains, ragdolls</li>
+                    <li><strong>Energy-conserving:</strong> Creates more natural motion</li>
+                </ul>
+
+                <div class="formula">
+                    velocity = current_position - previous_position<br>
+                    new_position = current_position + velocity + acceleration
+                </div>
+            </div>
+
+            <div class="concept-box">
+                <h4>Verlet vs Traditional Physics</h4>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr style="background: rgba(255,255,255,0.05);">
+                        <th style="padding: 10px; text-align: left; border: 1px solid rgba(255,255,255,0.1);">Aspect</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid rgba(255,255,255,0.1);">Euler (Force-based)</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid rgba(255,255,255,0.1);">Verlet (Position-based)</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);"><strong>Velocity</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">Explicit variable</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">Implicit (derived from positions)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);"><strong>Best for</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">Rigid bodies, projectiles</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">Ropes, cloth, soft bodies</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);"><strong>Stability</strong></td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">Can be unstable at high speeds</td>
+                        <td style="padding: 10px; border: 1px solid rgba(255,255,255,0.1);">More stable, energy-conserving</td>
+                    </tr>
+                </table>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Verlet Point Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">VerletPoint</span> {
+    <span class="keyword">constructor</span>(x, y, pinned = <span class="keyword">false</span>) {
+        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.oldPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        <span class="keyword">this</span>.pinned = pinned;  <span class="comment">// Fixed points don't move</span>
+    }
+
+    <span class="function">update</span>(dt = <span class="number">1</span>) {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.pinned) <span class="keyword">return</span>;
+
+        <span class="comment">// Calculate velocity implicitly</span>
+        <span class="keyword">const</span> velocity = <span class="keyword">this</span>.position.<span class="function">copy</span>().<span class="function">subtract</span>(<span class="keyword">this</span>.oldPosition);
+
+        <span class="comment">// Save current position</span>
+        <span class="keyword">const</span> temp = <span class="keyword">this</span>.position.<span class="function">copy</span>();
+
+        <span class="comment">// Verlet integration: new_pos = pos + velocity + acceleration</span>
+        <span class="keyword">this</span>.position.<span class="function">add</span>(velocity);
+        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.acceleration.<span class="function">copy</span>().<span class="function">multiply</span>(dt * dt));
+
+        <span class="comment">// Store old position for next frame</span>
+        <span class="keyword">this</span>.oldPosition = temp;
+
+        <span class="comment">// Reset acceleration</span>
+        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+    }
+
+    <span class="function">applyForce</span>(force) {
+        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(force);
+    }
+
+    <span class="function">constrain</span>(bounds) {
+        <span class="comment">// Keep point within bounds (with bouncing)</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.x < bounds.left) {
+            <span class="keyword">this</span>.position.x = bounds.left;
+        }
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.x > bounds.right) {
+            <span class="keyword">this</span>.position.x = bounds.right;
+        }
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y > bounds.bottom) {
+            <span class="keyword">this</span>.position.y = bounds.bottom;
+        }
+        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y < bounds.top) {
+            <span class="keyword">this</span>.position.y = bounds.top;
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🔗 Constraints: The Magic of Verlet</h4>
+                    <p>Constraints are what make Verlet physics special. After updating positions, we enforce constraints (like "these two points must stay exactly 50 pixels apart"). This creates rope, cloth, and rigid structures!</p>
+                    <pre><code><span class="keyword">class</span> <span class="function">Constraint</span> {
+    <span class="keyword">constructor</span>(p1, p2, length = <span class="keyword">null</span>) {
+        <span class="keyword">this</span>.p1 = p1;
+        <span class="keyword">this</span>.p2 = p2;
+        <span class="comment">// If no length specified, use current distance</span>
+        <span class="keyword">this</span>.length = length || p1.position.<span class="function">distance</span>(p2.position);
+    }
+
+    <span class="function">solve</span>() {
+        <span class="comment">// Calculate current distance between points</span>
+        <span class="keyword">const</span> diff = <span class="keyword">this</span>.p2.position.<span class="function">copy</span>().<span class="function">subtract</span>(<span class="keyword">this</span>.p1.position);
+        <span class="keyword">const</span> currentDistance = diff.<span class="function">length</span>();
+
+        <span class="comment">// Calculate how much to correct</span>
+        <span class="keyword">const</span> correction = (currentDistance - <span class="keyword">this</span>.length) / currentDistance;
+
+        <span class="comment">// Move both points to satisfy constraint</span>
+        <span class="keyword">const</span> correctionVector = diff.<span class="function">multiply</span>(correction * <span class="number">0.5</span>);
+
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.p1.pinned) {
+            <span class="keyword">this</span>.p1.position.<span class="function">add</span>(correctionVector);
+        }
+
+        <span class="keyword">if</span> (!<span class="keyword">this</span>.p2.pinned) {
+            <span class="keyword">this</span>.p2.position.<span class="function">subtract</span>(correctionVector);
+        }
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Complete Rope System</summary>
+                <div class="code-container">
+                    <pre><code><span class="keyword">class</span> <span class="function">Rope</span> {
+    <span class="keyword">constructor</span>(startX, startY, segments = <span class="number">10</span>, segmentLength = <span class="number">20</span>) {
+        <span class="keyword">this</span>.points = [];
+        <span class="keyword">this</span>.constraints = [];
+
+        <span class="comment">// Create points along the rope</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i <= segments; i++) {
+            <span class="keyword">const</span> x = startX;
+            <span class="keyword">const</span> y = startY + i * segmentLength;
+            <span class="keyword">const</span> pinned = (i === <span class="number">0</span>);  <span class="comment">// Pin the first point</span>
+
+            <span class="keyword">this</span>.points.<span class="function">push</span>(<span class="keyword">new</span> <span class="function">VerletPoint</span>(x, y, pinned));
+        }
+
+        <span class="comment">// Create constraints between adjacent points</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < segments; i++) {
+            <span class="keyword">const</span> constraint = <span class="keyword">new</span> <span class="function">Constraint</span>(
+                <span class="keyword">this</span>.points[i],
+                <span class="keyword">this</span>.points[i + <span class="number">1</span>],
+                segmentLength
+            );
+            <span class="keyword">this</span>.constraints.<span class="function">push</span>(constraint);
+        }
+    }
+
+    <span class="function">update</span>(gravity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0.5</span>)) {
+        <span class="comment">// Apply forces to all points</span>
+        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
+            point.<span class="function">applyForce</span>(gravity);
+        });
+
+        <span class="comment">// Update positions</span>
+        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
+            point.<span class="function">update</span>();
+        });
+
+        <span class="comment">// Solve constraints multiple times for stability</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">3</span>; i++) {
+            <span class="keyword">this</span>.constraints.<span class="function">forEach</span>(constraint => {
+                constraint.<span class="function">solve</span>();
+            });
+        }
+    }
+
+    <span class="function">draw</span>(ctx) {
+        <span class="comment">// Draw the rope as connected line segments</span>
+        ctx.strokeStyle = <span class="string">'#8b4513'</span>;
+        ctx.lineWidth = <span class="number">3</span>;
+        ctx.beginPath();
+        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.points[<span class="number">0</span>].position.x, <span class="keyword">this</span>.points[<span class="number">0</span>].position.y);
+
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < <span class="keyword">this</span>.points.length; i++) {
+            ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.points[i].position.x, <span class="keyword">this</span>.points[i].position.y);
+        }
+
+        ctx.<span class="function">stroke</span>();
+
+        <span class="comment">// Draw points</span>
+        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
+            ctx.fillStyle = point.pinned ? <span class="string">'#ff5252'</span> : <span class="string">'#42a5f5'</span>;
+            ctx.beginPath();
+            ctx.<span class="function">arc</span>(point.position.x, point.position.y, <span class="number">4</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
+            ctx.<span class="function">fill</span>();
+        });
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎮 Usage Example:</h4>
+                    <pre><code><span class="comment">// Create a rope hanging from the top</span>
+<span class="keyword">const</span> rope = <span class="keyword">new</span> <span class="function">Rope</span>(<span class="number">400</span>, <span class="number">50</span>, <span class="number">15</span>, <span class="number">20</span>);
+
+<span class="keyword">function</span> <span class="function">gameLoop</span>() {
+    <span class="comment">// Update rope physics</span>
+    rope.<span class="function">update</span>();
+
+    <span class="comment">// Draw rope</span>
+    rope.<span class="function">draw</span>(ctx);
+
+    <span class="function">requestAnimationFrame</span>(gameLoop);
+}
+
+<span class="comment">// Make the rope interactive!</span>
+canvas.<span class="function">addEventListener</span>(<span class="string">'mousemove'</span>, (e) => {
+    <span class="keyword">const</span> mousePos = <span class="keyword">new</span> <span class="function">Vector2D</span>(e.offsetX, e.offsetY);
+
+    <span class="comment">// Find closest point and apply force</span>
+    rope.points.<span class="function">forEach</span>(point => {
+        <span class="keyword">const</span> dist = point.position.<span class="function">distance</span>(mousePos);
+        <span class="keyword">if</span> (dist < <span class="number">50</span>) {
+            <span class="keyword">const</span> force = mousePos.<span class="function">subtract</span>(point.position).<span class="function">multiply</span>(<span class="number">0.02</span>);
+            point.<span class="function">applyForce</span>(force);
+        }
+    });
+});</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Verlet Physics Playground</h3>
+            <p style="text-align: center; color: #9e9e9e; margin-bottom: 20px;">
+                Experiment with ropes, cloth, and ragdolls! Drag points, enable wind, and try cut mode to see how constraints work.
+            </p>
+            <div class="diagram">
+                <canvas id="verletDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnAddRope">Add Rope</button>
+                <button id="btnAddCloth">Create Cloth</button>
+                <button id="btnAddRagdoll">Add Ragdoll</button>
+                <button id="btnToggleWind">Toggle Wind</button>
+                <button id="btnCutRope">Cut Mode</button>
+                <button id="btnResetVerlet">Reset</button>
+            </div>
+            <div id="verletInfo" class="info-display">Drag points to interact! Try the ragdoll for realistic physics. In cut mode, click constraints to cut them.</div>
+
+            <div class="key-point">
+                <strong>💡 Constraint Iterations:</strong> Notice we solve constraints multiple times per frame (usually 3-5 iterations). More iterations = more rigid/accurate constraints, but slower. Fewer iterations = more stretchy/flexible, but faster. This is a key trade-off in Verlet physics!
+            </div>
+
+            <div class="challenge-box">
+                <h4>🏆 What You Can Try:</h4>
+                <ul>
+                    <li><strong>✓ Rope:</strong> Already implemented! Add ropes and drag them around.</li>
+                    <li><strong>✓ Cloth:</strong> Already implemented! See how it deforms and flows.</li>
+                    <li><strong>✓ Ragdoll:</strong> Already implemented! Add ragdolls and watch them fall naturally.</li>
+                    <li><strong>Experiment:</strong> Try cutting constraints in different places to see how structures collapse!</li>
+                    <li><strong>Soft Body:</strong> Create a circle of points with constraints connecting to neighbors and center</li>
+                    <li><strong>Bridge:</strong> Modify rope code to pin both ends instead of just the top</li>
+                    <li><strong>Chain Links:</strong> Make each segment render as a circle instead of a line</li>
+                </ul>
+            </div>
+
+            <div class="thinking-prompt">
+                <h4>🤔 Common Use Cases:</h4>
+                <ul>
+                    <li><strong>Grappling Hooks:</strong> Rope that connects player to anchor point</li>
+                    <li><strong>Hair/Tail Physics:</strong> Chain of points following character</li>
+                    <li><strong>Cloth/Capes:</strong> 2D grid with collision detection</li>
+                    <li><strong>Bridges/Chains:</strong> Pinned at both ends</li>
+                    <li><strong>Soft Body Creatures:</strong> Circular/blob-like entities</li>
+                </ul>
             </div>
         </div>
 

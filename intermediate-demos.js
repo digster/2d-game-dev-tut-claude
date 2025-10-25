@@ -1136,6 +1136,539 @@ if (springCanvas) {
 }
 
 // ===================================
+// DEMO: Verlet Physics - Rope Simulation
+// ===================================
+const verletCanvas = document.getElementById('verletDemo');
+if (verletCanvas) {
+    const ctx = verletCanvas.getContext('2d');
+    const info = document.getElementById('verletInfo');
+
+    // VerletPoint class
+    class VerletPoint {
+        constructor(x, y, pinned = false) {
+            this.position = new Vector2D(x, y);
+            this.oldPosition = new Vector2D(x, y);
+            this.acceleration = new Vector2D(0, 0);
+            this.pinned = pinned;
+            this.radius = 5;
+        }
+
+        update(dt = 1) {
+            if (this.pinned) return;
+
+            // Calculate velocity implicitly
+            const velocity = this.position.copy().subtract(this.oldPosition);
+
+            // Save current position
+            const temp = this.position.copy();
+
+            // Verlet integration
+            this.position.add(velocity);
+            this.position.add(this.acceleration.copy().multiply(dt * dt));
+
+            // Store old position
+            this.oldPosition = temp;
+
+            // Reset acceleration
+            this.acceleration.multiply(0);
+        }
+
+        applyForce(force) {
+            this.acceleration.add(force);
+        }
+
+        constrain(bounds) {
+            // Keep point within canvas bounds
+            if (this.position.x < 0) {
+                this.position.x = 0;
+                this.oldPosition.x = this.position.x;
+            }
+            if (this.position.x > bounds.width) {
+                this.position.x = bounds.width;
+                this.oldPosition.x = this.position.x;
+            }
+            if (this.position.y < 0) {
+                this.position.y = 0;
+                this.oldPosition.y = this.position.y;
+            }
+            if (this.position.y > bounds.height) {
+                this.position.y = bounds.height;
+                this.oldPosition.y = this.position.y;
+            }
+        }
+
+        draw(ctx) {
+            ctx.fillStyle = this.pinned ? '#ff5252' : '#42a5f5';
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Constraint class
+    class Constraint {
+        constructor(p1, p2, length = null) {
+            this.p1 = p1;
+            this.p2 = p2;
+            this.length = length || p1.position.distance(p2.position);
+            this.active = true;
+        }
+
+        solve() {
+            if (!this.active) return;
+
+            const diff = this.p2.position.copy().subtract(this.p1.position);
+            const currentDistance = diff.length();
+
+            if (currentDistance === 0) return;
+
+            const correction = (currentDistance - this.length) / currentDistance;
+            const correctionVector = diff.copy().multiply(correction * 0.5);
+
+            if (!this.p1.pinned) {
+                this.p1.position.add(correctionVector);
+            }
+            if (!this.p2.pinned) {
+                // Subtract by adding negative vector
+                this.p2.position.add(correctionVector.copy().multiply(-1));
+            }
+        }
+
+        draw(ctx) {
+            if (!this.active) return;
+
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(this.p1.position.x, this.p1.position.y);
+            ctx.lineTo(this.p2.position.x, this.p2.position.y);
+            ctx.stroke();
+        }
+    }
+
+    // Rope class
+    class Rope {
+        constructor(startX, startY, segments = 10, segmentLength = 20, pinFirst = true, pinLast = false) {
+            this.points = [];
+            this.constraints = [];
+
+            // Create points
+            for (let i = 0; i <= segments; i++) {
+                const x = startX;
+                const y = startY + i * segmentLength;
+                const pinned = (i === 0 && pinFirst) || (i === segments && pinLast);
+                this.points.push(new VerletPoint(x, y, pinned));
+            }
+
+            // Create constraints
+            for (let i = 0; i < segments; i++) {
+                this.constraints.push(new Constraint(this.points[i], this.points[i + 1], segmentLength));
+            }
+        }
+
+        update(gravity, wind = new Vector2D(0, 0)) {
+            // Apply forces
+            this.points.forEach(point => {
+                point.applyForce(gravity);
+                point.applyForce(wind);
+            });
+
+            // Update positions
+            this.points.forEach(point => {
+                point.update();
+                point.constrain({ width: verletCanvas.width, height: verletCanvas.height });
+            });
+
+            // Solve constraints (multiple iterations for stability)
+            for (let i = 0; i < 3; i++) {
+                this.constraints.forEach(constraint => {
+                    constraint.solve();
+                });
+            }
+        }
+
+        draw(ctx) {
+            // Draw constraints
+            this.constraints.forEach(constraint => constraint.draw(ctx));
+            // Draw points
+            this.points.forEach(point => point.draw(ctx));
+        }
+    }
+
+    // Cloth class (2D grid of points)
+    class Cloth {
+        constructor(startX, startY, cols, rows, spacing) {
+            this.points = [];
+            this.constraints = [];
+
+            // Create grid of points
+            for (let y = 0; y <= rows; y++) {
+                this.points[y] = [];
+                for (let x = 0; x <= cols; x++) {
+                    const pinned = (y === 0); // Pin top row
+                    this.points[y][x] = new VerletPoint(
+                        startX + x * spacing,
+                        startY + y * spacing,
+                        pinned
+                    );
+                }
+            }
+
+            // Create constraints (horizontal, vertical, and diagonal for stability)
+            for (let y = 0; y <= rows; y++) {
+                for (let x = 0; x <= cols; x++) {
+                    // Horizontal
+                    if (x < cols) {
+                        this.constraints.push(new Constraint(this.points[y][x], this.points[y][x + 1]));
+                    }
+                    // Vertical
+                    if (y < rows) {
+                        this.constraints.push(new Constraint(this.points[y][x], this.points[y + 1][x]));
+                    }
+                    // Diagonal (for shear resistance)
+                    if (x < cols && y < rows) {
+                        this.constraints.push(new Constraint(this.points[y][x], this.points[y + 1][x + 1]));
+                        this.constraints.push(new Constraint(this.points[y][x + 1], this.points[y + 1][x]));
+                    }
+                }
+            }
+        }
+
+        getAllPoints() {
+            return this.points.flat();
+        }
+
+        update(gravity, wind = new Vector2D(0, 0)) {
+            const allPoints = this.getAllPoints();
+
+            // Apply forces
+            allPoints.forEach(point => {
+                point.applyForce(gravity);
+                point.applyForce(wind);
+            });
+
+            // Update positions
+            allPoints.forEach(point => {
+                point.update();
+                point.constrain({ width: verletCanvas.width, height: verletCanvas.height });
+            });
+
+            // Solve constraints
+            for (let i = 0; i < 3; i++) {
+                this.constraints.forEach(constraint => constraint.solve());
+            }
+        }
+
+        draw(ctx) {
+            this.constraints.forEach(constraint => constraint.draw(ctx));
+            this.getAllPoints().forEach(point => point.draw(ctx));
+        }
+    }
+
+    // Ragdoll class (stick figure)
+    class Ragdoll {
+        constructor(x, y, scale = 1) {
+            this.points = {};
+            this.constraints = [];
+
+            const s = scale; // Scale factor for size
+
+            // Create body points (from top to bottom)
+            this.points.head = new VerletPoint(x, y, false);
+            this.points.neck = new VerletPoint(x, y + 20 * s, false);
+            this.points.chest = new VerletPoint(x, y + 40 * s, false);
+            this.points.waist = new VerletPoint(x, y + 70 * s, false);
+
+            // Arms
+            this.points.leftShoulder = new VerletPoint(x - 10 * s, y + 35 * s, false);
+            this.points.leftElbow = new VerletPoint(x - 25 * s, y + 55 * s, false);
+            this.points.leftHand = new VerletPoint(x - 35 * s, y + 75 * s, false);
+
+            this.points.rightShoulder = new VerletPoint(x + 10 * s, y + 35 * s, false);
+            this.points.rightElbow = new VerletPoint(x + 25 * s, y + 55 * s, false);
+            this.points.rightHand = new VerletPoint(x + 35 * s, y + 75 * s, false);
+
+            // Legs
+            this.points.leftHip = new VerletPoint(x - 8 * s, y + 75 * s, false);
+            this.points.leftKnee = new VerletPoint(x - 10 * s, y + 105 * s, false);
+            this.points.leftFoot = new VerletPoint(x - 12 * s, y + 135 * s, false);
+
+            this.points.rightHip = new VerletPoint(x + 8 * s, y + 75 * s, false);
+            this.points.rightKnee = new VerletPoint(x + 10 * s, y + 105 * s, false);
+            this.points.rightFoot = new VerletPoint(x + 12 * s, y + 135 * s, false);
+
+            // Create constraints (skeleton structure)
+            // Spine
+            this.addConstraint('head', 'neck');
+            this.addConstraint('neck', 'chest');
+            this.addConstraint('chest', 'waist');
+
+            // Left arm
+            this.addConstraint('chest', 'leftShoulder');
+            this.addConstraint('leftShoulder', 'leftElbow');
+            this.addConstraint('leftElbow', 'leftHand');
+
+            // Right arm
+            this.addConstraint('chest', 'rightShoulder');
+            this.addConstraint('rightShoulder', 'rightElbow');
+            this.addConstraint('rightElbow', 'rightHand');
+
+            // Left leg
+            this.addConstraint('waist', 'leftHip');
+            this.addConstraint('leftHip', 'leftKnee');
+            this.addConstraint('leftKnee', 'leftFoot');
+
+            // Right leg
+            this.addConstraint('waist', 'rightHip');
+            this.addConstraint('rightHip', 'rightKnee');
+            this.addConstraint('rightKnee', 'rightFoot');
+
+            // Cross-body constraints for stability
+            this.addConstraint('leftShoulder', 'rightShoulder');
+            this.addConstraint('leftHip', 'rightHip');
+            this.addConstraint('leftShoulder', 'rightHip');
+            this.addConstraint('rightShoulder', 'leftHip');
+        }
+
+        addConstraint(name1, name2) {
+            this.constraints.push(new Constraint(this.points[name1], this.points[name2]));
+        }
+
+        getAllPoints() {
+            return Object.values(this.points);
+        }
+
+        update(gravity, wind = new Vector2D(0, 0)) {
+            const allPoints = this.getAllPoints();
+
+            // Apply forces
+            allPoints.forEach(point => {
+                point.applyForce(gravity);
+                point.applyForce(wind);
+            });
+
+            // Update positions
+            allPoints.forEach(point => {
+                point.update();
+                point.constrain({ width: verletCanvas.width, height: verletCanvas.height });
+            });
+
+            // Solve constraints (more iterations for ragdoll stability)
+            for (let i = 0; i < 5; i++) {
+                this.constraints.forEach(constraint => constraint.solve());
+            }
+        }
+
+        draw(ctx) {
+            // Draw constraints (bones)
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 4;
+            this.constraints.forEach(constraint => {
+                if (constraint.active) {
+                    ctx.beginPath();
+                    ctx.moveTo(constraint.p1.position.x, constraint.p1.position.y);
+                    ctx.lineTo(constraint.p2.position.x, constraint.p2.position.y);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw joints (points) with different sizes
+            this.getAllPoints().forEach((point, index) => {
+                ctx.fillStyle = point.pinned ? '#ff5252' : '#42a5f5';
+                const radius = point === this.points.head ? 8 : 5;
+                ctx.beginPath();
+                ctx.arc(point.position.x, point.position.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+
+            // Draw head as larger circle
+            ctx.fillStyle = '#ffb74d';
+            ctx.beginPath();
+            ctx.arc(this.points.head.position.x, this.points.head.position.y, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // Simulation state
+    let ropes = [];
+    let cloths = [];
+    let ragdolls = [];
+    const gravity = new Vector2D(0, 0.5);
+    let wind = new Vector2D(0, 0);
+    let windEnabled = false;
+    let cutMode = false;
+    let draggedPoint = null;
+
+    // Add initial rope
+    ropes.push(new Rope(400, 50, 15, 20));
+
+    // Mouse interaction
+    let mousePos = new Vector2D(0, 0);
+
+    verletCanvas.addEventListener('mousemove', (e) => {
+        const rect = verletCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+
+        if (draggedPoint) {
+            draggedPoint.position.x = mousePos.x;
+            draggedPoint.position.y = mousePos.y;
+            draggedPoint.oldPosition.x = mousePos.x;
+            draggedPoint.oldPosition.y = mousePos.y;
+        }
+    });
+
+    verletCanvas.addEventListener('mousedown', (e) => {
+        const rect = verletCanvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+
+        if (cutMode) {
+            // Cut mode - find and deactivate nearby constraint
+            let cutMade = false;
+            [...ropes, ...cloths, ...ragdolls].forEach(obj => {
+                obj.constraints.forEach(constraint => {
+                    const midPoint = new Vector2D(
+                        (constraint.p1.position.x + constraint.p2.position.x) / 2,
+                        (constraint.p1.position.y + constraint.p2.position.y) / 2
+                    );
+                    if (mousePos.distance(midPoint) < 10) {
+                        constraint.active = false;
+                        cutMade = true;
+                    }
+                });
+            });
+            if (cutMade) {
+                info.textContent = 'Constraint cut! Continue cutting or exit cut mode.';
+            }
+        } else {
+            // Drag mode - find nearest point
+            let minDist = Infinity;
+            let closest = null;
+
+            [...ropes, ...cloths, ...ragdolls].forEach(obj => {
+                const points = obj.points ? (Array.isArray(obj.points[0]) ? obj.getAllPoints() : obj.points) : [];
+                points.forEach(point => {
+                    const dist = mousePos.distance(point.position);
+                    if (dist < minDist && dist < 20) {
+                        minDist = dist;
+                        closest = point;
+                    }
+                });
+            });
+
+            if (closest && !closest.pinned) {
+                draggedPoint = closest;
+            }
+        }
+    });
+
+    verletCanvas.addEventListener('mouseup', () => {
+        draggedPoint = null;
+    });
+
+    // Button handlers
+    document.getElementById('btnAddRope').addEventListener('click', () => {
+        const x = randomFloat(100, verletCanvas.width - 100);
+        ropes.push(new Rope(x, 50, 12, 25));
+        info.textContent = 'New rope added! Drag points to interact.';
+    });
+
+    document.getElementById('btnAddCloth').addEventListener('click', () => {
+        cloths = []; // Remove old cloth
+        ropes = []; // Clear ropes
+        ragdolls = []; // Clear ragdolls
+        const cols = 12;
+        const rows = 10;
+        const spacing = 25;
+        const startX = (verletCanvas.width - cols * spacing) / 2;
+        cloths.push(new Cloth(startX, 50, cols, rows, spacing));
+        info.textContent = 'Cloth created! Drag points to see it deform.';
+    });
+
+    document.getElementById('btnAddRagdoll').addEventListener('click', () => {
+        const x = randomFloat(150, verletCanvas.width - 150);
+        ragdolls.push(new Ragdoll(x, 50, 1));
+        info.textContent = 'Ragdoll added! Drag limbs and watch it fall naturally.';
+    });
+
+    document.getElementById('btnToggleWind').addEventListener('click', () => {
+        windEnabled = !windEnabled;
+        wind = windEnabled ? new Vector2D(0.3, 0) : new Vector2D(0, 0);
+        info.textContent = windEnabled ? 'Wind enabled! Watch the physics objects sway.' : 'Wind disabled.';
+    });
+
+    document.getElementById('btnCutRope').addEventListener('click', () => {
+        cutMode = !cutMode;
+        info.textContent = cutMode ? 'CUT MODE: Click on constraints to cut them!' : 'Cut mode disabled. Drag points to interact.';
+    });
+
+    document.getElementById('btnResetVerlet').addEventListener('click', () => {
+        ropes = [new Rope(400, 50, 15, 20)];
+        cloths = [];
+        ragdolls = [];
+        windEnabled = false;
+        wind = new Vector2D(0, 0);
+        cutMode = false;
+        draggedPoint = null;
+        info.textContent = 'Reset! Drag points to interact with the rope.';
+    });
+
+    function animateVerlet() {
+        clearCanvas(ctx, verletCanvas.width, verletCanvas.height);
+        drawGrid(ctx, verletCanvas.width, verletCanvas.height);
+
+        // Update and draw ropes
+        ropes.forEach(rope => {
+            rope.update(gravity, wind);
+            rope.draw(ctx);
+        });
+
+        // Update and draw cloths
+        cloths.forEach(cloth => {
+            cloth.update(gravity, wind);
+            cloth.draw(ctx);
+        });
+
+        // Update and draw ragdolls
+        ragdolls.forEach(ragdoll => {
+            ragdoll.update(gravity, wind);
+            ragdoll.draw(ctx);
+        });
+
+        // Draw cursor indicator
+        if (cutMode) {
+            ctx.strokeStyle = '#ff5252';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mousePos.x, mousePos.y, 15, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(mousePos.x - 10, mousePos.y);
+            ctx.lineTo(mousePos.x + 10, mousePos.y);
+            ctx.moveTo(mousePos.x, mousePos.y - 10);
+            ctx.lineTo(mousePos.x, mousePos.y + 10);
+            ctx.stroke();
+        }
+
+        // Display info
+        if (!info.textContent || info.textContent.includes('undefined')) {
+            info.textContent = cutMode ? 'CUT MODE: Click constraints to cut!' : 'Drag points to interact with the rope!';
+        }
+
+        requestAnimationFrame(animateVerlet);
+    }
+
+    animateVerlet();
+}
+
+// ===================================
 // DEMO: Procedural Animation - Living Creatures
 // ===================================
 const proceduralCanvas = document.getElementById('proceduralDemo');
