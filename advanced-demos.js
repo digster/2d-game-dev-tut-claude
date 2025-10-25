@@ -1811,6 +1811,9 @@ if (behaviorTreeCanvas) {
     }
 
     let enemies = [];
+    let showTree = false;
+    let stepMode = false;
+    let paused = false;
 
     window.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
@@ -1822,16 +1825,166 @@ if (behaviorTreeCanvas) {
         if (key in keys) keys[key] = false;
     });
 
+    // Function to draw behavior tree structure
+    function drawBehaviorTree(ctx, x, y) {
+        const nodeWidth = 140;
+        const nodeHeight = 40;
+        const levelGap = 70;
+        const siblingGap = 20;
+
+        // Draw tree structure
+        ctx.fillStyle = 'rgba(33, 33, 33, 0.95)';
+        ctx.fillRect(x - 370, y - 20, 740, 320);
+
+        ctx.strokeStyle = '#424242';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - 370, y - 20, 740, 320);
+
+        // Title
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Enemy Behavior Tree', x, y);
+
+        let currentY = y + 30;
+
+        // Root Selector
+        ctx.fillStyle = '#ffa726';
+        ctx.fillRect(x - nodeWidth/2, currentY, nodeWidth, nodeHeight);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - nodeWidth/2, currentY, nodeWidth, nodeHeight);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText('SELECTOR', x, currentY + 15);
+        ctx.font = '10px Arial';
+        ctx.fillText('(Try each child)', x, currentY + 28);
+
+        currentY += nodeHeight + levelGap;
+
+        // Second level - 4 sequences/actions
+        const secondLevelNodes = [
+            { x: x - 220, label: 'SEQUENCE', sublabel: 'Attack Logic' },
+            { x: x - 73, label: 'SEQUENCE', sublabel: 'Chase Logic' },
+            { x: x + 73, label: 'SEQUENCE', sublabel: 'Patrol Logic' },
+            { x: x + 220, label: 'ACTION', sublabel: 'Flee' }
+        ];
+
+        secondLevelNodes.forEach((node, i) => {
+            // Draw connection line
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, currentY - levelGap + nodeHeight);
+            ctx.lineTo(node.x, currentY);
+            ctx.stroke();
+
+            // Draw node
+            ctx.fillStyle = i < 3 ? '#4fc3f7' : '#ef5350';
+            ctx.fillRect(node.x - nodeWidth/4, currentY, nodeWidth/2, nodeHeight - 8);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(node.x - nodeWidth/4, currentY, nodeWidth/2, nodeHeight - 8);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText(node.label, node.x, currentY + 12);
+            ctx.font = '9px Arial';
+            ctx.fillText(node.sublabel, node.x, currentY + 24);
+        });
+
+        currentY += nodeHeight + levelGap - 20;
+
+        // Third level - Conditions and Actions
+        const thirdLevelNodes = [
+            { x: x - 255, parent: 0, label: 'COND', sublabel: 'Near?' },
+            { x: x - 185, parent: 0, label: 'ACT', sublabel: 'Attack' },
+            { x: x - 108, parent: 1, label: 'COND', sublabel: 'See?' },
+            { x: x - 38, parent: 1, label: 'ACT', sublabel: 'Chase' },
+            { x: x + 38, parent: 2, label: 'COND', sublabel: 'HP>50?' },
+            { x: x + 108, parent: 2, label: 'ACT', sublabel: 'Patrol' }
+        ];
+
+        thirdLevelNodes.forEach((node) => {
+            const parentNode = secondLevelNodes[node.parent];
+
+            // Draw connection line
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(parentNode.x, currentY - levelGap + 20 + nodeHeight - 8);
+            ctx.lineTo(node.x, currentY);
+            ctx.stroke();
+
+            // Draw node
+            ctx.fillStyle = node.label === 'COND' ? '#66bb6a' : '#ab47bc';
+            ctx.fillRect(node.x - 30, currentY, 60, 30);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(node.x - 30, currentY, 60, 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 9px Arial';
+            ctx.fillText(node.label, node.x, currentY + 12);
+            ctx.font = '8px Arial';
+            ctx.fillText(node.sublabel, node.x, currentY + 22);
+        });
+
+        // Legend
+        const legendY = y + 290;
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffa726';
+        ctx.fillRect(x - 360, legendY, 15, 15);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Selector (OR)', x - 340, legendY + 12);
+
+        ctx.fillStyle = '#4fc3f7';
+        ctx.fillRect(x - 240, legendY, 15, 15);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Sequence (AND)', x - 220, legendY + 12);
+
+        ctx.fillStyle = '#66bb6a';
+        ctx.fillRect(x - 100, legendY, 15, 15);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Condition', x - 80, legendY + 12);
+
+        ctx.fillStyle = '#ab47bc';
+        ctx.fillRect(x + 20, legendY, 15, 15);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Action', x + 40, legendY + 12);
+    }
+
     // Button handlers
     const btnSpawnEnemy = document.getElementById('btnSpawnEnemy');
+    const btnToggleTree = document.getElementById('btnToggleTree');
+    const btnStepBehavior = document.getElementById('btnStepBehavior');
     const btnReset = document.getElementById('btnResetBehavior');
 
     if (btnSpawnEnemy) btnSpawnEnemy.addEventListener('click', () => {
         enemies.push(new Enemy(Math.random() * behaviorTreeCanvas.width, Math.random() * behaviorTreeCanvas.height));
     });
+
+    if (btnToggleTree) btnToggleTree.addEventListener('click', () => {
+        showTree = !showTree;
+        btnToggleTree.textContent = showTree ? 'Hide Tree' : 'Show Tree';
+    });
+
+    if (btnStepBehavior) btnStepBehavior.addEventListener('click', () => {
+        if (!stepMode) {
+            stepMode = true;
+            paused = true;
+            btnStepBehavior.textContent = 'Next Step';
+        } else {
+            paused = false;
+            setTimeout(() => { paused = true; }, 100);
+        }
+    });
+
     if (btnReset) btnReset.addEventListener('click', () => {
         enemies = [];
         player.position = new Vector2D(400, 250);
+        stepMode = false;
+        paused = false;
+        if (btnStepBehavior) btnStepBehavior.textContent = 'Step Through';
     });
 
     // Spawn initial enemies
@@ -1842,7 +1995,7 @@ if (behaviorTreeCanvas) {
     function animateBehaviorTree() {
         clearCanvas(ctx, behaviorTreeCanvas.width, behaviorTreeCanvas.height);
 
-        // Update player
+        // Update player (always allow player movement)
         if (keys.w) player.position.y -= player.speed;
         if (keys.s) player.position.y += player.speed;
         if (keys.a) player.position.x -= player.speed;
@@ -1857,17 +2010,37 @@ if (behaviorTreeCanvas) {
         ctx.arc(player.position.x, player.position.y, player.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Update and draw enemies
+        // Draw player label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('PLAYER', player.position.x, player.position.y - 25);
+
+        // Update and draw enemies (respect paused state)
+        if (!paused) {
+            enemies.forEach(enemy => {
+                enemy.update();
+            });
+        }
+
         enemies.forEach(enemy => {
-            enemy.update();
             enemy.draw(ctx);
         });
+
+        // Show behavior tree visualization if enabled
+        if (showTree) {
+            drawBehaviorTree(ctx, behaviorTreeCanvas.width / 2, 20);
+        }
 
         // State counts
         const stateCounts = {patrol: 0, chase: 0, attack: 0, flee: 0};
         enemies.forEach(e => stateCounts[e.state]++);
 
-        info.textContent = `Enemies: ${enemies.length} | Patrol: ${stateCounts.patrol} | Chase: ${stateCounts.chase} | Attack: ${stateCounts.attack} | Flee: ${stateCounts.flee}`;
+        let statusText = `Enemies: ${enemies.length} | Patrol: ${stateCounts.patrol} | Chase: ${stateCounts.chase} | Attack: ${stateCounts.attack} | Flee: ${stateCounts.flee}`;
+        if (stepMode) {
+            statusText += paused ? ' | PAUSED (Click "Next Step")' : ' | RUNNING';
+        }
+        info.textContent = statusText;
 
         requestAnimationFrame(animateBehaviorTree);
     }
