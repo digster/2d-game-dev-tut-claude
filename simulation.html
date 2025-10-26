@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation - Game Dev Math Guide</title>
+    <link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🌊 Simulation Systems</h1>
+        <p class="subtitle">Advanced simulation techniques - Fluids, cloth, and realistic effects</p>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <a href="index.html" class="nav-button">← Home</a>
+            <a href="expert.html" class="nav-button">Expert</a>
+            <a href="simulation.html" class="nav-button active">Simulation</a>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">📚 Topics in This Guide</div>
+            <ul>
+                <li><a href="#fluid-dynamics">Fluid Dynamics Simulation</a></li>
+            </ul>
+        </div>
+
+        <!-- FLUID DYNAMICS -->
+        <div id="fluid-dynamics" class="section">
+            <span class="level-indicator level-expert">EXPERT</span>
+            <h2>🌊 Fluid Dynamics Simulation</h2>
+
+            <div class="concept-box">
+                <h4>What is Fluid Simulation?</h4>
+                <p>Fluid simulation recreates the behavior of liquids and gases - water splashing, smoke rising, or fire spreading. In games, we often use simplified models that look realistic without the massive computational cost of real physics.</p>
+
+                <div class="key-point">
+                    <strong>💡 Core Idea:</strong> Instead of simulating individual water molecules, we divide space into a grid and calculate how properties like velocity, pressure, and density flow between neighboring cells.
+                </div>
+            </div>
+
+            <div class="concept-box">
+                <h4>How Fluids Work: The Basics</h4>
+                <p>Real fluids follow the <strong>Navier-Stokes equations</strong>, but don't worry - we'll break this down into simple concepts!</p>
+
+                <ul>
+                    <li><strong>Advection:</strong> Fluid carries things along with it (like a river carrying a leaf)</li>
+                    <li><strong>Diffusion:</strong> Properties spread out over time (like ink dispersing in water)</li>
+                    <li><strong>Pressure:</strong> Fluid pushes away from high-pressure areas</li>
+                    <li><strong>Incompressibility:</strong> Liquid volume stays constant (water doesn't compress)</li>
+                </ul>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Fluid Grid Setup</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Fluid simulation grid</span>
+<span class="keyword">class</span> <span class="function">FluidGrid</span> {
+    <span class="keyword">constructor</span>(width, height, scale) {
+        <span class="keyword">this</span>.cols = Math.<span class="function">floor</span>(width / scale);
+        <span class="keyword">this</span>.rows = Math.<span class="function">floor</span>(height / scale);
+        <span class="keyword">this</span>.scale = scale;
+
+        <span class="comment">// Create grids for velocity (in X and Y directions)</span>
+        <span class="keyword">this</span>.vx = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        <span class="keyword">this</span>.vy = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+
+        <span class="comment">// Previous velocity (for stability)</span>
+        <span class="keyword">this</span>.vx0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        <span class="keyword">this</span>.vy0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+
+        <span class="comment">// Density (for visualization - like dye in water)</span>
+        <span class="keyword">this</span>.density = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        <span class="keyword">this</span>.density0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+    }
+
+    <span class="function">createGrid</span>() {
+        <span class="keyword">const</span> grid = [];
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.rows; i++) {
+            grid[i] = <span class="keyword">new</span> <span class="function">Array</span>(<span class="keyword">this</span>.cols).<span class="function">fill</span>(<span class="number">0</span>);
+        }
+        <span class="keyword">return</span> grid;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Diffusion (Spreading)</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Diffusion spreads values to neighbors
+// Like heat spreading through metal or ink dispersing in water</span>
+<span class="function">diffuse</span>(x, x0, diffusion, dt) {
+    <span class="keyword">const</span> a = dt * diffusion * <span class="keyword">this</span>.cols * <span class="keyword">this</span>.rows;
+
+    <span class="comment">// Gauss-Seidel iteration for stability</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> iter = <span class="number">0</span>; iter &lt; <span class="number">20</span>; iter++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+                <span class="comment">// Average with neighbors, weighted by diffusion rate</span>
+                x[i][j] = (x0[i][j] + a * (
+                    x[i - <span class="number">1</span>][j] + x[i + <span class="number">1</span>][j] +
+                    x[i][j - <span class="number">1</span>] + x[i][j + <span class="number">1</span>]
+                )) / (<span class="number">1</span> + <span class="number">4</span> * a);
+            }
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Diffusion:</h4>
+                    <p>Think of a drop of food coloring in water. It starts concentrated, then slowly spreads out. Each cell shares a bit of its "stuff" with neighbors. The <code>diffusion</code> parameter controls how fast this happens.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Advection (Flow)</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Advection moves values along the velocity field
+// Like a river carrying leaves downstream</span>
+<span class="function">advect</span>(d, d0, vx, vy, dt) {
+    <span class="keyword">const</span> dt0 = dt * <span class="keyword">this</span>.cols;
+
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+            <span class="comment">// Trace backwards along velocity</span>
+            <span class="keyword">let</span> x = j - dt0 * vx[i][j];
+            <span class="keyword">let</span> y = i - dt0 * vy[i][j];
+
+            <span class="comment">// Clamp to grid boundaries</span>
+            x = Math.<span class="function">max</span>(<span class="number">0.5</span>, Math.<span class="function">min</span>(<span class="keyword">this</span>.cols - <span class="number">1.5</span>, x));
+            y = Math.<span class="function">max</span>(<span class="number">0.5</span>, Math.<span class="function">min</span>(<span class="keyword">this</span>.rows - <span class="number">1.5</span>, y));
+
+            <span class="comment">// Interpolate between grid cells</span>
+            <span class="keyword">const</span> i0 = Math.<span class="function">floor</span>(y);
+            <span class="keyword">const</span> i1 = i0 + <span class="number">1</span>;
+            <span class="keyword">const</span> j0 = Math.<span class="function">floor</span>(x);
+            <span class="keyword">const</span> j1 = j0 + <span class="number">1</span>;
+
+            <span class="keyword">const</span> s1 = x - j0;
+            <span class="keyword">const</span> s0 = <span class="number">1</span> - s1;
+            <span class="keyword">const</span> t1 = y - i0;
+            <span class="keyword">const</span> t0 = <span class="number">1</span> - t1;
+
+            <span class="comment">// Bilinear interpolation</span>
+            d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i1][j0]) +
+                      s1 * (t0 * d0[i0][j1] + t1 * d0[i1][j1]);
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Advection:</h4>
+                    <p>Imagine you drop dye in a moving river. The dye doesn't just sit there - it flows with the water. Advection does this: for each cell, we look backward along the velocity to see where the fluid came from, then bring that value forward.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Pressure & Incompressibility</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Project removes divergence (ensures fluid is incompressible)
+// This is what makes fluid behave like liquid, not gas</span>
+<span class="function">project</span>(vx, vy, p, div) {
+    <span class="comment">// Calculate divergence (how much fluid is leaving each cell)</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+            div[i][j] = -<span class="number">0.5</span> * (
+                vx[i][j + <span class="number">1</span>] - vx[i][j - <span class="number">1</span>] +
+                vy[i + <span class="number">1</span>][j] - vy[i - <span class="number">1</span>][j]
+            ) / <span class="keyword">this</span>.cols;
+            p[i][j] = <span class="number">0</span>;
+        }
+    }
+
+    <span class="comment">// Solve for pressure using iterative method</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> iter = <span class="number">0</span>; iter &lt; <span class="number">20</span>; iter++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
+            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+                p[i][j] = (div[i][j] +
+                    p[i - <span class="number">1</span>][j] + p[i + <span class="number">1</span>][j] +
+                    p[i][j - <span class="number">1</span>] + p[i][j + <span class="number">1</span>]
+                ) / <span class="number">4</span>;
+            }
+        }
+    }
+
+    <span class="comment">// Subtract pressure gradient from velocity</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+            vx[i][j] -= <span class="number">0.5</span> * <span class="keyword">this</span>.cols * (p[i][j + <span class="number">1</span>] - p[i][j - <span class="number">1</span>]);
+            vy[i][j] -= <span class="number">0.5</span> * <span class="keyword">this</span>.cols * (p[i + <span class="number">1</span>][j] - p[i - <span class="number">1</span>][j]);
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Pressure:</h4>
+                    <p>Water doesn't compress easily. If too much water flows into a cell, pressure builds up and pushes it out to neighbors. This step ensures the simulation stays physically plausible - the same amount of fluid stays in the system.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Complete Simulation Step</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Main simulation step - call this every frame</span>
+<span class="function">step</span>(dt = <span class="number">0.016</span>) {
+    <span class="keyword">const</span> visc = <span class="number">0.0001</span>;  <span class="comment">// Viscosity (thickness of fluid)</span>
+    <span class="keyword">const</span> diff = <span class="number">0.0001</span>;  <span class="comment">// Diffusion rate</span>
+
+    <span class="comment">// 1. Diffuse velocity (friction between fluid layers)</span>
+    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vx0, visc, dt);
+    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.vy, <span class="keyword">this</span>.vy0, visc, dt);
+
+    <span class="comment">// 2. Project (fix velocity to be incompressible)</span>
+    <span class="keyword">this</span>.<span class="function">project</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0);
+
+    <span class="comment">// 3. Advect velocity (velocity moves itself)</span>
+    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0, dt);
+    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.vy, <span class="keyword">this</span>.vy0, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0, dt);
+
+    <span class="comment">// 4. Project again (ensure still incompressible)</span>
+    <span class="keyword">this</span>.<span class="function">project</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0);
+
+    <span class="comment">// 5. Diffuse density (dye spreads out)</span>
+    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.density, <span class="keyword">this</span>.density0, diff, dt);
+
+    <span class="comment">// 6. Advect density (velocity carries dye along)</span>
+    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.density, <span class="keyword">this</span>.density0, <span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, dt);
+
+    <span class="comment">// 7. Fade density over time (optional, for visual effect)</span>
+    <span class="keyword">this</span>.<span class="function">fadeDensity</span>(<span class="number">0.99</span>);
+}
+
+<span class="function">fadeDensity</span>(fadeRate) {
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.rows; i++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; <span class="keyword">this</span>.cols; j++) {
+            <span class="keyword">this</span>.density[i][j] *= fadeRate;
+        }
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Fluid Simulation</h3>
+            <div class="example-box">
+                <strong>🖱️ How to Use:</strong> Click and drag on the canvas below to add fluid and watch it flow! The fluid will follow your mouse movement.
+            </div>
+            <div class="diagram">
+                <canvas id="fluidDemo" width="800" height="600" style="border: 1px solid #444;"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnClearFluid">Clear</button>
+                <label>
+                    Viscosity: <input type="range" id="viscSlider" min="0" max="0.001" step="0.0001" value="0.0001">
+                    <span id="viscValue">0.0001</span>
+                </label>
+            </div>
+
+            <div class="key-point">
+                <strong>🎮 Game Usage:</strong> Fluid simulation is perfect for water effects, smoke, fire, magic spells, and atmospheric effects. Adjust grid resolution for performance - smaller grids run faster but look less detailed.
+            </div>
+
+            <div class="example-box">
+                <h4>⚡ Performance Tips:</h4>
+                <ul>
+                    <li><strong>Grid Size:</strong> Use smaller grids (32x32 or 64x64) for real-time games</li>
+                    <li><strong>Iterations:</strong> Reduce iteration count (10-15) if too slow</li>
+                    <li><strong>GPU:</strong> Consider WebGL shaders for large simulations</li>
+                    <li><strong>Hybrid:</strong> Combine simple particle systems with fluid for best visual/performance ratio</li>
+                </ul>
+            </div>
+
+            <div class="concept-box">
+                <h4>📚 Further Reading:</h4>
+                <ul>
+                    <li><strong>Navier-Stokes Equations:</strong> The full physics of fluid motion</li>
+                    <li><strong>Jos Stam's "Stable Fluids":</strong> The paper this technique is based on</li>
+                    <li><strong>SPH (Smoothed Particle Hydrodynamics):</strong> Alternative particle-based approach</li>
+                    <li><strong>Level Set Methods:</strong> For tracking fluid surfaces</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Scroll to Top Button -->
+        <div class="scroll-to-top" id="scrollToTop">↑</div>
+    </div>
+
+    <script>
+        // Scroll to top functionality
+        const scrollToTopBtn = document.getElementById('scrollToTop');
+
+        scrollToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollToTopBtn.style.opacity = '1';
+            } else {
+                scrollToTopBtn.style.opacity = '0';
+            }
+        });
+
+        scrollToTopBtn.style.opacity = '0';
+        scrollToTopBtn.style.transition = 'opacity 0.3s';
+
+        // ===================================
+        // FLUID SIMULATION DEMO
+        // ===================================
+
+        // Ensure DOM is loaded
+        const canvas = document.getElementById('fluidDemo');
+        const ctx = canvas.getContext('2d');
+
+        if (!canvas || !ctx) {
+            console.error('Canvas not found!');
+        } else {
+
+        class FluidGrid {
+            constructor(width, height, scale) {
+                this.cols = Math.floor(width / scale);
+                this.rows = Math.floor(height / scale);
+                this.scale = scale;
+
+                this.vx = this.createGrid();
+                this.vy = this.createGrid();
+                this.vx0 = this.createGrid();
+                this.vy0 = this.createGrid();
+
+                this.density = this.createGrid();
+                this.density0 = this.createGrid();
+
+                // For projection
+                this.p = this.createGrid();
+                this.div = this.createGrid();
+
+                this.visc = 0.0001;
+                this.diff = 0.0001;
+            }
+
+            createGrid() {
+                const grid = [];
+                for (let i = 0; i < this.rows; i++) {
+                    grid[i] = new Array(this.cols).fill(0);
+                }
+                return grid;
+            }
+
+            diffuse(x, x0, diffusion, dt) {
+                const a = dt * diffusion * this.cols * this.rows;
+
+                for (let iter = 0; iter < 20; iter++) {
+                    for (let i = 1; i < this.rows - 1; i++) {
+                        for (let j = 1; j < this.cols - 1; j++) {
+                            x[i][j] = (x0[i][j] + a * (
+                                x[i - 1][j] + x[i + 1][j] +
+                                x[i][j - 1] + x[i][j + 1]
+                            )) / (1 + 4 * a);
+                        }
+                    }
+                    this.setBoundary(0, x);
+                }
+            }
+
+            advect(d, d0, vx, vy, dt) {
+                const dt0 = dt * this.cols;
+
+                for (let i = 1; i < this.rows - 1; i++) {
+                    for (let j = 1; j < this.cols - 1; j++) {
+                        let x = j - dt0 * vx[i][j];
+                        let y = i - dt0 * vy[i][j];
+
+                        x = Math.max(0.5, Math.min(this.cols - 1.5, x));
+                        y = Math.max(0.5, Math.min(this.rows - 1.5, y));
+
+                        const i0 = Math.floor(y);
+                        const i1 = i0 + 1;
+                        const j0 = Math.floor(x);
+                        const j1 = j0 + 1;
+
+                        const s1 = x - j0;
+                        const s0 = 1 - s1;
+                        const t1 = y - i0;
+                        const t0 = 1 - t1;
+
+                        d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i1][j0]) +
+                                  s1 * (t0 * d0[i0][j1] + t1 * d0[i1][j1]);
+                    }
+                }
+                this.setBoundary(0, d);
+            }
+
+            project(vx, vy, p, div) {
+                for (let i = 1; i < this.rows - 1; i++) {
+                    for (let j = 1; j < this.cols - 1; j++) {
+                        div[i][j] = -0.5 * (
+                            vx[i][j + 1] - vx[i][j - 1] +
+                            vy[i + 1][j] - vy[i - 1][j]
+                        ) / this.cols;
+                        p[i][j] = 0;
+                    }
+                }
+                this.setBoundary(0, div);
+                this.setBoundary(0, p);
+
+                for (let iter = 0; iter < 20; iter++) {
+                    for (let i = 1; i < this.rows - 1; i++) {
+                        for (let j = 1; j < this.cols - 1; j++) {
+                            p[i][j] = (div[i][j] +
+                                p[i - 1][j] + p[i + 1][j] +
+                                p[i][j - 1] + p[i][j + 1]
+                            ) / 4;
+                        }
+                    }
+                    this.setBoundary(0, p);
+                }
+
+                for (let i = 1; i < this.rows - 1; i++) {
+                    for (let j = 1; j < this.cols - 1; j++) {
+                        vx[i][j] -= 0.5 * this.cols * (p[i][j + 1] - p[i][j - 1]);
+                        vy[i][j] -= 0.5 * this.cols * (p[i + 1][j] - p[i - 1][j]);
+                    }
+                }
+                this.setBoundary(1, vx);
+                this.setBoundary(2, vy);
+            }
+
+            setBoundary(b, x) {
+                for (let i = 1; i < this.rows - 1; i++) {
+                    x[i][0] = b === 1 ? -x[i][1] : x[i][1];
+                    x[i][this.cols - 1] = b === 1 ? -x[i][this.cols - 2] : x[i][this.cols - 2];
+                }
+                for (let j = 1; j < this.cols - 1; j++) {
+                    x[0][j] = b === 2 ? -x[1][j] : x[1][j];
+                    x[this.rows - 1][j] = b === 2 ? -x[this.rows - 2][j] : x[this.rows - 2][j];
+                }
+
+                x[0][0] = 0.5 * (x[1][0] + x[0][1]);
+                x[0][this.cols - 1] = 0.5 * (x[1][this.cols - 1] + x[0][this.cols - 2]);
+                x[this.rows - 1][0] = 0.5 * (x[this.rows - 2][0] + x[this.rows - 1][1]);
+                x[this.rows - 1][this.cols - 1] = 0.5 * (x[this.rows - 2][this.cols - 1] + x[this.rows - 1][this.cols - 2]);
+            }
+
+            step(dt = 0.016) {
+                // Swap arrays
+                [this.vx0, this.vx] = [this.vx, this.vx0];
+                [this.vy0, this.vy] = [this.vy, this.vy0];
+
+                this.diffuse(this.vx, this.vx0, this.visc, dt);
+                this.diffuse(this.vy, this.vy0, this.visc, dt);
+
+                this.project(this.vx, this.vy, this.vx0, this.vy0);
+
+                [this.vx0, this.vx] = [this.vx, this.vx0];
+                [this.vy0, this.vy] = [this.vy, this.vy0];
+
+                this.advect(this.vx, this.vx0, this.vx0, this.vy0, dt);
+                this.advect(this.vy, this.vy0, this.vx0, this.vy0, dt);
+
+                this.project(this.vx, this.vy, this.vx0, this.vy0);
+
+                [this.density0, this.density] = [this.density, this.density0];
+
+                this.diffuse(this.density, this.density0, this.diff, dt);
+
+                [this.density0, this.density] = [this.density, this.density0];
+
+                this.advect(this.density, this.density0, this.vx, this.vy, dt);
+
+                this.fadeDensity(0.99);
+            }
+
+            fadeDensity(fadeRate) {
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        this.density[i][j] *= fadeRate;
+                    }
+                }
+            }
+
+            addDensity(x, y, amount) {
+                const i = Math.floor(y / this.scale);
+                const j = Math.floor(x / this.scale);
+                if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) {
+                    this.density[i][j] += amount;
+                }
+            }
+
+            addVelocity(x, y, vx, vy) {
+                const i = Math.floor(y / this.scale);
+                const j = Math.floor(x / this.scale);
+                if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) {
+                    this.vx[i][j] += vx;
+                    this.vy[i][j] += vy;
+                }
+            }
+
+            render(ctx) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const d = Math.min(255, Math.floor(this.density[i][j]));
+                        if (d > 0) {
+                            ctx.fillStyle = `rgba(${d}, ${d * 0.5}, ${255 - d}, ${d / 255})`;
+                            ctx.fillRect(j * this.scale, i * this.scale, this.scale, this.scale);
+                        }
+                    }
+                }
+            }
+        }
+
+        const fluid = new FluidGrid(canvas.width, canvas.height, 8);
+
+        // Initialize canvas with black background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let isMouseDown = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            const rect = canvas.getBoundingClientRect();
+            prevMouseX = e.clientX - rect.left;
+            prevMouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const vx = (x - prevMouseX) * 10;
+                const vy = (y - prevMouseY) * 10;
+
+                fluid.addDensity(x, y, 200);
+                fluid.addVelocity(x, y, vx, vy);
+
+                prevMouseX = x;
+                prevMouseY = y;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        document.getElementById('btnClearFluid').addEventListener('click', () => {
+            fluid.density = fluid.createGrid();
+            fluid.vx = fluid.createGrid();
+            fluid.vy = fluid.createGrid();
+        });
+
+        const viscSlider = document.getElementById('viscSlider');
+        const viscValue = document.getElementById('viscValue');
+
+        viscSlider.addEventListener('input', (e) => {
+            fluid.visc = parseFloat(e.target.value);
+            viscValue.textContent = fluid.visc.toFixed(4);
+        });
+
+        function animate() {
+            fluid.step();
+            fluid.render(ctx);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+        } // End canvas check
+    </script>
+</body>
+</html>
