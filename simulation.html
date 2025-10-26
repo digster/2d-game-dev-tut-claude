@@ -247,17 +247,111 @@
 
             <h3>Interactive Demo: Fluid Simulation</h3>
             <div class="example-box">
-                <strong>🖱️ How to Use:</strong> Click and drag on the canvas below to add fluid and watch it flow! The fluid will follow your mouse movement.
+                <strong>🖱️ How to Use:</strong> Click and drag on the canvas below to add fluid and watch it flow! Try different presets and features below.
             </div>
             <div class="diagram">
                 <canvas id="fluidDemo" width="800" height="600" style="border: 1px solid #444;"></canvas>
             </div>
-            <div class="controls">
-                <button id="btnClearFluid">Clear</button>
-                <label>
-                    Viscosity: <input type="range" id="viscSlider" min="0" max="0.001" step="0.0001" value="0.0001">
-                    <span id="viscValue">0.0001</span>
-                </label>
+
+            <div class="controls" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <strong>Presets:</strong>
+                    <button id="btnWater">💧 Water</button>
+                    <button id="btnSmoke">💨 Smoke</button>
+                    <button id="btnInk">🖋️ Ink</button>
+                    <button id="btnHoney">🍯 Honey</button>
+                    <button id="btnGas">☁️ Gas</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <strong>Features:</strong>
+                    <button id="btnVelocity">Show Velocity Field</button>
+                    <button id="btnAddObstacle">Add Obstacle (Click Canvas)</button>
+                    <button id="btnClearObstacles">Clear Obstacles</button>
+                    <button id="btnContinuousSource">Continuous Source</button>
+                    <button id="btnWind">Toggle Wind</button>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <strong>Visual:</strong>
+                    <button id="btnColorDefault">Default</button>
+                    <button id="btnColorRainbow">Rainbow</button>
+                    <button id="btnColorFire">Fire</button>
+                    <button id="btnColorBlue">Blue</button>
+                    <button id="btnClearFluid">Clear All</button>
+                </div>
+
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <label>
+                        Viscosity: <input type="range" id="viscSlider" min="0" max="0.002" step="0.0001" value="0.0001">
+                        <span id="viscValue">0.0001</span>
+                    </label>
+                    <label>
+                        Diffusion: <input type="range" id="diffSlider" min="0" max="0.001" step="0.0001" value="0.0001">
+                        <span id="diffValue">0.0001</span>
+                    </label>
+                    <label>
+                        Fade Rate: <input type="range" id="fadeSlider" min="0.9" max="1" step="0.01" value="0.99">
+                        <span id="fadeValue">0.99</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="info-display" id="fluidInfo" style="margin-top: 10px;">
+                Current Mode: Free Draw | Click and drag to add fluid
+            </div>
+
+            <div class="concept-box" style="margin-top: 20px;">
+                <h4>🎨 Try These Examples:</h4>
+                <ol>
+                    <li><strong>Smoke Rising:</strong> Click "💨 Smoke" preset, then click "Continuous Source". Watch smoke rise from the top!</li>
+                    <li><strong>Water Flow Around Obstacles:</strong> Click "💧 Water", then "Add Obstacle" and draw some circles. Then draw water above the obstacles and watch it flow around!</li>
+                    <li><strong>Velocity Visualization:</strong> Click "Show Velocity Field" to see the invisible forces moving the fluid</li>
+                    <li><strong>Honey Swirl:</strong> Click "🍯 Honey" and draw slow, thick swirls that take forever to dissipate</li>
+                    <li><strong>Rainbow Ink:</strong> Click "🖋️ Ink" for colorful, medium-viscosity fluid patterns</li>
+                </ol>
+            </div>
+
+            <div class="example-box" style="margin-top: 20px;">
+                <h4>⚙️ Understanding the Parameters:</h4>
+                <ul>
+                    <li><strong>Viscosity:</strong> How "thick" the fluid is
+                        <ul>
+                            <li>Low (0.00001) = Water, gas - flows freely</li>
+                            <li>High (0.001) = Honey, syrup - very thick and slow</li>
+                        </ul>
+                    </li>
+                    <li><strong>Diffusion:</strong> How fast properties spread out
+                        <ul>
+                            <li>Low = Fluid stays concentrated</li>
+                            <li>High = Fluid disperses quickly like smoke or gas</li>
+                        </ul>
+                    </li>
+                    <li><strong>Fade Rate:</strong> How quickly density disappears
+                        <ul>
+                            <li>0.95 = Fades very quickly (good for gas effects)</li>
+                            <li>0.999 = Stays visible for a long time (good for permanent liquids)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="concept-box" style="margin-top: 20px;">
+                <h4>🎯 Feature Breakdown:</h4>
+                <ul>
+                    <li><strong>Velocity Field:</strong> Shows the direction and speed of fluid movement with white arrows</li>
+                    <li><strong>Obstacles:</strong> Gray blocks that fluid can't pass through - creates realistic flow patterns</li>
+                    <li><strong>Continuous Source:</strong> Constantly adds fluid from the top center - great for smoke or fountains</li>
+                    <li><strong>Wind:</strong> Adds an upward force to simulate buoyancy (rising smoke/heat)</li>
+                    <li><strong>Color Modes:</strong>
+                        <ul>
+                            <li><em>Default:</em> Purple/blue gradient</li>
+                            <li><em>Rainbow:</em> Density-based hue shift</li>
+                            <li><em>Fire:</em> Yellow → Orange → Red</li>
+                            <li><em>Blue:</em> Water-like appearance</li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
 
             <div class="key-point">
@@ -341,8 +435,21 @@
                 this.p = this.createGrid();
                 this.div = this.createGrid();
 
+                // Obstacles (1 = blocked, 0 = free)
+                this.obstacles = this.createGrid();
+
+                // Settings
                 this.visc = 0.0001;
                 this.diff = 0.0001;
+                this.fadeRate = 0.99;
+
+                // Visual settings
+                this.colorMode = 'default';
+                this.showVelocity = false;
+
+                // Wind/gravity
+                this.windX = 0;
+                this.windY = 0;
             }
 
             createGrid() {
@@ -359,6 +466,8 @@
                 for (let iter = 0; iter < 20; iter++) {
                     for (let i = 1; i < this.rows - 1; i++) {
                         for (let j = 1; j < this.cols - 1; j++) {
+                            if (this.obstacles[i][j] === 1) continue;
+
                             x[i][j] = (x0[i][j] + a * (
                                 x[i - 1][j] + x[i + 1][j] +
                                 x[i][j - 1] + x[i][j + 1]
@@ -374,6 +483,11 @@
 
                 for (let i = 1; i < this.rows - 1; i++) {
                     for (let j = 1; j < this.cols - 1; j++) {
+                        if (this.obstacles[i][j] === 1) {
+                            d[i][j] = 0;
+                            continue;
+                        }
+
                         let x = j - dt0 * vx[i][j];
                         let y = i - dt0 * vy[i][j];
 
@@ -449,6 +563,16 @@
             }
 
             step(dt = 0.016) {
+                // Apply wind/gravity
+                if (this.windX !== 0 || this.windY !== 0) {
+                    for (let i = 0; i < this.rows; i++) {
+                        for (let j = 0; j < this.cols; j++) {
+                            this.vx[i][j] += this.windX * dt * 10;
+                            this.vy[i][j] += this.windY * dt * 10;
+                        }
+                    }
+                }
+
                 // Swap arrays
                 [this.vx0, this.vx] = [this.vx, this.vx0];
                 [this.vy0, this.vy] = [this.vy, this.vy0];
@@ -474,7 +598,7 @@
 
                 this.advect(this.density, this.density0, this.vx, this.vy, dt);
 
-                this.fadeDensity(0.99);
+                this.fadeDensity(this.fadeRate);
             }
 
             fadeDensity(fadeRate) {
@@ -502,16 +626,97 @@
                 }
             }
 
+            addObstacle(x, y, radius = 3) {
+                const i = Math.floor(y / this.scale);
+                const j = Math.floor(x / this.scale);
+
+                for (let di = -radius; di <= radius; di++) {
+                    for (let dj = -radius; dj <= radius; dj++) {
+                        const ni = i + di;
+                        const nj = j + dj;
+                        if (ni >= 0 && ni < this.rows && nj >= 0 && nj < this.cols) {
+                            if (di * di + dj * dj <= radius * radius) {
+                                this.obstacles[ni][nj] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            clearObstacles() {
+                this.obstacles = this.createGrid();
+            }
+
+            getColor(density) {
+                const d = Math.min(255, Math.floor(density));
+
+                switch(this.colorMode) {
+                    case 'rainbow':
+                        const hue = (d / 255) * 360;
+                        return `hsla(${hue}, 100%, 50%, ${d / 255})`;
+
+                    case 'fire':
+                        // Yellow -> Orange -> Red -> Black
+                        const r = Math.min(255, d * 1.5);
+                        const g = Math.min(255, d * 0.8);
+                        const b = d * 0.2;
+                        return `rgba(${r}, ${g}, ${b}, ${d / 255})`;
+
+                    case 'blue':
+                        return `rgba(${d * 0.3}, ${d * 0.5}, ${d}, ${d / 255})`;
+
+                    default: // 'default'
+                        return `rgba(${d}, ${d * 0.5}, ${255 - d}, ${d / 255})`;
+                }
+            }
+
             render(ctx) {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+                // Draw fluid density
                 for (let i = 0; i < this.rows; i++) {
                     for (let j = 0; j < this.cols; j++) {
-                        const d = Math.min(255, Math.floor(this.density[i][j]));
+                        const d = this.density[i][j];
                         if (d > 0) {
-                            ctx.fillStyle = `rgba(${d}, ${d * 0.5}, ${255 - d}, ${d / 255})`;
+                            ctx.fillStyle = this.getColor(d);
                             ctx.fillRect(j * this.scale, i * this.scale, this.scale, this.scale);
+                        }
+                    }
+                }
+
+                // Draw obstacles
+                ctx.fillStyle = '#666';
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.obstacles[i][j] === 1) {
+                            ctx.fillRect(j * this.scale, i * this.scale, this.scale, this.scale);
+                        }
+                    }
+                }
+
+                // Draw velocity field
+                if (this.showVelocity) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 1;
+
+                    const step = 4; // Show every 4th cell
+                    for (let i = 0; i < this.rows; i += step) {
+                        for (let j = 0; j < this.cols; j += step) {
+                            const vx = this.vx[i][j];
+                            const vy = this.vy[i][j];
+                            const mag = Math.sqrt(vx * vx + vy * vy);
+
+                            if (mag > 0.1) {
+                                const x = j * this.scale + this.scale / 2;
+                                const y = i * this.scale + this.scale / 2;
+                                const scale = 5;
+
+                                ctx.beginPath();
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x + vx * scale, y + vy * scale);
+                                ctx.stroke();
+                            }
                         }
                     }
                 }
@@ -527,12 +732,20 @@
         let isMouseDown = false;
         let prevMouseX = 0;
         let prevMouseY = 0;
+        let addingObstacles = false;
+        let continuousSource = false;
+        let sourceX = canvas.width / 2;
+        let sourceY = 50;
 
         canvas.addEventListener('mousedown', (e) => {
             isMouseDown = true;
             const rect = canvas.getBoundingClientRect();
             prevMouseX = e.clientX - rect.left;
             prevMouseY = e.clientY - rect.top;
+
+            if (addingObstacles) {
+                fluid.addObstacle(prevMouseX, prevMouseY);
+            }
         });
 
         canvas.addEventListener('mousemove', (e) => {
@@ -541,11 +754,15 @@
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
-                const vx = (x - prevMouseX) * 10;
-                const vy = (y - prevMouseY) * 10;
+                if (addingObstacles) {
+                    fluid.addObstacle(x, y);
+                } else {
+                    const vx = (x - prevMouseX) * 10;
+                    const vy = (y - prevMouseY) * 10;
 
-                fluid.addDensity(x, y, 200);
-                fluid.addVelocity(x, y, vx, vy);
+                    fluid.addDensity(x, y, 200);
+                    fluid.addVelocity(x, y, vx, vy);
+                }
 
                 prevMouseX = x;
                 prevMouseY = y;
@@ -560,21 +777,170 @@
             isMouseDown = false;
         });
 
+        // ===================================
+        // PRESET BUTTONS
+        // ===================================
+
+        document.getElementById('btnWater').addEventListener('click', () => {
+            fluid.visc = 0.0001;
+            fluid.diff = 0.0001;
+            fluid.fadeRate = 0.99;
+            fluid.colorMode = 'blue';
+            updateSliders();
+            updateInfo('Water preset loaded - Low viscosity, blue color');
+        });
+
+        document.getElementById('btnSmoke').addEventListener('click', () => {
+            fluid.visc = 0.00001;
+            fluid.diff = 0.0005;
+            fluid.fadeRate = 0.98;
+            fluid.colorMode = 'default';
+            fluid.windY = 0.5; // Buoyancy
+            updateSliders();
+            updateInfo('Smoke preset loaded - Very low viscosity, rises up');
+        });
+
+        document.getElementById('btnInk').addEventListener('click', () => {
+            fluid.visc = 0.0002;
+            fluid.diff = 0.0003;
+            fluid.fadeRate = 0.995;
+            fluid.colorMode = 'rainbow';
+            updateSliders();
+            updateInfo('Ink preset loaded - Medium viscosity, colorful');
+        });
+
+        document.getElementById('btnHoney').addEventListener('click', () => {
+            fluid.visc = 0.001;
+            fluid.diff = 0.00005;
+            fluid.fadeRate = 0.999;
+            fluid.colorMode = 'fire';
+            updateSliders();
+            updateInfo('Honey preset loaded - High viscosity, slow movement');
+        });
+
+        document.getElementById('btnGas').addEventListener('click', () => {
+            fluid.visc = 0.00001;
+            fluid.diff = 0.001;
+            fluid.fadeRate = 0.95;
+            fluid.colorMode = 'default';
+            updateSliders();
+            updateInfo('Gas preset loaded - Very low viscosity, high diffusion');
+        });
+
+        // ===================================
+        // FEATURE BUTTONS
+        // ===================================
+
+        document.getElementById('btnVelocity').addEventListener('click', () => {
+            fluid.showVelocity = !fluid.showVelocity;
+            updateInfo(fluid.showVelocity ? 'Velocity field shown' : 'Velocity field hidden');
+        });
+
+        document.getElementById('btnAddObstacle').addEventListener('click', () => {
+            addingObstacles = !addingObstacles;
+            updateInfo(addingObstacles ? 'Click canvas to add obstacles' : 'Obstacle mode disabled');
+        });
+
+        document.getElementById('btnClearObstacles').addEventListener('click', () => {
+            fluid.clearObstacles();
+            updateInfo('Obstacles cleared');
+        });
+
+        document.getElementById('btnContinuousSource').addEventListener('click', () => {
+            continuousSource = !continuousSource;
+            updateInfo(continuousSource ? 'Continuous source enabled at top center' : 'Continuous source disabled');
+        });
+
+        document.getElementById('btnWind').addEventListener('click', () => {
+            if (fluid.windY === 0) {
+                fluid.windY = -0.5;
+                updateInfo('Wind enabled - Upward force');
+            } else {
+                fluid.windY = 0;
+                updateInfo('Wind disabled');
+            }
+        });
+
+        // ===================================
+        // COLOR MODE BUTTONS
+        // ===================================
+
+        document.getElementById('btnColorDefault').addEventListener('click', () => {
+            fluid.colorMode = 'default';
+            updateInfo('Color mode: Default (Purple/Blue)');
+        });
+
+        document.getElementById('btnColorRainbow').addEventListener('click', () => {
+            fluid.colorMode = 'rainbow';
+            updateInfo('Color mode: Rainbow');
+        });
+
+        document.getElementById('btnColorFire').addEventListener('click', () => {
+            fluid.colorMode = 'fire';
+            updateInfo('Color mode: Fire (Red/Orange/Yellow)');
+        });
+
+        document.getElementById('btnColorBlue').addEventListener('click', () => {
+            fluid.colorMode = 'blue';
+            updateInfo('Color mode: Blue Water');
+        });
+
         document.getElementById('btnClearFluid').addEventListener('click', () => {
             fluid.density = fluid.createGrid();
             fluid.vx = fluid.createGrid();
             fluid.vy = fluid.createGrid();
+            fluid.windX = 0;
+            fluid.windY = 0;
+            continuousSource = false;
+            updateInfo('Fluid cleared');
         });
+
+        // ===================================
+        // SLIDERS
+        // ===================================
 
         const viscSlider = document.getElementById('viscSlider');
         const viscValue = document.getElementById('viscValue');
+        const diffSlider = document.getElementById('diffSlider');
+        const diffValue = document.getElementById('diffValue');
+        const fadeSlider = document.getElementById('fadeSlider');
+        const fadeValue = document.getElementById('fadeValue');
 
         viscSlider.addEventListener('input', (e) => {
             fluid.visc = parseFloat(e.target.value);
             viscValue.textContent = fluid.visc.toFixed(4);
         });
 
+        diffSlider.addEventListener('input', (e) => {
+            fluid.diff = parseFloat(e.target.value);
+            diffValue.textContent = fluid.diff.toFixed(4);
+        });
+
+        fadeSlider.addEventListener('input', (e) => {
+            fluid.fadeRate = parseFloat(e.target.value);
+            fadeValue.textContent = fluid.fadeRate.toFixed(2);
+        });
+
+        function updateSliders() {
+            viscSlider.value = fluid.visc;
+            viscValue.textContent = fluid.visc.toFixed(4);
+            diffSlider.value = fluid.diff;
+            diffValue.textContent = fluid.diff.toFixed(4);
+            fadeSlider.value = fluid.fadeRate;
+            fadeValue.textContent = fluid.fadeRate.toFixed(2);
+        }
+
+        function updateInfo(message) {
+            document.getElementById('fluidInfo').textContent = message;
+        }
+
         function animate() {
+            // Add continuous source if enabled
+            if (continuousSource) {
+                fluid.addDensity(sourceX, sourceY, 100);
+                fluid.addVelocity(sourceX, sourceY, 0, 2);
+            }
+
             fluid.step();
             fluid.render(ctx);
             requestAnimationFrame(animate);
