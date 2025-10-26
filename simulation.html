@@ -644,68 +644,148 @@
         <!-- THERMAL SIMULATION -->
         <div id="thermal-simulation" class="section">
             <span class="level-indicator level-expert">EXPERT</span>
-            <h2>🔥 Thermal Simulation</h2>
+            <h2>🔥 Fire Spread & Material Burning</h2>
 
             <div class="concept-box">
-                <h4>What is Thermal Simulation?</h4>
-                <p>Thermal simulation models heat spreading through your game world. Fire spreads to nearby flammable objects, ice melts near heat sources, or lava creates danger zones. Games like Minecraft (fire spread), Don't Starve (temperature mechanics), and Oxygen Not Included (complex heat systems) use these mechanics!</p>
+                <h4>What is Fire Spread Simulation?</h4>
+                <p>Fire spread simulation creates realistic fire propagation through different materials. Fire catches on flammable objects, spreads to neighbors, and burns materials over time. Games like Minecraft (fire mechanics), Don't Starve (forest fires), The Forest (survival fires), and Teardown (destructive fire) all use these systems!</p>
 
                 <div class="key-point">
-                    <strong>💡 Core Idea:</strong> Just like fluid simulation, we use a grid where each cell has a temperature value. Heat flows from hot cells to cold cells over time (thermal diffusion), and temperature affects object behavior - things melt, burn, or freeze!
+                    <strong>💡 Core Idea:</strong> Each grid cell contains a material type (wood, grass, stone, etc.) with properties like flammability, burn rate, and ignition temperature. Fire spreads from burning cells to nearby flammable neighbors, creating dynamic chain reactions!
                 </div>
             </div>
 
             <div class="concept-box">
-                <h4>How Heat Works in Games</h4>
-                <p>Think of heat like water flowing downhill - it naturally spreads from hot to cold:</p>
+                <h4>How Fire Spread Works</h4>
+                <p>Fire simulation combines multiple systems working together:</p>
 
                 <ul>
-                    <li><strong>Conduction:</strong> Heat spreads to neighboring cells (like a metal rod heating up)</li>
-                    <li><strong>Sources & Sinks:</strong> Fire adds heat, ice absorbs it</li>
-                    <li><strong>Material Properties:</strong> Some materials conduct heat faster than others</li>
-                    <li><strong>Thresholds:</strong> At certain temperatures, state changes happen (water→steam, ice→water)</li>
+                    <li><strong>Material States:</strong> Each cell can be: normal → igniting → burning → burned out (ash)</li>
+                    <li><strong>Heat Propagation:</strong> Burning cells heat neighbors, igniting flammable materials above their ignition point</li>
+                    <li><strong>Burn Duration:</strong> Materials burn for different times - grass burns quickly, wood takes longer</li>
+                    <li><strong>Spread Probability:</strong> Fire doesn't always spread - some materials resist better than others</li>
+                    <li><strong>Particle Effects:</strong> Rising smoke and embers make fires look alive and dangerous</li>
                 </ul>
             </div>
 
             <div class="example-box">
                 <h4>🎮 Game Applications:</h4>
                 <ul>
-                    <li><strong>Fire spread mechanics:</strong> Forest fires, burning buildings spread to nearby objects</li>
-                    <li><strong>Survival games:</strong> Stay warm near fires, avoid freezing in cold areas</li>
-                    <li><strong>Puzzle mechanics:</strong> Melt ice to reveal paths, cool lava to cross it</li>
-                    <li><strong>Combat systems:</strong> Fire spells create lingering heat zones, ice spells freeze water</li>
-                    <li><strong>Resource management:</strong> Ovens, furnaces need fuel and time to heat up</li>
+                    <li><strong>Forest fire mechanics:</strong> Lightning strikes or campfires can ignite entire forests</li>
+                    <li><strong>Destructible environments:</strong> Burn wooden structures to create new paths or remove obstacles</li>
+                    <li><strong>Tactical gameplay:</strong> Set traps using fire to corral enemies or destroy their resources</li>
+                    <li><strong>Survival challenges:</strong> Prevent fires from spreading to your base, or use controlled burns for land clearing</li>
+                    <li><strong>Puzzle mechanics:</strong> Use fire to burn specific objects while protecting others with firebreaks</li>
                 </ul>
             </div>
 
-            <!-- Interactive Demo: Thermal Simulation -->
+            <!-- Interactive Demo: Fire Spread -->
             <div class="concept-box" style="margin-top: 30px;">
-                <h3>🔥 Interactive Demo: Heat Spreading & Fire</h3>
-                <p>Click to add heat sources! Watch heat spread through the grid and ignite flammable materials.</p>
+                <h3>🔥 Interactive Demo: Fire Spread & Burning</h3>
+                <p>Place materials and ignite fires! Watch realistic fire propagation with particle effects.</p>
 
                 <div class="diagram">
                     <canvas id="thermalCanvas" width="800" height="500"></canvas>
                 </div>
                 <div class="controls">
-                    <button id="addFire">Add Fire (Click Canvas)</button>
-                    <button id="addIce">Add Ice (Click Canvas)</button>
-                    <label>Diffusion Rate: <span id="diffusionDisplay">0.5</span></label>
-                    <input type="range" id="diffusionSlider" min="0.1" max="1.0" step="0.1" value="0.5">
-                    <button id="resetThermal">Reset</button>
+                    <button id="placeMaterial" class="material-wood">Place Wood</button>
+                    <button id="placeGrass">Place Grass</button>
+                    <button id="placeStone">Place Stone</button>
+                    <button id="placeWater">Place Water</button>
+                    <button id="ignite">Ignite Fire</button>
+                    <button id="resetThermal">Reset & Generate Terrain</button>
                 </div>
                 <div class="info-display">
-                    Red = Hot, Blue = Cold. Watch heat spread naturally from hot to cold areas!
+                    <div><strong>Materials:</strong> 🟫 Wood | 🟩 Grass | ⬜ Stone | 🟦 Water | 🟧 Fire | ⬛ Ash</div>
+                    <div style="margin-top: 5px;"><strong>Tip:</strong> Wood burns slowly, Grass burns fast, Stone doesn't burn, Water stops fire!</div>
                 </div>
             </div>
+
+            <details>
+                <summary>📝 Click to see: Material Properties Code</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Define material types with burning properties</span>
+<span class="keyword">const</span> <span class="function">MATERIALS</span> = {
+    EMPTY: { id: <span class="number">0</span>, flammable: <span class="keyword">false</span>, color: <span class="string">'#1a1a1a'</span> },
+    WOOD: {
+        id: <span class="number">1</span>,
+        flammable: <span class="keyword">true</span>,
+        ignitionTemp: <span class="number">200</span>,
+        burnDuration: <span class="number">150</span>,  <span class="comment">// frames to burn</span>
+        spreadChance: <span class="number">0.3</span>,
+        color: <span class="string">'#8B4513'</span>
+    },
+    GRASS: {
+        id: <span class="number">2</span>,
+        flammable: <span class="keyword">true</span>,
+        ignitionTemp: <span class="number">150</span>,
+        burnDuration: <span class="number">60</span>,
+        spreadChance: <span class="number">0.6</span>,  <span class="comment">// spreads faster</span>
+        color: <span class="string">'#228B22'</span>
+    },
+    STONE: {
+        id: <span class="number">3</span>,
+        flammable: <span class="keyword">false</span>,
+        color: <span class="string">'#808080'</span>
+    },
+    WATER: {
+        id: <span class="number">4</span>,
+        flammable: <span class="keyword">false</span>,
+        extinguishes: <span class="keyword">true</span>,  <span class="comment">// stops fire</span>
+        color: <span class="string">'#1E90FF'</span>
+    }
+};</code></pre>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Fire Spread Algorithm</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Check if fire should spread to neighboring cells</span>
+<span class="function">spreadFire</span>(i, j) {
+    <span class="keyword">const</span> neighbors = [
+        [i-<span class="number">1</span>, j], [i+<span class="number">1</span>, j], [i, j-<span class="number">1</span>], [i, j+<span class="number">1</span>],
+        [i-<span class="number">1</span>, j-<span class="number">1</span>], [i-<span class="number">1</span>, j+<span class="number">1</span>], [i+<span class="number">1</span>, j-<span class="number">1</span>], [i+<span class="number">1</span>, j+<span class="number">1</span>]
+    ];
+
+    <span class="keyword">for</span> (<span class="keyword">const</span> [ni, nj] <span class="keyword">of</span> neighbors) {
+        <span class="keyword">if</span> (ni &lt; <span class="number">0</span> || ni &gt;= rows || nj &lt; <span class="number">0</span> || nj &gt;= cols) <span class="keyword">continue</span>;
+
+        <span class="keyword">const</span> cell = grid[ni][nj];
+        <span class="keyword">const</span> material = MATERIALS[cell.type];
+
+        <span class="comment">// Only spread to flammable materials not already burning</span>
+        <span class="keyword">if</span> (material.flammable && !cell.burning) {
+            <span class="comment">// Heat the neighbor</span>
+            cell.temperature += <span class="number">50</span>;
+
+            <span class="comment">// Try to ignite based on temperature and spread chance</span>
+            <span class="keyword">if</span> (cell.temperature &gt; material.ignitionTemp) {
+                <span class="keyword">if</span> (Math.<span class="function">random</span>() &lt; material.spreadChance) {
+                    cell.burning = <span class="keyword">true</span>;
+                    cell.burnTime = <span class="number">0</span>;
+                }
+            }
+        }
+
+        <span class="comment">// Water extinguishes nearby fire</span>
+        <span class="keyword">if</span> (material.extinguishes && cell.burning) {
+            cell.burning = <span class="keyword">false</span>;
+            cell.temperature = <span class="number">20</span>;
+        }
+    }
+}</code></pre>
+                </div>
+            </details>
 
             <div class="key-point">
                 <strong>🎯 Key Takeaways:</strong>
                 <ul>
-                    <li>Temperature is just another <strong>grid-based property</strong> like fluid density</li>
-                    <li>Use <strong>diffusion algorithms</strong> to spread heat naturally between cells</li>
-                    <li><strong>Material properties</strong> control how fast heat spreads (conductivity)</li>
-                    <li><strong>State changes</strong> at temperature thresholds create interesting gameplay</li>
-                    <li>Combine with <strong>other systems</strong> (fire + wind = spreading fire in wind direction!)</li>
+                    <li>Each material has <strong>unique burning properties</strong> - ignition temp, burn duration, spread rate</li>
+                    <li><strong>State machines</strong> manage transitions: normal → igniting → burning → ash</li>
+                    <li><strong>Probabilistic spread</strong> makes fire feel organic and unpredictable</li>
+                    <li><strong>Particle systems</strong> (smoke, embers) enhance visual feedback</li>
+                    <li>Combine materials strategically to create <strong>firebreaks and controlled burns</strong></li>
                 </ul>
             </div>
         </div>
@@ -2605,7 +2685,7 @@
         }
 
         // ========================================
-        // THERMAL SIMULATION DEMO
+        // FIRE SPREAD & BURNING DEMO
         // ========================================
         const thermalCanvas = document.getElementById('thermalCanvas');
         if (thermalCanvas) {
@@ -2615,178 +2695,387 @@
             const cols = Math.floor(thermalCanvas.width / cellSize);
             const rows = Math.floor(thermalCanvas.height / cellSize);
 
-            let heatGrid = [];
-            let diffusionRate = 0.5;
-            let addingFire = false;
-            let addingIce = false;
-
-            // Initialize heat grid
-            function initHeatGrid() {
-                heatGrid = [];
-                for (let i = 0; i < rows; i++) {
-                    heatGrid[i] = [];
-                    for (let j = 0; j < cols; j++) {
-                        heatGrid[i][j] = 20; // Room temperature
-                    }
+            // Material types
+            const MATERIALS = {
+                EMPTY: { id: 0, name: 'Empty', flammable: false, color: '#1a1a1a' },
+                WOOD: {
+                    id: 1,
+                    name: 'Wood',
+                    flammable: true,
+                    ignitionTemp: 180,
+                    burnDuration: 150,
+                    spreadChance: 0.35,
+                    color: '#8B4513',
+                    fireColor: '#FF6600'
+                },
+                GRASS: {
+                    id: 2,
+                    name: 'Grass',
+                    flammable: true,
+                    ignitionTemp: 140,
+                    burnDuration: 60,
+                    spreadChance: 0.65,
+                    color: '#228B22',
+                    fireColor: '#FF8800'
+                },
+                STONE: {
+                    id: 3,
+                    name: 'Stone',
+                    flammable: false,
+                    color: '#808080'
+                },
+                WATER: {
+                    id: 4,
+                    name: 'Water',
+                    flammable: false,
+                    extinguishes: true,
+                    color: '#1E90FF'
+                },
+                ASH: {
+                    id: 5,
+                    name: 'Ash',
+                    flammable: false,
+                    color: '#3a3a3a'
                 }
-            }
+            };
 
-            // Update heat diffusion
-            function updateHeat() {
-                const newHeat = [];
+            let grid = [];
+            let particles = [];
+            let currentMaterial = MATERIALS.WOOD;
+            let placingMode = 'material'; // 'material' or 'fire'
+
+            // Initialize grid with terrain
+            function initGrid() {
+                grid = [];
+                particles = [];
 
                 for (let i = 0; i < rows; i++) {
-                    newHeat[i] = [];
+                    grid[i] = [];
                     for (let j = 0; j < cols; j++) {
-                        newHeat[i][j] = heatGrid[i][j];
-                    }
-                }
+                        // Generate simple terrain
+                        let material = MATERIALS.EMPTY;
 
-                // Diffusion
-                for (let i = 1; i < rows - 1; i++) {
-                    for (let j = 1; j < cols - 1; j++) {
-                        const avg = (
-                            heatGrid[i - 1][j] + heatGrid[i + 1][j] +
-                            heatGrid[i][j - 1] + heatGrid[i][j + 1]
-                        ) / 4;
-
-                        newHeat[i][j] = heatGrid[i][j] + (avg - heatGrid[i][j]) * diffusionRate * 0.1;
-
-                        // Cool down over time (ambient cooling)
-                        if (newHeat[i][j] > 20) {
-                            newHeat[i][j] -= 0.1;
-                        } else if (newHeat[i][j] < 20) {
-                            newHeat[i][j] += 0.1;
+                        // Bottom layer: stone
+                        if (i > rows - 8) {
+                            material = MATERIALS.STONE;
                         }
+                        // Grass layer on top of stone
+                        else if (i > rows - 12 && i <= rows - 8) {
+                            material = Math.random() < 0.7 ? MATERIALS.GRASS : MATERIALS.EMPTY;
+                        }
+                        // Random wood patches
+                        else if (i > rows - 25 && Math.random() < 0.03) {
+                            material = MATERIALS.WOOD;
+                        }
+                        // Small water pools
+                        else if (i > rows - 10 && Math.random() < 0.005) {
+                            material = MATERIALS.WATER;
+                        }
+
+                        grid[i][j] = {
+                            material: material,
+                            temperature: 20,
+                            burning: false,
+                            burnTime: 0
+                        };
                     }
                 }
-
-                heatGrid = newHeat;
             }
 
-            // Draw thermal demo
-            function drawThermalDemo() {
+            // Fire spread logic
+            function updateFire() {
+                // Update burning cells
                 for (let i = 0; i < rows; i++) {
                     for (let j = 0; j < cols; j++) {
-                        const temp = heatGrid[i][j];
+                        const cell = grid[i][j];
 
-                        // Color based on temperature
-                        let r, g, b;
-                        if (temp < 20) {
-                            // Cold - blue
-                            const t = temp / 20;
-                            r = 0;
-                            g = Math.floor(t * 100);
-                            b = Math.floor(150 + t * 105);
-                        } else if (temp < 50) {
-                            // Cool to warm
-                            const t = (temp - 20) / 30;
-                            r = Math.floor(t * 150);
-                            g = Math.floor(100 + t * 100);
-                            b = Math.floor(150 * (1 - t));
-                        } else if (temp < 100) {
-                            // Warm to hot
-                            const t = (temp - 50) / 50;
-                            r = Math.floor(150 + t * 105);
-                            g = Math.floor(200 * (1 - t * 0.5));
-                            b = 0;
+                        if (cell.burning) {
+                            cell.burnTime++;
+
+                            // Try to spread to neighbors
+                            if (Math.random() < 0.3) {
+                                spreadFire(i, j);
+                            }
+
+                            // Generate smoke particles
+                            if (Math.random() < 0.15) {
+                                particles.push({
+                                    x: j * cellSize + cellSize / 2 + (Math.random() - 0.5) * cellSize,
+                                    y: i * cellSize + cellSize / 2,
+                                    vx: (Math.random() - 0.5) * 0.5,
+                                    vy: -0.5 - Math.random() * 1.5,
+                                    life: 60 + Math.random() * 40,
+                                    maxLife: 100,
+                                    size: 2 + Math.random() * 3,
+                                    type: Math.random() < 0.2 ? 'ember' : 'smoke'
+                                });
+                            }
+
+                            // Check if burned out
+                            if (cell.burnTime > cell.material.burnDuration) {
+                                cell.burning = false;
+                                cell.material = MATERIALS.ASH;
+                                cell.temperature = 100;
+                            }
                         } else {
-                            // Very hot - white/yellow
-                            const t = Math.min(1, (temp - 100) / 100);
-                            r = 255;
-                            g = Math.floor(200 + t * 55);
-                            b = Math.floor(t * 100);
+                            // Cool down gradually
+                            if (cell.temperature > 20) {
+                                cell.temperature -= 0.5;
+                            }
                         }
-
-                        thermalCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                        thermalCtx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
                     }
                 }
+
+                // Update particles
+                particles = particles.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    p.vy *= 0.98; // Slow down
+                    return p.life > 0;
+                });
             }
 
-            // Animation loop
-            function animateThermal() {
-                updateHeat();
-                drawThermalDemo();
-                requestAnimationFrame(animateThermal);
-            }
+            // Spread fire to neighbors
+            function spreadFire(i, j) {
+                const neighbors = [
+                    [i-1, j], [i+1, j], [i, j-1], [i, j+1],
+                    [i-1, j-1], [i-1, j+1], [i+1, j-1], [i+1, j+1]
+                ];
 
-            // Add heat at position
-            function addHeat(x, y, amount) {
-                const gridX = Math.floor(x / cellSize);
-                const gridY = Math.floor(y / cellSize);
+                for (const [ni, nj] of neighbors) {
+                    if (ni < 0 || ni >= rows || nj < 0 || nj >= cols) continue;
 
-                for (let dy = -2; dy <= 2; dy++) {
-                    for (let dx = -2; dx <= 2; dx++) {
-                        const i = gridY + dy;
-                        const j = gridX + dx;
-                        if (i >= 0 && i < rows && j >= 0 && j < cols) {
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist <= 2) {
-                                heatGrid[i][j] += amount * (1 - dist / 2);
-                                heatGrid[i][j] = Math.max(-50, Math.min(300, heatGrid[i][j]));
+                    const neighbor = grid[ni][nj];
+                    const material = neighbor.material;
+
+                    // Water extinguishes nearby fire
+                    if (material.extinguishes) {
+                        const source = grid[i][j];
+                        if (source.burning && Math.random() < 0.1) {
+                            source.burning = false;
+                            source.temperature = 50;
+                        }
+                        continue;
+                    }
+
+                    // Spread to flammable materials
+                    if (material.flammable && !neighbor.burning) {
+                        // Heat the neighbor
+                        neighbor.temperature += 30;
+
+                        // Try to ignite
+                        if (neighbor.temperature > material.ignitionTemp) {
+                            if (Math.random() < material.spreadChance) {
+                                neighbor.burning = true;
+                                neighbor.burnTime = 0;
                             }
                         }
                     }
                 }
             }
 
-            // Controls
-            document.getElementById('diffusionSlider').addEventListener('input', (e) => {
-                diffusionRate = parseFloat(e.target.value);
-                document.getElementById('diffusionDisplay').textContent = diffusionRate.toFixed(1);
+            // Draw the simulation
+            function drawFireDemo() {
+                // Clear canvas
+                thermalCtx.fillStyle = '#0a0a0a';
+                thermalCtx.fillRect(0, 0, thermalCanvas.width, thermalCanvas.height);
+
+                // Draw grid
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        const cell = grid[i][j];
+
+                        if (cell.burning) {
+                            // Burning animation - flicker between colors
+                            const flicker = Math.random();
+                            if (flicker < 0.3) {
+                                thermalCtx.fillStyle = '#FF0000';
+                            } else if (flicker < 0.6) {
+                                thermalCtx.fillStyle = cell.material.fireColor || '#FF6600';
+                            } else {
+                                thermalCtx.fillStyle = '#FFAA00';
+                            }
+                        } else {
+                            thermalCtx.fillStyle = cell.material.color;
+                        }
+
+                        thermalCtx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+
+                        // Draw slight glow around hot cells
+                        if (!cell.burning && cell.temperature > 100) {
+                            const alpha = Math.min(0.4, (cell.temperature - 100) / 200);
+                            thermalCtx.fillStyle = `rgba(255, 100, 0, ${alpha})`;
+                            thermalCtx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+
+                // Draw particles
+                particles.forEach(p => {
+                    const alpha = p.life / p.maxLife;
+
+                    if (p.type === 'ember') {
+                        thermalCtx.fillStyle = `rgba(255, 150, 50, ${alpha})`;
+                    } else {
+                        thermalCtx.fillStyle = `rgba(100, 100, 100, ${alpha * 0.6})`;
+                    }
+
+                    thermalCtx.beginPath();
+                    thermalCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    thermalCtx.fill();
+                });
+            }
+
+            // Animation loop
+            function animateFire() {
+                updateFire();
+                drawFireDemo();
+                requestAnimationFrame(animateFire);
+            }
+
+            // Place material at position
+            function placeMaterial(x, y, material, radius = 2) {
+                const gridX = Math.floor(x / cellSize);
+                const gridY = Math.floor(y / cellSize);
+
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const i = gridY + dy;
+                        const j = gridX + dx;
+                        if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                grid[i][j].material = material;
+                                grid[i][j].burning = false;
+                                grid[i][j].temperature = 20;
+                                grid[i][j].burnTime = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Ignite fire at position
+            function igniteFire(x, y, radius = 1) {
+                const gridX = Math.floor(x / cellSize);
+                const gridY = Math.floor(y / cellSize);
+
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const i = gridY + dy;
+                        const j = gridX + dx;
+                        if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                const cell = grid[i][j];
+                                if (cell.material.flammable) {
+                                    cell.burning = true;
+                                    cell.burnTime = 0;
+                                    cell.temperature = 300;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Material selection buttons
+            const materialButtons = {
+                wood: document.getElementById('placeMaterial'),
+                grass: document.getElementById('placeGrass'),
+                stone: document.getElementById('placeStone'),
+                water: document.getElementById('placeWater')
+            };
+
+            function setActiveMaterial(button, material) {
+                // Remove active class from all
+                Object.values(materialButtons).forEach(btn => {
+                    btn.style.backgroundColor = '';
+                    btn.style.fontWeight = '';
+                });
+
+                // Set active
+                button.style.backgroundColor = '#2a2a2a';
+                button.style.fontWeight = 'bold';
+                currentMaterial = material;
+                placingMode = 'material';
+            }
+
+            materialButtons.wood.addEventListener('click', () => {
+                setActiveMaterial(materialButtons.wood, MATERIALS.WOOD);
             });
 
-            document.getElementById('addFire').addEventListener('click', () => {
-                addingFire = !addingFire;
-                addingIce = false;
-                document.getElementById('addFire').textContent = addingFire ? 'Adding Fire (Click to Stop)' : 'Add Fire (Click Canvas)';
-                document.getElementById('addIce').textContent = 'Add Ice (Click Canvas)';
+            materialButtons.grass.addEventListener('click', () => {
+                setActiveMaterial(materialButtons.grass, MATERIALS.GRASS);
             });
 
-            document.getElementById('addIce').addEventListener('click', () => {
-                addingIce = !addingIce;
-                addingFire = false;
-                document.getElementById('addIce').textContent = addingIce ? 'Adding Ice (Click to Stop)' : 'Add Ice (Click Canvas)';
-                document.getElementById('addFire').textContent = 'Add Fire (Click Canvas)';
+            materialButtons.stone.addEventListener('click', () => {
+                setActiveMaterial(materialButtons.stone, MATERIALS.STONE);
+            });
+
+            materialButtons.water.addEventListener('click', () => {
+                setActiveMaterial(materialButtons.water, MATERIALS.WATER);
+            });
+
+            document.getElementById('ignite').addEventListener('click', () => {
+                placingMode = 'fire';
+                // Highlight ignite button
+                Object.values(materialButtons).forEach(btn => {
+                    btn.style.backgroundColor = '';
+                    btn.style.fontWeight = '';
+                });
+                document.getElementById('ignite').style.backgroundColor = '#2a2a2a';
+                document.getElementById('ignite').style.fontWeight = 'bold';
             });
 
             document.getElementById('resetThermal').addEventListener('click', () => {
-                initHeatGrid();
-                addingFire = false;
-                addingIce = false;
-                document.getElementById('addFire').textContent = 'Add Fire (Click Canvas)';
-                document.getElementById('addIce').textContent = 'Add Ice (Click Canvas)';
+                initGrid();
+                setActiveMaterial(materialButtons.wood, MATERIALS.WOOD);
             });
 
-            thermalCanvas.addEventListener('click', (e) => {
+            // Mouse interaction
+            let isMouseDown = false;
+
+            thermalCanvas.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
                 const rect = thermalCanvas.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
-                if (addingFire) {
-                    addHeat(x, y, 100);
-                } else if (addingIce) {
-                    addHeat(x, y, -100);
+                if (placingMode === 'fire') {
+                    igniteFire(x, y, 2);
+                } else {
+                    placeMaterial(x, y, currentMaterial, 2);
                 }
             });
 
             thermalCanvas.addEventListener('mousemove', (e) => {
-                if (addingFire || addingIce) {
+                if (isMouseDown) {
                     const rect = thermalCanvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
 
-                    if (addingFire) {
-                        addHeat(x, y, 10);
-                    } else if (addingIce) {
-                        addHeat(x, y, -10);
+                    if (placingMode === 'fire') {
+                        igniteFire(x, y, 1);
+                    } else {
+                        placeMaterial(x, y, currentMaterial, 2);
                     }
                 }
             });
 
-            initHeatGrid();
-            animateThermal();
+            thermalCanvas.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+            thermalCanvas.addEventListener('mouseleave', () => {
+                isMouseDown = false;
+            });
+
+            // Initialize
+            initGrid();
+            setActiveMaterial(materialButtons.wood, MATERIALS.WOOD);
+            animateFire();
         }
 
     </script>
