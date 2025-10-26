@@ -2,7 +2,7 @@ Always check the index.html file to see what tuts and systems we have currently 
 
 Assume a beginner and explain in an intuitive way.
 
-Topics explained should be divided into separate files of beginner, intermediate, expert and advanced so that they can be edited individually so that the length limits are not hit. Create a separate index file linking these files and content. The index file should always be consistent with the content added or edited.
+Topics explained should be divided into separate files of beginner, intermediate, expert, advanced and simulations so that they can be edited individually so that the length limits are not hit. Create a separate index file linking these files and content. The index file should always be consistent with the content added or edited.
 
 Show diagrams where required.
 
