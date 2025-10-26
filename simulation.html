@@ -22,7 +22,15 @@
         <div class="toc">
             <div class="toc-title">📚 Topics in This Guide</div>
             <ul>
-                <li><a href="#fluid-dynamics">Fluid Dynamics Simulation</a></li>
+                <li><a href="#fluid-dynamics">Fluid Dynamics Simulation (Grid-Based)</a></li>
+                <li><a href="#game-mechanics">Fluid Dynamics as Game Mechanics</a>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li><a href="#game-mechanics">→ Water Buoyancy & Floating Objects</a></li>
+                        <li><a href="#game-mechanics">→ Rising Water Challenge (Platformer)</a></li>
+                        <li><a href="#game-mechanics">→ Particle-Based Water (SPH)</a></li>
+                        <li><a href="#game-mechanics">→ Flow Direction & Collection</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
 
@@ -377,6 +385,112 @@
                     <li><strong>Jos Stam's "Stable Fluids":</strong> The paper this technique is based on</li>
                     <li><strong>SPH (Smoothed Particle Hydrodynamics):</strong> Alternative particle-based approach</li>
                     <li><strong>Level Set Methods:</strong> For tracking fluid surfaces</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- GAME MECHANICS DEMOS -->
+        <div id="game-mechanics" class="section">
+            <h2>🎮 Fluid Dynamics as Game Mechanics</h2>
+            <p>Let's see how fluid simulation translates into actual playable game mechanics!</p>
+
+            <!-- Demo 1: Water Buoyancy -->
+            <div class="concept-box" style="margin-top: 30px;">
+                <h3>1. 🌊 Water Buoyancy & Floating Objects</h3>
+                <p>Objects float or sink based on their density. This is used in games for boats, swimming mechanics, and physics puzzles.</p>
+
+                <div class="diagram">
+                    <canvas id="buoyancyDemo" width="800" height="500"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="btnAddBox">Add Box (Floats)</button>
+                    <button id="btnAddStone">Add Stone (Sinks)</button>
+                    <button id="btnAddBall">Add Ball (Bounces)</button>
+                    <button id="btnDrain">Drain Water</button>
+                    <button id="btnFill">Fill Water</button>
+                    <button id="btnResetBuoyancy">Reset</button>
+                </div>
+                <div class="info-display" style="margin-top: 10px;">
+                    Click to drop objects! Lighter objects float, heavier ones sink. Watch buoyancy forces in action!
+                </div>
+            </div>
+
+            <!-- Demo 2: Rising Water Level -->
+            <div class="concept-box" style="margin-top: 30px;">
+                <h3>2. ⏫ Rising Water Challenge</h3>
+                <p>Classic escape mechanic - water rises and the player must climb to safety! Used in platformers and puzzle games.</p>
+
+                <div class="diagram">
+                    <canvas id="risingWaterDemo" width="800" height="500"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="btnStartRising">Start Water Rising</button>
+                    <button id="btnStopRising">Stop</button>
+                    <button id="btnResetRising">Reset Level</button>
+                    <span style="margin-left: 20px;">Use Arrow Keys to move the player</span>
+                </div>
+                <div class="info-display" id="risingWaterInfo" style="margin-top: 10px;">
+                    Climb the platforms before the water reaches you! Player moves slower in water.
+                </div>
+            </div>
+
+            <!-- Demo 3: Particle-Based Water (SPH) -->
+            <div class="concept-box" style="margin-top: 30px;">
+                <h3>3. 💧 Particle-Based Water (SPH)</h3>
+                <p>Smoothed Particle Hydrodynamics - each water particle interacts with neighbors. Great for splash effects and destructible water.</p>
+
+                <div class="diagram">
+                    <canvas id="sphDemo" width="800" height="500"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="btnAddWater">Add Water Particles</button>
+                    <button id="btnAddBarrier">Add Barrier (Click Canvas)</button>
+                    <button id="btnToggleGravity">Toggle Gravity</button>
+                    <button id="btnResetSPH">Reset</button>
+                    <label>
+                        Viscosity: <input type="range" id="sphViscosity" min="0.1" max="1" step="0.1" value="0.5">
+                        <span id="sphViscValue">0.5</span>
+                    </label>
+                </div>
+                <div class="info-display" style="margin-top: 10px;">
+                    Click to add water particles. They attract each other and flow like real liquid!
+                </div>
+            </div>
+
+            <!-- Demo 4: Flow-Based Puzzle -->
+            <div class="concept-box" style="margin-top: 30px;">
+                <h3>4. 🧩 Flow Direction Mechanic (Simplified)</h3>
+                <p>Water flows downward but can be redirected. This demo shows the concept behind puzzle games like "Where's My Water?" - simplified for clarity.</p>
+
+                <div class="diagram">
+                    <canvas id="flowPuzzleDemo" width="800" height="500"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="btnRelease">Release Water</button>
+                    <button id="btnAddPlatform">Add Platform (Blocks Water)</button>
+                    <button id="btnResetPuzzle">Reset</button>
+                    <span style="margin-left: 20px; font-weight: bold;" id="puzzleStatus">Watch water flow and collect</span>
+                </div>
+                <div class="info-display" style="margin-top: 10px;">
+                    Click "Release Water" to start. Water flows down naturally and fills the bucket. Click "Add Platform" then click canvas to block water flow.
+                </div>
+
+                <div class="key-point" style="margin-top: 15px;">
+                    <strong>💡 Implementation Note:</strong> Full pipe-routing puzzles require complex pathfinding logic. This simplified demo shows the core concept: water as particles that follow simple rules (gravity + obstacles). For production games, consider using:
+                    <ul style="margin-top: 5px;">
+                        <li>Grid-based flow fields for directing water</li>
+                        <li>Waypoint systems for pipe networks</li>
+                        <li>Simplified particle systems for visual effects</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="key-point" style="margin-top: 30px;">
+                <strong>💡 Design Tip:</strong> Different fluid representations work for different game types:
+                <ul style="margin-top: 10px;">
+                    <li><strong>Grid-based (Navier-Stokes):</strong> Best for atmospheric effects, smoke, gas - continuous fields</li>
+                    <li><strong>Particle-based (SPH):</strong> Best for interactive water, splashes, destruction - discrete elements</li>
+                    <li><strong>Simplified/Fake:</strong> Best for performance-critical games - rising water levels, flow direction only</li>
                 </ul>
             </div>
         </div>
@@ -1002,6 +1116,868 @@
 
         animate();
         } // End canvas check
+
+        // ===================================
+        // DEMO 1: BUOYANCY SIMULATION
+        // ===================================
+
+        const buoyancyCanvas = document.getElementById('buoyancyDemo');
+        const buoyancyCtx = buoyancyCanvas.getContext('2d');
+
+        let waterLevel = 350;
+        const targetWaterLevel = 350;
+        let objects = [];
+
+        class PhysicsObject {
+            constructor(x, y, width, height, density, color, type) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.density = density; // kg/m³
+                this.color = color;
+                this.type = type;
+                this.vx = 0;
+                this.vy = 0;
+                this.mass = width * height * density / 1000;
+                this.onGround = false;
+            }
+
+            update(dt) {
+                const gravity = 800; // pixels/s²
+                const waterDensity = 1.0;
+                const airResistance = 0.02;
+                const waterResistance = 0.1;
+
+                // Check if submerged
+                const bottomY = this.y + this.height;
+                const topY = this.y;
+
+                let submergedHeight = 0;
+                if (bottomY > waterLevel && topY < waterLevel) {
+                    submergedHeight = bottomY - waterLevel;
+                } else if (topY >= waterLevel) {
+                    submergedHeight = this.height;
+                }
+
+                const submergedFraction = submergedHeight / this.height;
+
+                // Buoyancy force (Archimedes' principle)
+                const buoyancyForce = submergedFraction * this.width * this.height * waterDensity * gravity / 1000;
+
+                // Net force
+                const gravityForce = this.mass * gravity;
+                let netForce = gravityForce - buoyancyForce;
+
+                // Apply force
+                this.vy += (netForce / this.mass) * dt;
+
+                // Resistance
+                if (submergedFraction > 0) {
+                    this.vx *= (1 - waterResistance);
+                    this.vy *= (1 - waterResistance);
+                } else {
+                    this.vx *= (1 - airResistance);
+                    this.vy *= (1 - airResistance);
+                }
+
+                // Update position
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                // Boundaries
+                if (this.x < 0) {
+                    this.x = 0;
+                    this.vx = -this.vx * 0.5;
+                }
+                if (this.x + this.width > buoyancyCanvas.width) {
+                    this.x = buoyancyCanvas.width - this.width;
+                    this.vx = -this.vx * 0.5;
+                }
+
+                // Floor
+                if (this.y + this.height > buoyancyCanvas.height) {
+                    this.y = buoyancyCanvas.height - this.height;
+                    this.vy = -this.vy * 0.3;
+                    this.onGround = true;
+                } else {
+                    this.onGround = false;
+                }
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+                // Draw type label
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.type, this.x + this.width / 2, this.y + this.height / 2 + 4);
+            }
+        }
+
+        buoyancyCanvas.addEventListener('click', (e) => {
+            const rect = buoyancyCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Add a random object at click position
+            const types = ['box', 'stone', 'ball'];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            if (type === 'box') {
+                objects.push(new PhysicsObject(x - 20, y - 20, 40, 40, 0.5, '#8B4513', 'BOX'));
+            } else if (type === 'stone') {
+                objects.push(new PhysicsObject(x - 15, y - 15, 30, 30, 2.5, '#555', 'STONE'));
+            } else {
+                objects.push(new PhysicsObject(x - 15, y - 15, 30, 30, 0.3, '#FF6B6B', 'BALL'));
+            }
+        });
+
+        document.getElementById('btnAddBox').addEventListener('click', () => {
+            objects.push(new PhysicsObject(Math.random() * 700 + 50, 50, 40, 40, 0.5, '#8B4513', 'BOX'));
+        });
+
+        document.getElementById('btnAddStone').addEventListener('click', () => {
+            objects.push(new PhysicsObject(Math.random() * 700 + 50, 50, 30, 30, 2.5, '#555', 'STONE'));
+        });
+
+        document.getElementById('btnAddBall').addEventListener('click', () => {
+            objects.push(new PhysicsObject(Math.random() * 700 + 50, 50, 30, 30, 0.3, '#FF6B6B', 'BALL'));
+        });
+
+        document.getElementById('btnDrain').addEventListener('click', () => {
+            waterLevel = Math.max(waterLevel - 100, 500);
+        });
+
+        document.getElementById('btnFill').addEventListener('click', () => {
+            waterLevel = Math.max(waterLevel - 100, 200);
+        });
+
+        document.getElementById('btnResetBuoyancy').addEventListener('click', () => {
+            objects = [];
+            waterLevel = 350;
+        });
+
+        function animateBuoyancy() {
+            // Clear
+            buoyancyCtx.fillStyle = '#1a1a2e';
+            buoyancyCtx.fillRect(0, 0, buoyancyCanvas.width, buoyancyCanvas.height);
+
+            // Draw water
+            buoyancyCtx.fillStyle = 'rgba(30, 144, 255, 0.6)';
+            buoyancyCtx.fillRect(0, waterLevel, buoyancyCanvas.width, buoyancyCanvas.height - waterLevel);
+
+            // Draw water surface
+            buoyancyCtx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+            buoyancyCtx.lineWidth = 3;
+            buoyancyCtx.beginPath();
+            buoyancyCtx.moveTo(0, waterLevel);
+            buoyancyCtx.lineTo(buoyancyCanvas.width, waterLevel);
+            buoyancyCtx.stroke();
+
+            // Update and draw objects
+            objects.forEach(obj => {
+                obj.update(0.016);
+                obj.draw(buoyancyCtx);
+            });
+
+            // Draw info
+            buoyancyCtx.fillStyle = '#fff';
+            buoyancyCtx.font = '14px Arial';
+            buoyancyCtx.textAlign = 'left';
+            buoyancyCtx.fillText(`Water Level: ${Math.floor(waterLevel)}px`, 10, 20);
+            buoyancyCtx.fillText(`Objects: ${objects.length}`, 10, 40);
+
+            requestAnimationFrame(animateBuoyancy);
+        }
+
+        animateBuoyancy();
+
+        // ===================================
+        // DEMO 2: RISING WATER CHALLENGE
+        // ===================================
+
+        const risingCanvas = document.getElementById('risingWaterDemo');
+        const risingCtx = risingCanvas.getContext('2d');
+
+        let risingWaterLevel = 500;
+        let isRising = false;
+        let player = {
+            x: 100,
+            y: 400,
+            width: 30,
+            height: 40,
+            vx: 0,
+            vy: 0,
+            onGround: false,
+            inWater: false,
+            alive: true
+        };
+
+        const platforms = [
+            { x: 50, y: 450, width: 150, height: 20 },
+            { x: 250, y: 380, width: 120, height: 20 },
+            { x: 420, y: 310, width: 140, height: 20 },
+            { x: 600, y: 240, width: 150, height: 20 },
+            { x: 200, y: 170, width: 200, height: 20 },
+            { x: 450, y: 100, width: 300, height: 20 },
+        ];
+
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        document.getElementById('btnStartRising').addEventListener('click', () => {
+            isRising = true;
+        });
+
+        document.getElementById('btnStopRising').addEventListener('click', () => {
+            isRising = false;
+        });
+
+        document.getElementById('btnResetRising').addEventListener('click', () => {
+            risingWaterLevel = 500;
+            isRising = false;
+            player = {
+                x: 100,
+                y: 400,
+                width: 30,
+                height: 40,
+                vx: 0,
+                vy: 0,
+                onGround: false,
+                inWater: false,
+                alive: true
+            };
+        });
+
+        function updateRisingWater() {
+            if (!player.alive) return;
+
+            const speed = player.inWater ? 3 : 5;
+            const jumpPower = player.inWater ? -8 : -12;
+
+            // Movement
+            if (keys['ArrowLeft']) player.vx = -speed;
+            else if (keys['ArrowRight']) player.vx = speed;
+            else player.vx *= 0.8;
+
+            // Jump
+            if (keys['ArrowUp'] && player.onGround) {
+                player.vy = jumpPower;
+            }
+
+            // Gravity
+            const gravity = player.inWater ? 0.3 : 0.5;
+            player.vy += gravity;
+
+            // Update position
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Check water
+            player.inWater = (player.y + player.height) > risingWaterLevel;
+
+            // Collisions with platforms
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + platform.height &&
+                    player.vy >= 0) {
+                    player.y = platform.y - player.height;
+                    player.vy = 0;
+                    player.onGround = true;
+                }
+            });
+
+            // Boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > risingCanvas.width) player.x = risingCanvas.width - player.width;
+
+            // Check if drowned
+            if (player.y > risingWaterLevel) {
+                player.alive = false;
+            }
+
+            // Check if safe
+            if (player.y < 50 && risingWaterLevel < 100) {
+                document.getElementById('risingWaterInfo').textContent = '🎉 You escaped! You win!';
+            }
+
+            // Rise water
+            if (isRising && risingWaterLevel > 0) {
+                risingWaterLevel -= 0.5;
+            }
+        }
+
+        function renderRisingWater() {
+            // Background
+            risingCtx.fillStyle = '#16213e';
+            risingCtx.fillRect(0, 0, risingCanvas.width, risingCanvas.height);
+
+            // Platforms
+            risingCtx.fillStyle = '#4a5568';
+            platforms.forEach(platform => {
+                risingCtx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                risingCtx.strokeStyle = '#718096';
+                risingCtx.lineWidth = 2;
+                risingCtx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            });
+
+            // Water
+            risingCtx.fillStyle = 'rgba(30, 100, 200, 0.7)';
+            risingCtx.fillRect(0, risingWaterLevel, risingCanvas.width, risingCanvas.height - risingWaterLevel);
+
+            // Water surface animation
+            risingCtx.strokeStyle = 'rgba(100, 180, 255, 0.9)';
+            risingCtx.lineWidth = 3;
+            risingCtx.beginPath();
+            const time = Date.now() / 200;
+            for (let x = 0; x < risingCanvas.width; x += 5) {
+                const wave = Math.sin(x / 30 + time) * 3;
+                risingCtx.lineTo(x, risingWaterLevel + wave);
+            }
+            risingCtx.stroke();
+
+            // Player
+            if (player.alive) {
+                risingCtx.fillStyle = player.inWater ? '#FF6B6B' : '#4ECDC4';
+                risingCtx.fillRect(player.x, player.y, player.width, player.height);
+                risingCtx.strokeStyle = '#fff';
+                risingCtx.lineWidth = 2;
+                risingCtx.strokeRect(player.x, player.y, player.width, player.height);
+
+                // Eyes
+                risingCtx.fillStyle = '#fff';
+                risingCtx.fillRect(player.x + 8, player.y + 10, 5, 5);
+                risingCtx.fillRect(player.x + 17, player.y + 10, 5, 5);
+            } else {
+                risingCtx.fillStyle = '#FF0000';
+                risingCtx.font = '30px Arial';
+                risingCtx.textAlign = 'center';
+                risingCtx.fillText('DROWNED!', risingCanvas.width / 2, risingCanvas.height / 2);
+                risingCtx.font = '16px Arial';
+                risingCtx.fillText('Click Reset to try again', risingCanvas.width / 2, risingCanvas.height / 2 + 30);
+            }
+
+            // Info
+            risingCtx.fillStyle = '#fff';
+            risingCtx.font = '14px Arial';
+            risingCtx.textAlign = 'left';
+            risingCtx.fillText(`Water Level: ${Math.floor(risingWaterLevel)}`, 10, 20);
+            risingCtx.fillText(`Player Status: ${player.alive ? (player.inWater ? 'In Water!' : 'Safe') : 'Drowned'}`, 10, 40);
+
+            updateRisingWater();
+            requestAnimationFrame(renderRisingWater);
+        }
+
+        renderRisingWater();
+
+        // ===================================
+        // DEMO 3: SPH PARTICLE-BASED WATER
+        // ===================================
+
+        const sphCanvas = document.getElementById('sphDemo');
+        const sphCtx = sphCanvas.getContext('2d');
+
+        let sphParticles = [];
+        let sphBarriers = [];
+        let sphGravity = true;
+        let sphViscosity = 0.5;
+        let addingBarrier = false;
+
+        class WaterParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.density = 0;
+                this.pressure = 0;
+                this.fx = 0;
+                this.fy = 0;
+                this.radius = 4;
+            }
+
+            update(particles, dt) {
+                const h = 20; // Smoothing radius
+                const k = 0.1; // Pressure constant
+                const restDensity = 1.0;
+
+                // Calculate density
+                this.density = 0;
+                particles.forEach(other => {
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < h) {
+                        const q = dist / h;
+                        const kernel = (1 - q) * (1 - q);
+                        this.density += kernel;
+                    }
+                });
+
+                // Calculate pressure
+                this.pressure = k * (this.density - restDensity);
+
+                // Reset forces
+                this.fx = 0;
+                this.fy = 0;
+
+                // Pressure force
+                particles.forEach(other => {
+                    if (other === this) return;
+
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < h && dist > 0.01) {
+                        const q = dist / h;
+                        const kernel = (1 - q);
+                        const pressureForce = -kernel * (this.pressure + other.pressure) / (2 * this.density);
+
+                        this.fx += pressureForce * (dx / dist);
+                        this.fy += pressureForce * (dy / dist);
+                    }
+                });
+
+                // Gravity
+                if (sphGravity) {
+                    this.fy += 10;
+                }
+
+                // Apply forces
+                this.vx += this.fx * dt;
+                this.vy += this.fy * dt;
+
+                // Viscosity
+                this.vx *= (1 - sphViscosity * 0.05);
+                this.vy *= (1 - sphViscosity * 0.05);
+
+                // Update position
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                // Boundaries
+                if (this.x < this.radius) {
+                    this.x = this.radius;
+                    this.vx = -this.vx * 0.5;
+                }
+                if (this.x > sphCanvas.width - this.radius) {
+                    this.x = sphCanvas.width - this.radius;
+                    this.vx = -this.vx * 0.5;
+                }
+                if (this.y < this.radius) {
+                    this.y = this.radius;
+                    this.vy = -this.vy * 0.5;
+                }
+                if (this.y > sphCanvas.height - this.radius) {
+                    this.y = sphCanvas.height - this.radius;
+                    this.vy = -this.vy * 0.5;
+                }
+
+                // Barrier collisions
+                sphBarriers.forEach(barrier => {
+                    if (this.x > barrier.x && this.x < barrier.x + barrier.width &&
+                        this.y > barrier.y && this.y < barrier.y + barrier.height) {
+                        // Simple ejection
+                        const dx = this.x - (barrier.x + barrier.width / 2);
+                        const dy = this.y - (barrier.y + barrier.height / 2);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > 0) {
+                            this.x += (dx / dist) * 5;
+                            this.y += (dy / dist) * 5;
+                        }
+                        this.vx *= 0.3;
+                        this.vy *= 0.3;
+                    }
+                });
+            }
+
+            draw(ctx) {
+                const colorIntensity = Math.min(255, this.density * 100);
+                ctx.fillStyle = `rgba(30, ${100 + colorIntensity}, ${200 + colorIntensity / 2}, 0.9)`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        sphCanvas.addEventListener('click', (e) => {
+            const rect = sphCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (addingBarrier) {
+                sphBarriers.push({ x: x - 30, y: y - 10, width: 60, height: 20 });
+            } else {
+                // Add cluster of particles
+                for (let i = 0; i < 20; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 20;
+                    sphParticles.push(new WaterParticle(
+                        x + Math.cos(angle) * radius,
+                        y + Math.sin(angle) * radius
+                    ));
+                }
+            }
+        });
+
+        document.getElementById('btnAddWater').addEventListener('click', () => {
+            for (let i = 0; i < 30; i++) {
+                sphParticles.push(new WaterParticle(
+                    Math.random() * 200 + 300,
+                    Math.random() * 100 + 50
+                ));
+            }
+        });
+
+        document.getElementById('btnAddBarrier').addEventListener('click', () => {
+            addingBarrier = !addingBarrier;
+        });
+
+        document.getElementById('btnToggleGravity').addEventListener('click', () => {
+            sphGravity = !sphGravity;
+        });
+
+        document.getElementById('btnResetSPH').addEventListener('click', () => {
+            sphParticles = [];
+            sphBarriers = [];
+        });
+
+        document.getElementById('sphViscosity').addEventListener('input', (e) => {
+            sphViscosity = parseFloat(e.target.value);
+            document.getElementById('sphViscValue').textContent = sphViscosity.toFixed(1);
+        });
+
+        function animateSPH() {
+            sphCtx.fillStyle = '#0a0e1a';
+            sphCtx.fillRect(0, 0, sphCanvas.width, sphCanvas.height);
+
+            // Draw barriers
+            sphCtx.fillStyle = '#666';
+            sphBarriers.forEach(barrier => {
+                sphCtx.fillRect(barrier.x, barrier.y, barrier.width, barrier.height);
+            });
+
+            // Update and draw particles
+            const dt = 0.1;
+            sphParticles.forEach(p => p.update(sphParticles, dt));
+            sphParticles.forEach(p => p.draw(sphCtx));
+
+            // Info
+            sphCtx.fillStyle = '#fff';
+            sphCtx.font = '14px Arial';
+            sphCtx.textAlign = 'left';
+            sphCtx.fillText(`Particles: ${sphParticles.length}`, 10, 20);
+            sphCtx.fillText(`Gravity: ${sphGravity ? 'ON' : 'OFF'}`, 10, 40);
+
+            requestAnimationFrame(animateSPH);
+        }
+
+        animateSPH();
+
+        // ===================================
+        // DEMO 4: SIMPLIFIED FLOW MECHANIC
+        // ===================================
+
+        const puzzleCanvas = document.getElementById('flowPuzzleDemo');
+        const puzzleCtx = puzzleCanvas.getContext('2d');
+
+        let waterReleased = false;
+        let addingPlatforms = false;
+        let flowPlatforms = [];
+
+        const bucket = { x: 650, y: 400, width: 100, height: 80, filled: 0 };
+        const source = { x: 400, y: 50 };
+
+        // Grid-based flow system
+        const cellSize = 10;
+        const cols = Math.floor(puzzleCanvas.width / cellSize);
+        const rows = Math.floor(puzzleCanvas.height / cellSize);
+        let waterGrid = [];
+        let velocityGrid = [];
+
+        // Initialize grids
+        for (let i = 0; i < cols; i++) {
+            waterGrid[i] = [];
+            velocityGrid[i] = [];
+            for (let j = 0; j < rows; j++) {
+                waterGrid[i][j] = 0;
+                velocityGrid[i][j] = { vx: 0, vy: 0 };
+            }
+        }
+
+        // Check if cell is blocked by platform
+        function isBlocked(gridX, gridY) {
+            const x = gridX * cellSize;
+            const y = gridY * cellSize;
+
+            for (let platform of flowPlatforms) {
+                if (x + cellSize > platform.x && x < platform.x + platform.width &&
+                    y + cellSize > platform.y && y < platform.y + platform.height) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Update water flow
+        function updateFlow() {
+            const newWater = [];
+            for (let i = 0; i < cols; i++) {
+                newWater[i] = [];
+                for (let j = 0; j < rows; j++) {
+                    newWater[i][j] = waterGrid[i][j];
+                }
+            }
+
+            // Add water from source
+            if (waterReleased) {
+                const sourceGridX = Math.floor(source.x / cellSize);
+                const sourceGridY = Math.floor(source.y / cellSize);
+                for (let dx = -2; dx <= 2; dx++) {
+                    const gx = sourceGridX + dx;
+                    if (gx >= 0 && gx < cols && sourceGridY >= 0 && sourceGridY < rows) {
+                        newWater[gx][sourceGridY] = Math.min(255, newWater[gx][sourceGridY] + 35);
+                    }
+                }
+            }
+
+            // Flow simulation - water flows down and spreads
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (waterGrid[i][j] > 5 && !isBlocked(i, j)) {
+                        const amount = waterGrid[i][j];
+
+                        // Try to flow down first
+                        if (j < rows - 1 && !isBlocked(i, j + 1)) {
+                            const flowDown = Math.min(amount * 0.5, 255 - newWater[i][j + 1]);
+                            newWater[i][j] -= flowDown;
+                            newWater[i][j + 1] += flowDown;
+                        }
+
+                        // Then spread sideways if there's water left
+                        if (newWater[i][j] > 10) {
+                            // Flow left
+                            if (i > 0 && !isBlocked(i - 1, j)) {
+                                const diff = (newWater[i][j] - newWater[i - 1][j]) * 0.15;
+                                if (diff > 0) {
+                                    const flow = Math.min(diff, 255 - newWater[i - 1][j]);
+                                    newWater[i][j] -= flow;
+                                    newWater[i - 1][j] += flow;
+                                }
+                            }
+
+                            // Flow right
+                            if (i < cols - 1 && !isBlocked(i + 1, j)) {
+                                const diff = (newWater[i][j] - newWater[i + 1][j]) * 0.15;
+                                if (diff > 0) {
+                                    const flow = Math.min(diff, 255 - newWater[i + 1][j]);
+                                    newWater[i][j] -= flow;
+                                    newWater[i + 1][j] += flow;
+                                }
+                            }
+                        }
+                    }
+
+                    // Check if water reached bucket
+                    const x = i * cellSize;
+                    const y = j * cellSize;
+                    if (x > bucket.x && x < bucket.x + bucket.width &&
+                        y > bucket.y && y < bucket.y + bucket.height) {
+                        if (newWater[i][j] > 0) {
+                            bucket.filled = Math.min(100, bucket.filled + newWater[i][j] * 0.01);
+                            newWater[i][j] = 0;
+                        }
+                    }
+
+                    // Evaporation at bottom
+                    if (j === rows - 1 && newWater[i][j] > 0) {
+                        newWater[i][j] *= 0.95;
+                    }
+                }
+            }
+
+            waterGrid = newWater;
+        }
+
+        // Draw water grid
+        function drawWater(ctx) {
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const amount = waterGrid[i][j];
+                    if (amount > 3) {
+                        // Much more visible water color
+                        const intensity = Math.min(1, amount / 180);
+
+                        // Bright cyan-blue water
+                        const r = Math.floor(30 + intensity * 50);
+                        const g = Math.floor(180 + intensity * 75);
+                        const b = Math.floor(220 + intensity * 35);
+
+                        // Higher base opacity
+                        const alpha = Math.max(0.7, intensity);
+
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+
+                        // Add white highlights to make water more visible
+                        if (amount > 50) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.4})`;
+                            ctx.fillRect(i * cellSize + 1, j * cellSize + 1, cellSize - 2, cellSize - 2);
+                        }
+
+                        // Add shimmer effect
+                        if (amount > 80 && Math.random() < 0.15) {
+                            ctx.fillStyle = `rgba(200, 255, 255, 0.6)`;
+                            const shimmerSize = cellSize * 0.6;
+                            ctx.fillRect(
+                                i * cellSize + (cellSize - shimmerSize) / 2,
+                                j * cellSize + (cellSize - shimmerSize) / 2,
+                                shimmerSize,
+                                shimmerSize
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        puzzleCanvas.addEventListener('click', (e) => {
+            if (!addingPlatforms) return;
+
+            const rect = puzzleCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Add a platform
+            flowPlatforms.push({
+                x: x - 40,
+                y: y,
+                width: 80,
+                height: 10
+            });
+        });
+
+        document.getElementById('btnRelease').addEventListener('click', () => {
+            waterReleased = !waterReleased;
+            document.getElementById('btnRelease').textContent = waterReleased ? 'Stop Water' : 'Release Water';
+        });
+
+        document.getElementById('btnAddPlatform').addEventListener('click', (e) => {
+            addingPlatforms = !addingPlatforms;
+            e.target.textContent = addingPlatforms ? 'Stop Adding Platforms' : 'Add Platform (Blocks Water)';
+            e.target.style.backgroundColor = addingPlatforms ? '#4CAF50' : '#4a5568';
+        });
+
+        document.getElementById('btnResetPuzzle').addEventListener('click', () => {
+            waterReleased = false;
+            flowPlatforms = [];
+            bucket.filled = 0;
+            // Reset water grid
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    waterGrid[i][j] = 0;
+                }
+            }
+            document.getElementById('btnRelease').textContent = 'Release Water';
+        });
+
+        function animatePuzzle() {
+            // Background - darker for better water contrast
+            puzzleCtx.fillStyle = '#0a0e1a';
+            puzzleCtx.fillRect(0, 0, puzzleCanvas.width, puzzleCanvas.height);
+
+            // Update and draw water flow
+            updateFlow();
+            drawWater(puzzleCtx);
+
+            // Draw source
+            puzzleCtx.fillStyle = '#4FC3F7';
+            puzzleCtx.fillRect(source.x - 25, source.y - 15, 50, 30);
+            puzzleCtx.strokeStyle = '#82CEFF';
+            puzzleCtx.lineWidth = 2;
+            puzzleCtx.strokeRect(source.x - 25, source.y - 15, 50, 30);
+            puzzleCtx.fillStyle = '#fff';
+            puzzleCtx.font = 'bold 12px Arial';
+            puzzleCtx.textAlign = 'center';
+            puzzleCtx.fillText('SOURCE', source.x, source.y + 5);
+
+            // Draw platforms
+            puzzleCtx.fillStyle = '#4a5568';
+            flowPlatforms.forEach(platform => {
+                puzzleCtx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                puzzleCtx.strokeStyle = '#718096';
+                puzzleCtx.lineWidth = 2;
+                puzzleCtx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            });
+
+            // Platform mode indicator
+            if (addingPlatforms) {
+                puzzleCtx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+                puzzleCtx.fillRect(0, 0, puzzleCanvas.width, puzzleCanvas.height);
+                puzzleCtx.fillStyle = '#4CAF50';
+                puzzleCtx.font = 'bold 20px Arial';
+                puzzleCtx.textAlign = 'center';
+                puzzleCtx.fillText('Click to add platforms', puzzleCanvas.width / 2, 30);
+            }
+
+            // Draw bucket
+            puzzleCtx.strokeStyle = '#8B4513';
+            puzzleCtx.lineWidth = 4;
+            puzzleCtx.strokeRect(bucket.x, bucket.y, bucket.width, bucket.height);
+
+            // Fill water in bucket
+            puzzleCtx.fillStyle = 'rgba(30, 144, 255, 0.7)';
+            const fillHeight = (bucket.filled / 100) * bucket.height;
+            puzzleCtx.fillRect(bucket.x, bucket.y + bucket.height - fillHeight, bucket.width, fillHeight);
+
+            // Bucket label
+            puzzleCtx.fillStyle = '#FFD700';
+            puzzleCtx.font = 'bold 14px Arial';
+            puzzleCtx.textAlign = 'center';
+            puzzleCtx.fillText('BUCKET', bucket.x + bucket.width / 2, bucket.y - 5);
+            puzzleCtx.fillStyle = '#fff';
+            puzzleCtx.font = '12px Arial';
+            puzzleCtx.fillText(`${Math.floor(bucket.filled)}%`, bucket.x + bucket.width / 2, bucket.y + bucket.height / 2);
+
+            // Calculate total water in system
+            let totalWater = 0;
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (waterGrid[i][j] > 0) totalWater++;
+                }
+            }
+
+            // Update status
+            const bucketPercent = Math.floor(bucket.filled);
+            if (bucket.filled >= 90) {
+                document.getElementById('puzzleStatus').textContent = `🎉 Bucket Full! ${bucketPercent}%`;
+            } else {
+                document.getElementById('puzzleStatus').textContent = `Bucket: ${bucketPercent}% | Platforms: ${flowPlatforms.length} | Water Cells: ${totalWater}`;
+            }
+
+            requestAnimationFrame(animatePuzzle);
+        }
+
+        animatePuzzle();
+
     </script>
 </body>
 </html>
