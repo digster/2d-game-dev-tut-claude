@@ -273,12 +273,12 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <strong>Visual:</strong>
-                    <button id="btnColorDefault">Default</button>
-                    <button id="btnColorRainbow">Rainbow</button>
-                    <button id="btnColorFire">Fire</button>
-                    <button id="btnColorBlue">Blue</button>
-                    <button id="btnClearFluid">Clear All</button>
+                    <strong>Quick Switch:</strong>
+                    <button id="btnColorDefault">💧 Water</button>
+                    <button id="btnColorRainbow">🌈 Ink</button>
+                    <button id="btnColorFire">🍯 Honey</button>
+                    <button id="btnColorBlue">☁️ Gas</button>
+                    <button id="btnClearFluid">🗑️ Clear All</button>
                 </div>
 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -302,13 +302,14 @@
             </div>
 
             <div class="concept-box" style="margin-top: 20px;">
-                <h4>🎨 Try These Examples:</h4>
+                <h4>🎨 Try These Examples (Each Material Looks Completely Different!):</h4>
                 <ol>
-                    <li><strong>Smoke Rising:</strong> Click "💨 Smoke" preset, then click "Continuous Source". Watch smoke rise from the top!</li>
-                    <li><strong>Water Flow Around Obstacles:</strong> Click "💧 Water", then "Add Obstacle" and draw some circles. Then draw water above the obstacles and watch it flow around!</li>
-                    <li><strong>Velocity Visualization:</strong> Click "Show Velocity Field" to see the invisible forces moving the fluid</li>
-                    <li><strong>Honey Swirl:</strong> Click "🍯 Honey" and draw slow, thick swirls that take forever to dissipate</li>
-                    <li><strong>Rainbow Ink:</strong> Click "🖋️ Ink" for colorful, medium-viscosity fluid patterns</li>
+                    <li><strong>💧 Water (Clear Blue):</strong> Flows freely with a cyan-blue transparent appearance. Great for water effects!</li>
+                    <li><strong>💨 Smoke (Gray Wisps):</strong> Soft gray with glow effect that rises upward. Click "Continuous Source" to see it billow!</li>
+                    <li><strong>🖋️ Ink (Rainbow Colors):</strong> Vibrant multicolored fluid that creates beautiful psychedelic patterns</li>
+                    <li><strong>🍯 Honey (Golden Amber):</strong> Rich golden color, very thick and viscous - watch it pour slowly!</li>
+                    <li><strong>☁️ Gas (Green-Yellow):</strong> Light greenish with glow, disperses quickly and rises slightly</li>
+                    <li><strong>Add Obstacles:</strong> Try any material with obstacles to see realistic flow patterns!</li>
                 </ol>
             </div>
 
@@ -337,20 +338,21 @@
             </div>
 
             <div class="concept-box" style="margin-top: 20px;">
-                <h4>🎯 Feature Breakdown:</h4>
+                <h4>🎯 Visual Features & Material Properties:</h4>
                 <ul>
-                    <li><strong>Velocity Field:</strong> Shows the direction and speed of fluid movement with white arrows</li>
-                    <li><strong>Obstacles:</strong> Gray blocks that fluid can't pass through - creates realistic flow patterns</li>
-                    <li><strong>Continuous Source:</strong> Constantly adds fluid from the top center - great for smoke or fountains</li>
-                    <li><strong>Wind:</strong> Adds an upward force to simulate buoyancy (rising smoke/heat)</li>
-                    <li><strong>Color Modes:</strong>
+                    <li><strong>Material-Specific Colors:</strong> Each material has unique colors, transparency, and background
                         <ul>
-                            <li><em>Default:</em> Purple/blue gradient</li>
-                            <li><em>Rainbow:</em> Density-based hue shift</li>
-                            <li><em>Fire:</em> Yellow → Orange → Red</li>
-                            <li><em>Blue:</em> Water-like appearance</li>
+                            <li>💧 <strong>Water:</strong> Cyan-blue on dark blue background (70% opacity)</li>
+                            <li>💨 <strong>Smoke:</strong> Soft gray with glow effect on dark gray bg (50% opacity)</li>
+                            <li>🖋️ <strong>Ink:</strong> Rainbow gradient on black background (90% opacity)</li>
+                            <li>🍯 <strong>Honey:</strong> Golden amber on brown background (85% opacity)</li>
+                            <li>☁️ <strong>Gas:</strong> Green-yellow with glow on greenish bg (40% opacity)</li>
                         </ul>
                     </li>
+                    <li><strong>Velocity Field:</strong> White arrows showing fluid movement direction and speed</li>
+                    <li><strong>Obstacles:</strong> Gray barriers that create realistic flow patterns around them</li>
+                    <li><strong>Continuous Source:</strong> Constant fluid stream from top center</li>
+                    <li><strong>Wind/Buoyancy:</strong> Upward force (automatic for smoke and gas)</li>
                 </ul>
             </div>
 
@@ -446,6 +448,7 @@
                 // Visual settings
                 this.colorMode = 'default';
                 this.showVelocity = false;
+                this.material = 'water'; // water, smoke, ink, honey, gas
 
                 // Wind/gravity
                 this.windX = 0;
@@ -649,41 +652,88 @@
 
             getColor(density) {
                 const d = Math.min(255, Math.floor(density));
+                const alpha = Math.min(1, d / 255);
 
-                switch(this.colorMode) {
-                    case 'rainbow':
-                        const hue = (d / 255) * 360;
-                        return `hsla(${hue}, 100%, 50%, ${d / 255})`;
+                // Material-specific colors with very distinct appearances
+                switch(this.material) {
+                    case 'water':
+                        // Clear blue water with cyan highlights
+                        const waterBlue = Math.floor(150 + (d / 255) * 105);
+                        const waterGreen = Math.floor(100 + (d / 255) * 100);
+                        return `rgba(30, ${waterGreen}, ${waterBlue}, ${alpha * 0.7})`;
 
-                    case 'fire':
-                        // Yellow -> Orange -> Red -> Black
-                        const r = Math.min(255, d * 1.5);
-                        const g = Math.min(255, d * 0.8);
-                        const b = d * 0.2;
-                        return `rgba(${r}, ${g}, ${b}, ${d / 255})`;
+                    case 'smoke':
+                        // Gray smoke with slight transparency
+                        const smokeGray = Math.floor(100 + (d / 255) * 155);
+                        return `rgba(${smokeGray}, ${smokeGray}, ${smokeGray + 20}, ${alpha * 0.5})`;
 
-                    case 'blue':
-                        return `rgba(${d * 0.3}, ${d * 0.5}, ${d}, ${d / 255})`;
+                    case 'ink':
+                        // Vibrant rainbow colors based on density
+                        const inkHue = (d / 255) * 360;
+                        return `hsla(${inkHue}, 100%, 60%, ${alpha * 0.9})`;
 
-                    default: // 'default'
+                    case 'honey':
+                        // Golden/amber honey color
+                        const honeyR = Math.floor(200 + (d / 255) * 55);
+                        const honeyG = Math.floor(140 + (d / 255) * 50);
+                        const honeyB = Math.floor(20 + (d / 255) * 20);
+                        return `rgba(${honeyR}, ${honeyG}, ${honeyB}, ${alpha * 0.85})`;
+
+                    case 'gas':
+                        // Light green/yellow gas
+                        const gasR = Math.floor(150 + (d / 255) * 80);
+                        const gasG = Math.floor(200 + (d / 255) * 55);
+                        const gasB = Math.floor(100 + (d / 255) * 60);
+                        return `rgba(${gasR}, ${gasG}, ${gasB}, ${alpha * 0.4})`;
+
+                    default:
                         return `rgba(${d}, ${d * 0.5}, ${255 - d}, ${d / 255})`;
                 }
             }
 
             render(ctx) {
-                ctx.fillStyle = '#000';
+                // Background color based on material
+                switch(this.material) {
+                    case 'water':
+                        ctx.fillStyle = '#001020'; // Deep blue-black
+                        break;
+                    case 'smoke':
+                        ctx.fillStyle = '#0a0a0a'; // Dark gray
+                        break;
+                    case 'honey':
+                        ctx.fillStyle = '#1a0f00'; // Dark brown
+                        break;
+                    case 'gas':
+                        ctx.fillStyle = '#0a1008'; // Dark greenish
+                        break;
+                    default:
+                        ctx.fillStyle = '#000';
+                }
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw fluid density
+                // Draw fluid density with glow effect for some materials
+                const needsGlow = (this.material === 'gas' || this.material === 'smoke');
+
                 for (let i = 0; i < this.rows; i++) {
                     for (let j = 0; j < this.cols; j++) {
                         const d = this.density[i][j];
                         if (d > 0) {
                             ctx.fillStyle = this.getColor(d);
+
+                            // Add glow effect for smoke and gas
+                            if (needsGlow && d > 50) {
+                                ctx.shadowBlur = 10;
+                                ctx.shadowColor = this.getColor(d);
+                            } else {
+                                ctx.shadowBlur = 0;
+                            }
+
                             ctx.fillRect(j * this.scale, i * this.scale, this.scale, this.scale);
                         }
                     }
                 }
+
+                ctx.shadowBlur = 0;
 
                 // Draw obstacles
                 ctx.fillStyle = '#666';
@@ -785,46 +835,50 @@
             fluid.visc = 0.0001;
             fluid.diff = 0.0001;
             fluid.fadeRate = 0.99;
-            fluid.colorMode = 'blue';
+            fluid.material = 'water';
+            fluid.windY = 0;
             updateSliders();
-            updateInfo('Water preset loaded - Low viscosity, blue color');
+            updateInfo('💧 Water - Clear blue liquid, low viscosity');
         });
 
         document.getElementById('btnSmoke').addEventListener('click', () => {
             fluid.visc = 0.00001;
             fluid.diff = 0.0005;
-            fluid.fadeRate = 0.98;
-            fluid.colorMode = 'default';
-            fluid.windY = 0.5; // Buoyancy
+            fluid.fadeRate = 0.97;
+            fluid.material = 'smoke';
+            fluid.windY = -0.8; // Strong upward buoyancy
             updateSliders();
-            updateInfo('Smoke preset loaded - Very low viscosity, rises up');
+            updateInfo('💨 Smoke - Gray wisps that rise upward with buoyancy');
         });
 
         document.getElementById('btnInk').addEventListener('click', () => {
             fluid.visc = 0.0002;
             fluid.diff = 0.0003;
             fluid.fadeRate = 0.995;
-            fluid.colorMode = 'rainbow';
+            fluid.material = 'ink';
+            fluid.windY = 0;
             updateSliders();
-            updateInfo('Ink preset loaded - Medium viscosity, colorful');
+            updateInfo('🖋️ Ink - Vibrant rainbow colors, medium viscosity');
         });
 
         document.getElementById('btnHoney').addEventListener('click', () => {
-            fluid.visc = 0.001;
-            fluid.diff = 0.00005;
+            fluid.visc = 0.0015;
+            fluid.diff = 0.00003;
             fluid.fadeRate = 0.999;
-            fluid.colorMode = 'fire';
+            fluid.material = 'honey';
+            fluid.windY = 0;
             updateSliders();
-            updateInfo('Honey preset loaded - High viscosity, slow movement');
+            updateInfo('🍯 Honey - Golden amber, very thick and viscous');
         });
 
         document.getElementById('btnGas').addEventListener('click', () => {
             fluid.visc = 0.00001;
             fluid.diff = 0.001;
-            fluid.fadeRate = 0.95;
-            fluid.colorMode = 'default';
+            fluid.fadeRate = 0.94;
+            fluid.material = 'gas';
+            fluid.windY = -0.3;
             updateSliders();
-            updateInfo('Gas preset loaded - Very low viscosity, high diffusion');
+            updateInfo('☁️ Gas - Light green/yellow, disperses quickly');
         });
 
         // ===================================
@@ -866,23 +920,23 @@
         // ===================================
 
         document.getElementById('btnColorDefault').addEventListener('click', () => {
-            fluid.colorMode = 'default';
-            updateInfo('Color mode: Default (Purple/Blue)');
+            fluid.material = 'water';
+            updateInfo('Material changed to Water (blue)');
         });
 
         document.getElementById('btnColorRainbow').addEventListener('click', () => {
-            fluid.colorMode = 'rainbow';
-            updateInfo('Color mode: Rainbow');
+            fluid.material = 'ink';
+            updateInfo('Material changed to Ink (rainbow)');
         });
 
         document.getElementById('btnColorFire').addEventListener('click', () => {
-            fluid.colorMode = 'fire';
-            updateInfo('Color mode: Fire (Red/Orange/Yellow)');
+            fluid.material = 'honey';
+            updateInfo('Material changed to Honey (golden/amber)');
         });
 
         document.getElementById('btnColorBlue').addEventListener('click', () => {
-            fluid.colorMode = 'blue';
-            updateInfo('Color mode: Blue Water');
+            fluid.material = 'gas';
+            updateInfo('Material changed to Gas (green/yellow)');
         });
 
         document.getElementById('btnClearFluid').addEventListener('click', () => {
