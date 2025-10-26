@@ -1995,6 +1995,327 @@ if (proceduralCanvas) {
 }
 
 // ===================================
+// DEMO: Wave Simulation
+// ===================================
+const waveCanvas = document.getElementById('waveDemo');
+if (waveCanvas) {
+    const ctx = waveCanvas.getContext('2d');
+    const info = document.getElementById('waveInfo');
+    let mode = 'physical'; // physical, standing, traveling, interference
+    let lastTime = performance.now();
+
+    // 1D Physical Wave System
+    const POINTS = 100;
+    let wave1D = {
+        points: POINTS,
+        y: new Array(POINTS).fill(0),
+        velocity: new Array(POINTS).fill(0),
+        damping: 0.99,
+        tension: 0.025
+    };
+
+    // Mathematical wave systems
+    let standingWave = {
+        amplitude: 40,
+        frequency: 0.05,
+        time: 0
+    };
+
+    let travelingWave = {
+        amplitude: 30,
+        wavelength: 100,
+        speed: 3,
+        time: 0
+    };
+
+    let waveField = {
+        sources: [],
+        time: 0
+    };
+
+    // Initialize with a couple of interference sources
+    waveField.sources.push({ x: 300, y: 250, amplitude: 20, frequency: 0.08, phase: 0 });
+    waveField.sources.push({ x: 500, y: 250, amplitude: 20, frequency: 0.08, phase: Math.PI });
+
+    // Update physical wave
+    function updatePhysicalWave() {
+        // Calculate forces based on neighbors
+        const newVelocity = [...wave1D.velocity];
+        for (let i = 1; i < wave1D.points - 1; i++) {
+            const force = (wave1D.y[i - 1] + wave1D.y[i + 1]) / 2 - wave1D.y[i];
+            newVelocity[i] += force * wave1D.tension;
+        }
+        wave1D.velocity = newVelocity;
+
+        // Apply velocities and damping
+        for (let i = 0; i < wave1D.points; i++) {
+            wave1D.y[i] += wave1D.velocity[i];
+            wave1D.velocity[i] *= wave1D.damping;
+        }
+
+        // Fixed endpoints
+        wave1D.y[0] = 0;
+        wave1D.y[wave1D.points - 1] = 0;
+    }
+
+    // Disturb physical wave at position
+    function disturbWave(index, force) {
+        if (index >= 0 && index < wave1D.points) {
+            wave1D.velocity[index] += force;
+            // Also disturb neighbors for better effect
+            if (index > 0) wave1D.velocity[index - 1] += force * 0.5;
+            if (index < wave1D.points - 1) wave1D.velocity[index + 1] += force * 0.5;
+        }
+    }
+
+    // Reset physical wave
+    function resetPhysicalWave() {
+        wave1D.y = new Array(POINTS).fill(0);
+        wave1D.velocity = new Array(POINTS).fill(0);
+    }
+
+    // Draw 1D wave
+    function drawWave1D(ctx, yData, offsetY, color = '#4fc3f7') {
+        const width = waveCanvas.width - 40;
+        const spacing = width / (yData.length - 1);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        for (let i = 0; i < yData.length; i++) {
+            const x = 20 + i * spacing;
+            const y = offsetY + yData[i];
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+
+        // Draw points
+        ctx.fillStyle = color;
+        for (let i = 0; i < yData.length; i += 5) {
+            const x = 20 + i * spacing;
+            const y = offsetY + yData[i];
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw baseline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(20, offsetY);
+        ctx.lineTo(20 + width, offsetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Draw 2D wave field
+    function drawWaveField(ctx) {
+        const gridSize = 10;
+        const width = waveCanvas.width;
+        const height = waveCanvas.height;
+
+        // Draw wave sources
+        waveField.sources.forEach((source, index) => {
+            // Draw expanding circles
+            for (let r = 0; r < 5; r++) {
+                const radius = (source.phase + r * Math.PI / 2) / source.frequency;
+                const alpha = Math.sin(source.phase + r * Math.PI / 2) * 0.3;
+                if (alpha > 0) {
+                    ctx.strokeStyle = `rgba(79, 195, 247, ${alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(source.x, source.y, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw source point
+            ctx.fillStyle = '#ffa726';
+            ctx.beginPath();
+            ctx.arc(source.x, source.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`S${index + 1}`, source.x, source.y + 25);
+        });
+
+        // Draw grid points affected by waves
+        for (let x = gridSize; x < width; x += gridSize * 2) {
+            for (let y = gridSize; y < height; y += gridSize * 2) {
+                let totalHeight = 0;
+                waveField.sources.forEach(source => {
+                    const dx = x - source.x;
+                    const dy = y - source.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    totalHeight += source.amplitude * Math.sin(distance * source.frequency - source.phase);
+                });
+
+                // Draw point with size based on wave height
+                const normalizedHeight = Math.max(0, Math.min(1, (totalHeight + 40) / 80));
+                const size = 2 + normalizedHeight * 4;
+                const brightness = 50 + normalizedHeight * 50;
+
+                ctx.fillStyle = `hsl(200, 70%, ${brightness}%)`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+
+    // Click handler
+    waveCanvas.addEventListener('click', (e) => {
+        const rect = waveCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (mode === 'physical') {
+            // Convert click position to wave index
+            const width = waveCanvas.width - 40;
+            const clickX = x - 20;
+            const index = Math.floor((clickX / width) * (POINTS - 1));
+            disturbWave(index, 20);
+        } else if (mode === 'interference') {
+            // Add new wave source
+            waveField.sources.push({ x, y, amplitude: 20, frequency: 0.08, phase: 0 });
+        }
+    });
+
+    // Button handlers
+    document.getElementById('btnPhysicalWave').addEventListener('click', () => {
+        mode = 'physical';
+        resetPhysicalWave();
+        info.textContent = 'Click on Physical Wave mode to create ripples!';
+    });
+
+    document.getElementById('btnStandingWave').addEventListener('click', () => {
+        mode = 'standing';
+        info.textContent = 'Standing wave oscillates in place - like a guitar string!';
+    });
+
+    document.getElementById('btnTravelingWave').addEventListener('click', () => {
+        mode = 'traveling';
+        info.textContent = 'Traveling wave moves through space - watch it flow!';
+    });
+
+    document.getElementById('btnInterference').addEventListener('click', () => {
+        mode = 'interference';
+        waveField.sources = [];
+        waveField.sources.push({ x: 300, y: 250, amplitude: 20, frequency: 0.08, phase: 0 });
+        waveField.sources.push({ x: 500, y: 250, amplitude: 20, frequency: 0.08, phase: Math.PI });
+        info.textContent = 'Wave interference - click to add sources and see them interact!';
+    });
+
+    document.getElementById('btnResetWaves').addEventListener('click', () => {
+        resetPhysicalWave();
+        standingWave.time = 0;
+        travelingWave.time = 0;
+        waveField.sources = [];
+        waveField.sources.push({ x: 300, y: 250, amplitude: 20, frequency: 0.08, phase: 0 });
+        waveField.sources.push({ x: 500, y: 250, amplitude: 20, frequency: 0.08, phase: Math.PI });
+        waveField.time = 0;
+    });
+
+    function animateWaves(currentTime) {
+        const dt = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        clearCanvas(ctx, waveCanvas.width, waveCanvas.height);
+
+        if (mode === 'physical') {
+            updatePhysicalWave();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💧 Physical Wave Simulation', waveCanvas.width / 2, 30);
+
+            ctx.font = '14px Arial';
+            ctx.fillText('Click to create disturbances!', waveCanvas.width / 2, 55);
+
+            drawWave1D(ctx, wave1D.y, waveCanvas.height / 2);
+
+        } else if (mode === 'standing') {
+            standingWave.time += dt;
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎵 Standing Wave', waveCanvas.width / 2, 30);
+
+            // Generate standing wave
+            const yData = [];
+            for (let i = 0; i < POINTS; i++) {
+                const x = (i / (POINTS - 1)) * Math.PI * 4;
+                const y = standingWave.amplitude * Math.sin(x) * Math.cos(standingWave.time * 3);
+                yData.push(y);
+            }
+
+            drawWave1D(ctx, yData, waveCanvas.height / 2, '#66bb6a');
+
+            // Draw nodes (points that don't move)
+            ctx.fillStyle = '#ffa726';
+            const width = waveCanvas.width - 40;
+            for (let n = 0; n <= 4; n++) {
+                const x = 20 + (n / 4) * width;
+                ctx.beginPath();
+                ctx.arc(x, waveCanvas.height / 2, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+        } else if (mode === 'traveling') {
+            travelingWave.time += dt;
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌊 Traveling Wave', waveCanvas.width / 2, 30);
+
+            // Generate traveling wave
+            const yData = [];
+            const frequency = (2 * Math.PI) / travelingWave.wavelength;
+            for (let i = 0; i < POINTS; i++) {
+                const x = (i / (POINTS - 1)) * (waveCanvas.width - 40);
+                const y = travelingWave.amplitude * Math.sin(x * frequency - travelingWave.time * travelingWave.speed);
+                yData.push(y);
+            }
+
+            drawWave1D(ctx, yData, waveCanvas.height / 2, '#ab47bc');
+
+        } else if (mode === 'interference') {
+            // Update wave sources
+            waveField.sources.forEach(source => {
+                source.phase += dt * 2;
+            });
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💫 Wave Interference', waveCanvas.width / 2, 30);
+
+            ctx.font = '14px Arial';
+            ctx.fillText(`Sources: ${waveField.sources.length} - Click to add more!`, waveCanvas.width / 2, 55);
+
+            drawWaveField(ctx);
+        }
+
+        requestAnimationFrame(animateWaves);
+    }
+
+    animateWaves(performance.now());
+}
+
+// ===================================
 // DEMO: Friction Comparison
 // ===================================
 const frictionCanvas = document.getElementById('frictionDemo');

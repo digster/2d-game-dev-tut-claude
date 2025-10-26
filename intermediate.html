@@ -28,6 +28,7 @@
                 <li><a href="#spring">Spring Physics & Damping</a></li>
                 <li><a href="#verlet">Verlet Physics & Constraints</a></li>
                 <li><a href="#procedural-animation">Procedural Animation</a></li>
+                <li><a href="#wave-simulation">Wave Simulation</a></li>
                 <li><a href="#friction">Friction & Drag Systems</a></li>
                 <li><a href="#collision">Collision Detection</a></li>
                 <li><a href="#reflection">Bouncing & Reflection</a></li>
@@ -833,6 +834,181 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
 
             <div class="key-point">
                 <strong>💡 Pro Tip:</strong> Procedural animation shines when you need infinite variation or reactive behavior. Combine it with spring physics for even more organic results! Try using different frequencies and amplitudes to create unique movement patterns. Adding random phase offsets (starting positions in the sine wave) prevents entities from moving in perfect sync.
+            </div>
+        </div>
+
+        <!-- WAVE SIMULATION -->
+        <div id="wave-simulation" class="section">
+            <span class="level-indicator level-intermediate">INTERMEDIATE</span>
+            <h2>🌊 Wave Simulation</h2>
+
+            <div class="concept-box">
+                <h4>What are Waves?</h4>
+                <p>Waves are oscillating disturbances that propagate through space. In games, wave simulation creates realistic water, cloth, flags, sound visualization, and force fields!</p>
+                <p><strong>Key Properties:</strong></p>
+                <ul>
+                    <li><strong>Amplitude:</strong> Maximum displacement from rest position (wave height)</li>
+                    <li><strong>Wavelength:</strong> Distance between wave peaks</li>
+                    <li><strong>Frequency:</strong> How many oscillations per second</li>
+                    <li><strong>Phase:</strong> Offset in time (creates wave motion)</li>
+                </ul>
+            </div>
+
+            <div class="concept-box">
+                <h4>Wave Equation</h4>
+                <p><strong>Basic Sine Wave:</strong></p>
+                <div class="formula">
+                    y = amplitude × sin(x × frequency + phase)
+                </div>
+                <p><strong>Traveling Wave:</strong></p>
+                <div class="formula">
+                    y = amplitude × sin(x × frequency - time × speed)
+                </div>
+                <p>The <code>- time × speed</code> term makes the wave move! Positive speed moves right, negative moves left.</p>
+            </div>
+
+            <div class="concept-box">
+                <h4>Types of Waves</h4>
+                <p><strong>1. Standing Wave:</strong> Oscillates in place (guitar strings, flags)</p>
+                <p><strong>2. Traveling Wave:</strong> Moves through space (water ripples, sound)</p>
+                <p><strong>3. Interference:</strong> Multiple waves combining (ocean waves, force fields)</p>
+            </div>
+
+            <details>
+                <summary>📝 Click to see: Wave Simulation Implementation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// 1D Wave System - Perfect for water surfaces, ropes, flags</span>
+<span class="keyword">class</span> <span class="function">Wave1D</span> {
+    <span class="keyword">constructor</span>(points, length) {
+        <span class="keyword">this</span>.points = points;      <span class="comment">// Number of points in the wave</span>
+        <span class="keyword">this</span>.length = length;      <span class="comment">// Physical length</span>
+        <span class="keyword">this</span>.y = <span class="keyword">new</span> <span class="function">Array</span>(points).<span class="function">fill</span>(<span class="number">0</span>);       <span class="comment">// Current positions</span>
+        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Array</span>(points).<span class="function">fill</span>(<span class="number">0</span>); <span class="comment">// Velocities</span>
+        <span class="keyword">this</span>.damping = <span class="number">0.99</span>;   <span class="comment">// Energy loss (0.95-0.99 typical)</span>
+        <span class="keyword">this</span>.tension = <span class="number">0.025</span>;  <span class="comment">// Wave propagation speed</span>
+    }
+
+    <span class="function">update</span>() {
+        <span class="comment">// Calculate forces based on neighbors</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < <span class="keyword">this</span>.points - <span class="number">1</span>; i++) {
+            <span class="comment">// Force from left and right neighbors</span>
+            <span class="keyword">const</span> force = (<span class="keyword">this</span>.y[i - <span class="number">1</span>] + <span class="keyword">this</span>.y[i + <span class="number">1</span>]) / <span class="number">2</span> - <span class="keyword">this</span>.y[i];
+            <span class="keyword">this</span>.velocity[i] += force * <span class="keyword">this</span>.tension;
+        }
+
+        <span class="comment">// Apply velocities and damping</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.points; i++) {
+            <span class="keyword">this</span>.y[i] += <span class="keyword">this</span>.velocity[i];
+            <span class="keyword">this</span>.velocity[i] *= <span class="keyword">this</span>.damping;
+        }
+    }
+
+    <span class="function">disturb</span>(index, force) {
+        <span class="comment">// Create a disturbance (like dropping a stone in water)</span>
+        <span class="keyword">if</span> (index >= <span class="number">0</span> && index < <span class="keyword">this</span>.points) {
+            <span class="keyword">this</span>.velocity[index] += force;
+        }
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🎵 Standing Wave Generator:</h4>
+                    <pre><code><span class="comment">// Great for visualizing sound, vibrations, energy fields</span>
+<span class="keyword">class</span> <span class="function">StandingWave</span> {
+    <span class="keyword">constructor</span>(amplitude, frequency, points) {
+        <span class="keyword">this</span>.amplitude = amplitude;
+        <span class="keyword">this</span>.frequency = frequency;
+        <span class="keyword">this</span>.points = points;
+        <span class="keyword">this</span>.time = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="keyword">this</span>.time += dt;
+    }
+
+    <span class="function">getY</span>(x) {
+        <span class="comment">// Standing wave: oscillates in place</span>
+        <span class="keyword">return</span> <span class="keyword">this</span>.amplitude * Math.<span class="function">sin</span>(x * <span class="keyword">this</span>.frequency) * Math.<span class="function">cos</span>(<span class="keyword">this</span>.time * <span class="number">3</span>);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>🌊 Traveling Wave System:</h4>
+                    <pre><code><span class="comment">// Perfect for water, energy blasts, shockwaves</span>
+<span class="keyword">class</span> <span class="function">TravelingWave</span> {
+    <span class="keyword">constructor</span>(amplitude, wavelength, speed) {
+        <span class="keyword">this</span>.amplitude = amplitude;
+        <span class="keyword">this</span>.wavelength = wavelength;
+        <span class="keyword">this</span>.speed = speed;
+        <span class="keyword">this</span>.time = <span class="number">0</span>;
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="keyword">this</span>.time += dt;
+    }
+
+    <span class="function">getY</span>(x) {
+        <span class="comment">// Traveling wave: moves through space</span>
+        <span class="keyword">const</span> frequency = (<span class="number">2</span> * Math.PI) / <span class="keyword">this</span>.wavelength;
+        <span class="keyword">return</span> <span class="keyword">this</span>.amplitude * Math.<span class="function">sin</span>(x * frequency - <span class="keyword">this</span>.time * <span class="keyword">this</span>.speed);
+    }
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💫 Wave Interference (Multiple Waves):</h4>
+                    <pre><code><span class="comment">// Combine multiple waves for complex effects</span>
+<span class="keyword">class</span> <span class="function">WaveField</span> {
+    <span class="keyword">constructor</span>() {
+        <span class="keyword">this</span>.sources = []; <span class="comment">// Array of {x, y, amplitude, frequency, phase}</span>
+    }
+
+    <span class="function">addSource</span>(x, y, amplitude = <span class="number">20</span>, frequency = <span class="number">0.1</span>) {
+        <span class="keyword">this</span>.sources.<span class="function">push</span>({ x, y, amplitude, frequency, phase: <span class="number">0</span> });
+    }
+
+    <span class="function">update</span>(dt) {
+        <span class="comment">// Advance phase of all sources</span>
+        <span class="keyword">this</span>.sources.<span class="function">forEach</span>(source => {
+            source.phase += dt * <span class="number">2</span>;
+        });
+    }
+
+    <span class="function">getHeight</span>(x, y) {
+        <span class="comment">// Sum contributions from all wave sources</span>
+        <span class="keyword">let</span> height = <span class="number">0</span>;
+        <span class="keyword">this</span>.sources.<span class="function">forEach</span>(source => {
+            <span class="keyword">const</span> dx = x - source.x;
+            <span class="keyword">const</span> dy = y - source.y;
+            <span class="keyword">const</span> distance = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+
+            <span class="comment">// Circular wave spreading from source</span>
+            height += source.amplitude * Math.<span class="function">sin</span>(distance * source.frequency - source.phase);
+        });
+        <span class="keyword">return</span> height;
+    }
+}</code></pre>
+                </div>
+            </details>
+
+            <h3>Interactive Demo: Wave Playground</h3>
+            <p>Experiment with different wave types! Click to create disturbances in the physical simulation, or watch mathematical waves travel and interfere.</p>
+            <div class="diagram">
+                <canvas id="waveDemo" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <button id="btnPhysicalWave">💧 Physical Wave</button>
+                <button id="btnStandingWave">🎵 Standing Wave</button>
+                <button id="btnTravelingWave">🌊 Traveling Wave</button>
+                <button id="btnInterference">💫 Wave Interference</button>
+                <button id="btnResetWaves">Reset</button>
+            </div>
+            <div id="waveInfo" class="info-display">Click on Physical Wave mode to create ripples!</div>
+
+            <div class="key-point">
+                <strong>💡 Pro Tip:</strong> For realistic water, combine multiple waves with different frequencies! Add small, fast ripples on top of large, slow waves. Use interference patterns for force fields and energy effects. The physical simulation (spring-based) is great for interactive water, while mathematical waves are perfect for backgrounds and visual effects.
             </div>
         </div>
 
