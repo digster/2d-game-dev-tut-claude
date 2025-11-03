@@ -402,6 +402,44 @@
                 <h3>1. 🌊 Water Buoyancy & Floating Objects</h3>
                 <p>Objects float or sink based on their density. This is used in games for boats, swimming mechanics, and physics puzzles.</p>
 
+                <details>
+                    <summary>📝 Click to see: Buoyancy Force Calculation</summary>
+                    <div class="code-container">
+                        <pre><code><span class="comment">// Apply buoyancy force to objects in water</span>
+<span class="keyword">function</span> <span class="function">applyBuoyancy</span>(object, waterLevel) {
+    <span class="comment">// Calculate how much of object is submerged</span>
+    <span class="keyword">const</span> objectBottom = object.y + object.height / <span class="number">2</span>;
+    <span class="keyword">const</span> objectTop = object.y - object.height / <span class="number">2</span>;
+
+    <span class="keyword">if</span> (objectBottom &gt; waterLevel) {
+        <span class="comment">// Calculate submerged percentage (0 to 1)</span>
+        <span class="keyword">let</span> submergedHeight = objectBottom - waterLevel;
+        <span class="keyword">if</span> (objectTop &lt; waterLevel) {
+            submergedHeight = object.height;
+        }
+        <span class="keyword">const</span> submergedPercent = submergedHeight / object.height;
+
+        <span class="comment">// Buoyancy force = (water density - object density) * submerged volume * gravity</span>
+        <span class="comment">// Simplified: use density ratio for force calculation</span>
+        <span class="keyword">const</span> waterDensity = <span class="number">1.0</span>;
+        <span class="keyword">const</span> buoyancyForce = (waterDensity - object.density) * submergedPercent * <span class="number">0.5</span>;
+
+        <span class="comment">// Apply upward buoyancy force</span>
+        object.vy += buoyancyForce;
+
+        <span class="comment">// Water drag (resistance)</span>
+        object.vx *= <span class="number">0.95</span>;
+        object.vy *= <span class="number">0.98</span>;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>💡 Understanding Buoyancy:</h4>
+                        <p>Buoyancy is an upward force that acts on objects in fluid. If an object's density is less than water (< 1.0), it floats. If it's greater, it sinks. The force depends on how much of the object is submerged. This is Archimedes' principle in action!</p>
+                    </div>
+                </details>
+
                 <div class="diagram">
                     <canvas id="buoyancyDemo" width="800" height="500"></canvas>
                 </div>
@@ -423,6 +461,54 @@
                 <h3>2. ⏫ Rising Water Challenge</h3>
                 <p>Classic escape mechanic - water rises and the player must climb to safety! Used in platformers and puzzle games.</p>
 
+                <details>
+                    <summary>📝 Click to see: Rising Water & Player Movement Code</summary>
+                    <div class="code-container">
+                        <pre><code><span class="comment">// Rising water challenge mechanics</span>
+<span class="keyword">let</span> waterLevel = canvas.height;
+<span class="keyword">let</span> waterRising = <span class="keyword">false</span>;
+<span class="keyword">const</span> waterRiseSpeed = <span class="number">0.5</span>;
+
+<span class="comment">// Update water level</span>
+<span class="keyword">function</span> <span class="function">updateWater</span>() {
+    <span class="keyword">if</span> (waterRising &amp;&amp; waterLevel &gt; <span class="number">0</span>) {
+        waterLevel -= waterRiseSpeed; <span class="comment">// Water rises (Y decreases upward)</span>
+    }
+
+    <span class="comment">// Check if player is caught by water</span>
+    <span class="keyword">if</span> (player.y &gt;= waterLevel) {
+        <span class="comment">// Game over - player drowns!</span>
+        gameOver = <span class="keyword">true</span>;
+    }
+}
+
+<span class="comment">// Player movement in water</span>
+<span class="keyword">function</span> <span class="function">updatePlayer</span>() {
+    <span class="comment">// Apply gravity</span>
+    player.vy += gravity;
+
+    <span class="comment">// Check if player is in water</span>
+    <span class="keyword">if</span> (player.y + player.height / <span class="number">2</span> &gt; waterLevel) {
+        <span class="comment">// Reduce speed in water (water resistance)</span>
+        player.vx *= <span class="number">0.8</span>;
+        player.vy *= <span class="number">0.8</span>;
+
+        <span class="comment">// Apply buoyancy (slight upward force)</span>
+        player.vy -= <span class="number">0.3</span>;
+    }
+
+    <span class="comment">// Apply velocity</span>
+    player.x += player.vx;
+    player.y += player.vy;
+}</code></pre>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>💡 Understanding Rising Water Mechanics:</h4>
+                        <p>This creates tension in games! The water rises at a constant rate, while the player moves slower in water. The key is balancing water rise speed with platform placement to create challenging but fair gameplay.</p>
+                    </div>
+                </details>
+
                 <div class="diagram">
                     <canvas id="risingWaterDemo" width="800" height="500"></canvas>
                 </div>
@@ -441,6 +527,65 @@
             <div class="concept-box" style="margin-top: 30px;">
                 <h3>3. 💧 Particle-Based Water (SPH)</h3>
                 <p>Smoothed Particle Hydrodynamics - each water particle interacts with neighbors. Great for splash effects and destructible water.</p>
+
+                <details>
+                    <summary>📝 Click to see: SPH Particle Interaction Code</summary>
+                    <div class="code-container">
+                        <pre><code><span class="comment">// SPH - Smoothed Particle Hydrodynamics</span>
+<span class="keyword">const</span> smoothingRadius = <span class="number">30</span>; <span class="comment">// How far particles interact</span>
+<span class="keyword">const</span> restDensity = <span class="number">1.0</span>;    <span class="comment">// Target density (how tightly packed)</span>
+<span class="keyword">const</span> stiffness = <span class="number">0.1</span>;      <span class="comment">// How strongly particles push apart</span>
+
+<span class="comment">// Update each particle</span>
+<span class="keyword">function</span> <span class="function">updateSPHParticles</span>() {
+    particles.<span class="function">forEach</span>(p =&gt; {
+        <span class="comment">// Find nearby particles</span>
+        <span class="keyword">let</span> density = <span class="number">0</span>;
+        <span class="keyword">let</span> pressureForceX = <span class="number">0</span>;
+        <span class="keyword">let</span> pressureForceY = <span class="number">0</span>;
+
+        particles.<span class="function">forEach</span>(neighbor =&gt; {
+            <span class="keyword">if</span> (p === neighbor) <span class="keyword">return</span>;
+
+            <span class="keyword">const</span> dx = neighbor.x - p.x;
+            <span class="keyword">const</span> dy = neighbor.y - p.y;
+            <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+
+            <span class="keyword">if</span> (dist &lt; smoothingRadius) {
+                <span class="comment">// Smoothing kernel - particles closer = stronger influence</span>
+                <span class="keyword">const</span> influence = <span class="number">1</span> - dist / smoothingRadius;
+                density += influence;
+
+                <span class="comment">// Pressure force pushes particles apart</span>
+                <span class="keyword">const</span> pressure = (density - restDensity) * stiffness;
+                pressureForceX -= (dx / dist) * pressure * influence;
+                pressureForceY -= (dy / dist) * pressure * influence;
+            }
+        });
+
+        <span class="comment">// Apply forces</span>
+        p.vx += pressureForceX;
+        p.vy += pressureForceY;
+
+        <span class="comment">// Viscosity (water sticks together)</span>
+        p.vx *= <span class="number">0.98</span>;
+        p.vy *= <span class="number">0.98</span>;
+
+        <span class="comment">// Gravity</span>
+        p.vy += <span class="number">0.5</span>;
+
+        <span class="comment">// Update position</span>
+        p.x += p.vx;
+        p.y += p.vy;
+    });
+}</code></pre>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>💡 Understanding SPH:</h4>
+                        <p>SPH treats water as many independent particles. Each particle feels pressure from nearby particles - when too close, they push apart. This creates realistic water behavior: cohesion (sticking together), pressure, and splashing!</p>
+                    </div>
+                </details>
 
                 <div class="diagram">
                     <canvas id="sphDemo" width="800" height="500"></canvas>
@@ -464,6 +609,57 @@
             <div class="concept-box" style="margin-top: 30px;">
                 <h3>4. 🧩 Flow Direction Mechanic (Simplified)</h3>
                 <p>Water flows downward but can be redirected. This demo shows the concept behind puzzle games like "Where's My Water?" - simplified for clarity.</p>
+
+                <details>
+                    <summary>📝 Click to see: Particle Flow & Obstacle Detection</summary>
+                    <div class="code-container">
+                        <pre><code><span class="comment">// Simple particle-based water flow</span>
+<span class="keyword">let</span> waterParticles = [];
+<span class="keyword">let</span> obstacles = [];
+<span class="keyword">let</span> bucket = { x: <span class="number">600</span>, y: <span class="number">400</span>, width: <span class="number">100</span>, height: <span class="number">60</span> };
+<span class="keyword">let</span> collected = <span class="number">0</span>;
+
+<span class="comment">// Update water particles</span>
+<span class="keyword">function</span> <span class="function">updateFlowParticles</span>() {
+    waterParticles.<span class="function">forEach</span>((p, index) =&gt; {
+        <span class="comment">// Gravity pulls water down</span>
+        p.vy += <span class="number">0.3</span>;
+
+        <span class="comment">// Apply velocity</span>
+        p.x += p.vx;
+        p.y += p.vy;
+
+        <span class="comment">// Check collision with obstacles</span>
+        obstacles.<span class="function">forEach</span>(obs =&gt; {
+            <span class="keyword">if</span> (p.x &gt; obs.x &amp;&amp; p.x &lt; obs.x + obs.width &amp;&amp;
+                p.y &gt; obs.y &amp;&amp; p.y &lt; obs.y + obs.height) {
+                <span class="comment">// Bounce off obstacle</span>
+                p.vy *= -<span class="number">0.5</span>;
+                p.vx += (Math.<span class="function">random</span>() - <span class="number">0.5</span>) * <span class="number">2</span>; <span class="comment">// Scatter sideways</span>
+                p.y = obs.y - <span class="number">1</span>; <span class="comment">// Push out of obstacle</span>
+            }
+        });
+
+        <span class="comment">// Check if particle reaches bucket</span>
+        <span class="keyword">if</span> (p.x &gt; bucket.x &amp;&amp; p.x &lt; bucket.x + bucket.width &amp;&amp;
+            p.y &gt; bucket.y &amp;&amp; p.y &lt; bucket.y + bucket.height) {
+            collected++;
+            waterParticles.<span class="function">splice</span>(index, <span class="number">1</span>); <span class="comment">// Remove collected particle</span>
+        }
+
+        <span class="comment">// Remove particles that fall off screen</span>
+        <span class="keyword">if</span> (p.y &gt; canvas.height) {
+            waterParticles.<span class="function">splice</span>(index, <span class="number">1</span>);
+        }
+    });
+}</code></pre>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>💡 Understanding Flow Puzzles:</h4>
+                        <p>The core mechanic: water particles follow physics (gravity + obstacles). Players place platforms/pipes to redirect flow. When particles reach the goal (bucket), they're collected. This creates puzzle gameplay about path planning!</p>
+                    </div>
+                </details>
 
                 <div class="diagram">
                     <canvas id="flowPuzzleDemo" width="800" height="500"></canvas>
@@ -523,6 +719,165 @@
                     <li><strong>Gusts:</strong> Temporary increases in wind strength create dynamic effects</li>
                 </ul>
             </div>
+
+            <details>
+                <summary>📝 Click to see: Wind Field Setup</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Wind field - grid-based vector field with turbulence</span>
+<span class="keyword">const</span> windGridSize = <span class="number">20</span>;
+<span class="keyword">const</span> windCols = Math.<span class="function">ceil</span>(canvas.width / windGridSize);
+<span class="keyword">const</span> windRows = Math.<span class="function">ceil</span>(canvas.height / windGridSize);
+
+<span class="keyword">let</span> windVectors = [];
+<span class="keyword">let</span> windParticles = [];
+<span class="keyword">let</span> windGusts = [];
+<span class="keyword">let</span> windTime = <span class="number">0</span>;
+
+<span class="comment">// Initialize wind field grid</span>
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; windRows; i++) {
+    windVectors[i] = [];
+    <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; windCols; j++) {
+        windVectors[i][j] = { x: <span class="number">0</span>, y: <span class="number">0</span> };
+    }
+}
+
+<span class="comment">// Create particles to visualize wind</span>
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">200</span>; i++) {
+    windParticles.<span class="function">push</span>({
+        x: Math.<span class="function">random</span>() * canvas.width,
+        y: Math.<span class="function">random</span>() * canvas.height,
+        vx: <span class="number">0</span>,
+        vy: <span class="number">0</span>,
+        trail: []
+    });
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Wind Grids:</h4>
+                    <p>We divide space into a grid where each cell stores a wind vector (direction and strength). Particles interpolate between grid points for smooth movement. This is much more efficient than calculating wind for every particle individually!</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Wind Field Update with Turbulence</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Simple noise function for natural turbulence</span>
+<span class="keyword">function</span> <span class="function">windNoise</span>(x, y, t) {
+    <span class="keyword">const</span> n = Math.<span class="function">sin</span>(x * <span class="number">0.1</span> + t) * Math.<span class="function">cos</span>(y * <span class="number">0.1</span> + t * <span class="number">0.7</span>);
+    <span class="keyword">return</span> n * <span class="number">0.5</span> + <span class="number">0.5</span>; <span class="comment">// Normalize to 0-1</span>
+}
+
+<span class="comment">// Update wind field each frame</span>
+<span class="keyword">function</span> <span class="function">updateWindField</span>(dt) {
+    windTime += dt * <span class="number">0.001</span>;
+
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; windRows; i++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; windCols; j++) {
+            <span class="comment">// Base wind direction (left to right)</span>
+            <span class="keyword">let</span> wx = <span class="number">1</span> * windStrength;
+            <span class="keyword">let</span> wy = <span class="number">0</span>;
+
+            <span class="comment">// Add turbulence using noise</span>
+            <span class="keyword">const</span> noiseX = <span class="function">windNoise</span>(j, i, windTime);
+            <span class="keyword">const</span> noiseY = <span class="function">windNoise</span>(j + <span class="number">100</span>, i + <span class="number">100</span>, windTime);
+            wx += (noiseX - <span class="number">0.5</span>) * turbulence * <span class="number">2</span>;
+            wy += (noiseY - <span class="number">0.5</span>) * turbulence * <span class="number">2</span>;
+
+            <span class="comment">// Add gust effects (temporary wind bursts)</span>
+            <span class="keyword">const</span> x = j * windGridSize;
+            <span class="keyword">const</span> y = i * windGridSize;
+            <span class="keyword">for</span> (<span class="keyword">let</span> gust <span class="keyword">of</span> windGusts) {
+                <span class="keyword">const</span> dx = x - gust.x;
+                <span class="keyword">const</span> dy = y - gust.y;
+                <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+                <span class="keyword">if</span> (dist &lt; gust.radius) {
+                    <span class="keyword">const</span> influence = (<span class="number">1</span> - dist / gust.radius) * gust.strength;
+                    <span class="keyword">const</span> angle = Math.<span class="function">atan2</span>(dy, dx);
+                    wx += Math.<span class="function">cos</span>(angle) * influence;
+                    wy += Math.<span class="function">sin</span>(angle) * influence;
+                }
+            }
+
+            windVectors[i][j] = { x: wx, y: wy };
+        }
+    }
+
+    <span class="comment">// Decay gusts over time</span>
+    windGusts = windGusts.<span class="function">filter</span>(g =&gt; {
+        g.strength *= <span class="number">0.95</span>;
+        <span class="keyword">return</span> g.strength &gt; <span class="number">0.1</span>;
+    });
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Turbulence:</h4>
+                    <p>Natural wind isn't constant - it swirls and fluctuates. We use noise functions to add variation. Gusts are temporary circular forces that radiate outward, creating dramatic wind bursts when you click the canvas.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Particle Movement & Interpolation</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Get interpolated wind at any position (smooth between grid cells)</span>
+<span class="keyword">function</span> <span class="function">getWindAt</span>(x, y) {
+    <span class="keyword">const</span> gridX = x / windGridSize;
+    <span class="keyword">const</span> gridY = y / windGridSize;
+    <span class="keyword">const</span> i = Math.<span class="function">floor</span>(gridY);
+    <span class="keyword">const</span> j = Math.<span class="function">floor</span>(gridX);
+
+    <span class="keyword">if</span> (i &lt; <span class="number">0</span> || i &gt;= windRows - <span class="number">1</span> || j &lt; <span class="number">0</span> || j &gt;= windCols - <span class="number">1</span>) {
+        <span class="keyword">return</span> { x: <span class="number">0</span>, y: <span class="number">0</span> };
+    }
+
+    <span class="comment">// Bilinear interpolation between 4 grid points</span>
+    <span class="keyword">const</span> fx = gridX - j;
+    <span class="keyword">const</span> fy = gridY - i;
+    <span class="keyword">const</span> v00 = windVectors[i][j];
+    <span class="keyword">const</span> v10 = windVectors[i][j + <span class="number">1</span>];
+    <span class="keyword">const</span> v01 = windVectors[i + <span class="number">1</span>][j];
+    <span class="keyword">const</span> v11 = windVectors[i + <span class="number">1</span>][j + <span class="number">1</span>];
+
+    <span class="keyword">const</span> wx = v00.x * (<span class="number">1</span> - fx) * (<span class="number">1</span> - fy) + v10.x * fx * (<span class="number">1</span> - fy) +
+               v01.x * (<span class="number">1</span> - fx) * fy + v11.x * fx * fy;
+    <span class="keyword">const</span> wy = v00.y * (<span class="number">1</span> - fx) * (<span class="number">1</span> - fy) + v10.y * fx * (<span class="number">1</span> - fy) +
+               v01.y * (<span class="number">1</span> - fx) * fy + v11.y * fx * fy;
+
+    <span class="keyword">return</span> { x: wx, y: wy };
+}
+
+<span class="comment">// Update particles based on wind</span>
+<span class="keyword">function</span> <span class="function">updateWindParticles</span>() {
+    windParticles.<span class="function">forEach</span>(p =&gt; {
+        <span class="keyword">const</span> wind = <span class="function">getWindAt</span>(p.x, p.y);
+
+        <span class="comment">// Apply wind force</span>
+        p.vx += wind.x * <span class="number">0.5</span>;
+        p.vy += wind.y * <span class="number">0.5</span>;
+
+        <span class="comment">// Damping to prevent infinite acceleration</span>
+        p.vx *= <span class="number">0.98</span>;
+        p.vy *= <span class="number">0.98</span>;
+
+        <span class="comment">// Move particle</span>
+        p.x += p.vx;
+        p.y += p.vy;
+
+        <span class="comment">// Wrap around screen edges</span>
+        <span class="keyword">if</span> (p.x &lt; <span class="number">0</span>) p.x = canvas.width;
+        <span class="keyword">if</span> (p.x &gt; canvas.width) p.x = <span class="number">0</span>;
+        <span class="keyword">if</span> (p.y &lt; <span class="number">0</span>) p.y = canvas.height;
+        <span class="keyword">if</span> (p.y &gt; canvas.height) p.y = <span class="number">0</span>;
+    });
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Bilinear Interpolation:</h4>
+                    <p>Wind values are only stored at grid corners. For smooth motion, particles need wind values at ANY position. Bilinear interpolation blends the 4 nearest grid points based on distance. This is the same technique used for image scaling and texture mapping!</p>
+                </div>
+            </details>
 
             <!-- Interactive Demo: Wind Particles -->
             <div class="concept-box" style="margin-top: 30px;">
@@ -609,6 +964,132 @@
                     <li><strong>Platformers:</strong> Breakable floors, walls create shortcuts</li>
                 </ul>
             </div>
+
+            <details>
+                <summary>📝 Click to see: Terrain Initialization (Pixel-Based)</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Use ImageData to store terrain at pixel level</span>
+<span class="keyword">let</span> terrainImageData = ctx.<span class="function">createImageData</span>(canvas.width, canvas.height);
+<span class="keyword">let</span> balls = [];
+
+<span class="comment">// Initialize terrain with layered generation</span>
+<span class="keyword">function</span> <span class="function">initTerrain</span>() {
+    balls = [];
+    terrainImageData = ctx.<span class="function">createImageData</span>(canvas.width, canvas.height);
+    <span class="keyword">const</span> data = terrainImageData.data;
+
+    <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y &lt; canvas.height; y++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x &lt; canvas.width; x++) {
+            <span class="keyword">const</span> idx = (y * canvas.width + x) * <span class="number">4</span>; <span class="comment">// RGBA = 4 bytes per pixel</span>
+
+            <span class="comment">// Create layered terrain with noise</span>
+            <span class="keyword">if</span> (y &gt; <span class="number">150</span> &amp;&amp; y &lt; <span class="number">450</span>) {
+                <span class="keyword">const</span> noise = Math.<span class="function">sin</span>(x * <span class="number">0.05</span>) * <span class="number">10</span> + Math.<span class="function">cos</span>(y * <span class="number">0.03</span>) * <span class="number">5</span>;
+                <span class="keyword">if</span> (y + noise &gt; <span class="number">200</span>) {
+                    <span class="comment">// Dirt layer (brown)</span>
+                    data[idx] = <span class="number">139</span>;     <span class="comment">// R</span>
+                    data[idx + <span class="number">1</span>] = <span class="number">90</span>;  <span class="comment">// G</span>
+                    data[idx + <span class="number">2</span>] = <span class="number">43</span>;  <span class="comment">// B</span>
+                    data[idx + <span class="number">3</span>] = <span class="number">255</span>; <span class="comment">// A (fully opaque = solid terrain)</span>
+                }
+            }
+        }
+    }
+
+    ctx.<span class="function">putImageData</span>(terrainImageData, <span class="number">0</span>, <span class="number">0</span>);
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Pixel-Based Terrain:</h4>
+                    <p>We use ImageData to directly manipulate pixels. Each pixel has 4 values (RGBA). The alpha channel (A) determines if a pixel is solid (255) or empty (0). This allows for smooth, organic destruction at the pixel level!</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Terrain Destruction</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Check if terrain exists at a position</span>
+<span class="keyword">function</span> <span class="function">isTerrainAt</span>(x, y) {
+    <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt;= canvas.width || y &lt; <span class="number">0</span> || y &gt;= canvas.height) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">const</span> idx = (Math.<span class="function">floor</span>(y) * canvas.width + Math.<span class="function">floor</span>(x)) * <span class="number">4</span>;
+    <span class="keyword">return</span> terrainImageData.data[idx + <span class="number">3</span>] &gt; <span class="number">0</span>; <span class="comment">// Check alpha channel</span>
+}
+
+<span class="comment">// Destroy terrain in circular area</span>
+<span class="keyword">function</span> <span class="function">destroyTerrain</span>(x, y, radius) {
+    <span class="keyword">const</span> data = terrainImageData.data;
+
+    <span class="comment">// Loop through square bounding box, check distance for circle</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> dy = -radius; dy &lt;= radius; dy++) {
+        <span class="keyword">for</span> (<span class="keyword">let</span> dx = -radius; dx &lt;= radius; dx++) {
+            <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+            <span class="keyword">if</span> (dist &lt;= radius) {
+                <span class="keyword">const</span> px = Math.<span class="function">floor</span>(x + dx);
+                <span class="keyword">const</span> py = Math.<span class="function">floor</span>(y + dy);
+
+                <span class="keyword">if</span> (px &gt;= <span class="number">0</span> &amp;&amp; px &lt; canvas.width &amp;&amp; py &gt;= <span class="number">0</span> &amp;&amp; py &lt; canvas.height) {
+                    <span class="keyword">const</span> idx = (py * canvas.width + px) * <span class="number">4</span>;
+                    data[idx + <span class="number">3</span>] = <span class="number">0</span>; <span class="comment">// Set alpha to 0 = transparent = destroyed</span>
+                }
+            }
+        }
+    }
+
+    <span class="comment">// Update canvas with destroyed terrain</span>
+    ctx.<span class="function">putImageData</span>(terrainImageData, <span class="number">0</span>, <span class="number">0</span>);
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Circular Destruction:</h4>
+                    <p>We loop through a square area but only destroy pixels within the circular radius. Setting the alpha channel to 0 makes pixels transparent. This is much faster than recalculating terrain geometry!</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>📝 Click to see: Physics Collision with Terrain</summary>
+                <div class="code-container">
+                    <pre><code><span class="comment">// Update physics balls</span>
+<span class="keyword">function</span> <span class="function">updateBalls</span>() {
+    balls.<span class="function">forEach</span>((ball, index) =&gt; {
+        <span class="comment">// Apply gravity</span>
+        ball.vy += <span class="number">0.5</span>;
+
+        <span class="comment">// Move ball</span>
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        <span class="comment">// Check collision with terrain at multiple points around ball</span>
+        <span class="keyword">let</span> collided = <span class="keyword">false</span>;
+        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">360</span>; i += <span class="number">30</span>) {
+            <span class="keyword">const</span> angle = i * Math.PI / <span class="number">180</span>;
+            <span class="keyword">const</span> checkX = ball.x + Math.<span class="function">cos</span>(angle) * ball.radius;
+            <span class="keyword">const</span> checkY = ball.y + Math.<span class="function">sin</span>(angle) * ball.radius;
+
+            <span class="keyword">if</span> (<span class="function">isTerrainAt</span>(checkX, checkY)) {
+                collided = <span class="keyword">true</span>;
+                <span class="comment">// Bounce with energy loss</span>
+                ball.vy *= -<span class="number">0.5</span>;
+                ball.vx *= <span class="number">0.9</span>;
+                ball.y -= <span class="number">2</span>; <span class="comment">// Push out of terrain</span>
+                <span class="keyword">break</span>;
+            }
+        }
+
+        <span class="comment">// Remove balls that fall off screen</span>
+        <span class="keyword">if</span> (ball.y &gt; canvas.height + <span class="number">50</span>) {
+            balls.<span class="function">splice</span>(index, <span class="number">1</span>);
+        }
+    });
+}</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>💡 Understanding Pixel-Perfect Collision:</h4>
+                    <p>We check 12 points around the ball's perimeter (every 30 degrees). If any point touches terrain (alpha > 0), we bounce. This is more accurate than simple circle collision and works with any terrain shape!</p>
+                </div>
+            </details>
 
             <!-- Interactive Demo: Destructible Terrain -->
             <div class="concept-box" style="margin-top: 30px;">
