@@ -15,3 +15,5 @@ See if the code sections can be made collapsible.
 Make sure the code examples are error and bug free. Always check the console for any errors.
 
 Try and make changes in an iterative way(refer the index file).  Before making any major changes like removing an existing section, ask.
+
+After making any changes, generate a commit message that I can use to commit.

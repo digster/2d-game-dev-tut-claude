@@ -662,6 +662,8 @@ if (astarCanvas) {
                 return;
             }
 
+            // Note: indexOf() and includes() are O(n) operations. For production code,
+            // use a Set or Map for O(1) lookups. We use arrays here for tutorial clarity.
             openSet.splice(openSet.indexOf(current), 1);
             closedSet.push(current);
 

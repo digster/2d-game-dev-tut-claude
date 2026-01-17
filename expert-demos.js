@@ -906,6 +906,26 @@ if (networkCanvas) {
     const ctx = networkCanvas.getContext('2d');
     const info = document.getElementById('networkInfo');
 
+    // Create cached grid canvas (drawn once, reused every frame)
+    const gridCanvas = document.createElement('canvas');
+    gridCanvas.width = networkCanvas.width;
+    gridCanvas.height = networkCanvas.height;
+    const gridCtx = gridCanvas.getContext('2d');
+    gridCtx.strokeStyle = '#222';
+    gridCtx.lineWidth = 1;
+    for (let x = 0; x < gridCanvas.width; x += 50) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(x, 0);
+        gridCtx.lineTo(x, gridCanvas.height);
+        gridCtx.stroke();
+    }
+    for (let y = 0; y < gridCanvas.height; y += 50) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(0, y);
+        gridCtx.lineTo(gridCanvas.width, y);
+        gridCtx.stroke();
+    }
+
     let latency = 0;
     let packetLoss = 0;
     let usePrediction = true;
@@ -1052,21 +1072,8 @@ if (networkCanvas) {
         player.renderPosition.x = clamp(player.renderPosition.x, 20, networkCanvas.width - 20);
         player.renderPosition.y = clamp(player.renderPosition.y, 20, networkCanvas.height - 20);
 
-        // Draw grid
-        ctx.strokeStyle = '#222';
-        ctx.lineWidth = 1;
-        for (let x = 0; x < networkCanvas.width; x += 50) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, networkCanvas.height);
-            ctx.stroke();
-        }
-        for (let y = 0; y < networkCanvas.height; y += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(networkCanvas.width, y);
-            ctx.stroke();
-        }
+        // Draw cached grid (pre-rendered for performance)
+        ctx.drawImage(gridCanvas, 0, 0);
 
         // Draw server position (ghost)
         ctx.fillStyle = 'rgba(100, 255, 100, 0.3)';

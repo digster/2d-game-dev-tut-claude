@@ -411,3 +411,65 @@ function lineIntersectsRect(p1, p2, rect) {
 
     return false;
 }
+
+// ===================================
+// DEMO CONTROLLER UTILITIES
+// ===================================
+
+/**
+ * Creates a controller that pauses/resumes animation when canvas is off-screen
+ * This helps save CPU cycles by not animating demos that aren't visible
+ *
+ * Usage:
+ *   const controller = createDemoController(canvas, animateFn);
+ *   // Later, if needed: controller.stop();
+ *
+ * @param {HTMLCanvasElement} canvas - The canvas element to observe
+ * @param {Function} animateFn - The animation loop function (will be called with requestAnimationFrame)
+ * @param {Object} options - Optional configuration
+ * @returns {Object} Controller with stop() method
+ */
+function createDemoController(canvas, animateFn, options = {}) {
+    const { threshold = 0.1, autoStart = true } = options;
+    let animationId = null;
+    let isRunning = false;
+
+    function start() {
+        if (!isRunning) {
+            isRunning = true;
+            animationId = requestAnimationFrame(animateFn);
+        }
+    }
+
+    function stop() {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        isRunning = false;
+    }
+
+    // Use IntersectionObserver to pause off-screen demos
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    start();
+                } else {
+                    stop();
+                }
+            });
+        }, { threshold });
+
+        observer.observe(canvas);
+    } else if (autoStart) {
+        // Fallback for browsers without IntersectionObserver
+        start();
+    }
+
+    return {
+        start,
+        stop,
+        isRunning: () => isRunning
+    };
+}

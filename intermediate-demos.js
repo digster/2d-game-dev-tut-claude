@@ -746,12 +746,16 @@ if (particleCanvas) {
         }
     }
 
+    const MAX_PARTICLES = 500;
     const particles = [];
     let currentMode = 'explosion';
     let trailMode = false;
 
     function emit(x, y, count = 30) {
-        for (let i = 0; i < count; i++) {
+        // Limit particles to prevent memory issues
+        const available = MAX_PARTICLES - particles.length;
+        const toEmit = Math.min(count, available);
+        for (let i = 0; i < toEmit; i++) {
             particles.push(new Particle(x, y, currentMode));
         }
     }

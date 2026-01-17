@@ -2027,7 +2027,7 @@
         });
 
         document.getElementById('btnDrain').addEventListener('click', () => {
-            waterLevel = Math.max(waterLevel - 100, 500);
+            waterLevel = Math.min(waterLevel + 100, 500);
         });
 
         document.getElementById('btnFill').addEventListener('click', () => {
@@ -2168,14 +2168,17 @@
             // Collisions with platforms
             player.onGround = false;
             platforms.forEach(platform => {
+                // Check if player is horizontally aligned with platform
                 if (player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.y + player.height > platform.y &&
-                    player.y + player.height < platform.y + platform.height &&
-                    player.vy >= 0) {
-                    player.y = platform.y - player.height;
-                    player.vy = 0;
-                    player.onGround = true;
+                    player.x < platform.x + platform.width) {
+                    // Check if player's feet are landing on platform top (within tolerance)
+                    const feetY = player.y + player.height;
+                    const platformTop = platform.y;
+                    if (feetY >= platformTop && feetY <= platformTop + 15 && player.vy >= 0) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
                 }
             });
 
@@ -2269,6 +2272,7 @@
         const sphCanvas = document.getElementById('sphDemo');
         const sphCtx = sphCanvas.getContext('2d');
 
+        const MAX_SPH_PARTICLES = 300;
         let sphParticles = [];
         let sphBarriers = [];
         let sphGravity = true;
@@ -2322,7 +2326,7 @@
                     const dy = other.y - this.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < h && dist > 0.01) {
+                    if (dist < h && dist > 0.01 && this.density > 0.001) {
                         const q = dist / h;
                         const kernel = (1 - q);
                         const pressureForce = -kernel * (this.pressure + other.pressure) / (2 * this.density);
@@ -2401,9 +2405,10 @@
 
             if (addingBarrier) {
                 sphBarriers.push({ x: x - 30, y: y - 10, width: 60, height: 20 });
-            } else {
-                // Add cluster of particles
-                for (let i = 0; i < 20; i++) {
+            } else if (sphParticles.length < MAX_SPH_PARTICLES) {
+                // Add cluster of particles (limited to prevent performance issues)
+                const particlesToAdd = Math.min(20, MAX_SPH_PARTICLES - sphParticles.length);
+                for (let i = 0; i < particlesToAdd; i++) {
                     const angle = Math.random() * Math.PI * 2;
                     const radius = Math.random() * 20;
                     sphParticles.push(new WaterParticle(
@@ -2415,7 +2420,8 @@
         });
 
         document.getElementById('btnAddWater').addEventListener('click', () => {
-            for (let i = 0; i < 30; i++) {
+            const particlesToAdd = Math.min(30, MAX_SPH_PARTICLES - sphParticles.length);
+            for (let i = 0; i < particlesToAdd; i++) {
                 sphParticles.push(new WaterParticle(
                     Math.random() * 200 + 300,
                     Math.random() * 100 + 50
