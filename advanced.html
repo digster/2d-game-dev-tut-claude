@@ -52,7 +52,7 @@
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="steering" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Steering Behavior Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">SteeringEntity</span> {
@@ -155,7 +155,7 @@
                 <p>A quaternion has 4 components: <code>(x, y, z, w)</code> where w is the "real" part.</p>
             </div>
 
-            <details>
+            <details data-demo-id="quaternion" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Quaternion Implementation (Simplified)</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">Quaternion</span> {
@@ -287,7 +287,7 @@
                 <p>A quadratic Bézier curve has 3 points: start, control point, and end.</p>
             </div>
 
-            <details>
+            <details data-demo-id="bezier" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Bézier Curve Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// Quadratic Bézier: 3 points (start, control, end)</span>
@@ -369,7 +369,7 @@
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="astar" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: A* Implementation (Simplified)</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">Node</span> {
@@ -472,7 +472,7 @@
                 <p><strong>How it works:</strong> Run pathfinding ONCE from the goal to create a vector field. Each unit simply follows the arrow in its current grid cell!</p>
             </div>
 
-            <details>
+            <details data-demo-id="flowField" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Flow Field Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">FlowField</span> {
@@ -670,7 +670,7 @@ units.<span class="function">forEach</span>(unit => {
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="state" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: State Machine Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">State</span> {
@@ -790,7 +790,7 @@ units.<span class="function">forEach</span>(unit => {
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="behaviorTree" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Behavior Tree Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// Base Node class</span>
@@ -984,7 +984,7 @@ units.<span class="function">forEach</span>(unit => {
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="ik" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Two-Joint IK Implementation (Arm/Leg)</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">TwoJointIK</span> {
@@ -1100,7 +1100,7 @@ units.<span class="function">forEach</span>(unit => {
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="shadow" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Raycasting Shadow Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">ShadowCaster</span> {
@@ -1237,7 +1237,7 @@ units.<span class="function">forEach</span>(unit => {
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="spatialHash" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Spatial Hash Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">SpatialHash</span> {
@@ -1423,6 +1423,11 @@ gameObjects.<span class="function">forEach</span>(obj => spatialHash.<span class
 
     <!-- Load shared utilities -->
     <script src="shared/utils.js"></script>
+
+    <!-- Export Demo Feature -->
+    <script src="shared/dependency-bundles.js"></script>
+    <script src="shared/demo-bundles.js"></script>
+    <script src="shared/export-demo.js"></script>
 
     <!-- Page-specific JavaScript -->
     <script src="advanced-demos.js"></script>

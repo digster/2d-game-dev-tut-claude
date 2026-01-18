@@ -208,7 +208,7 @@ player.<span class="function">add</span>(movement);
                 <p><strong>Solution:</strong> Normalize the vector (make it length = 1), then multiply by desired speed.</p>
             </div>
 
-            <details>
+            <details data-demo-id="normalize" data-deps="vector2d,clearCanvas,drawGrid,clamp">
                 <summary>📝 Click to see: Normalization Code</summary>
                 <div class="code-container">
                     <pre><code><span class="function">normalize</span>() {
@@ -268,7 +268,7 @@ player.<span class="function">add</span>(direction);</code></pre>
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="dotProduct" data-deps="vector2d,clearCanvas,drawGrid,drawVector">
                 <summary>📝 Click to see: Dot Product Code</summary>
                 <div class="code-container">
                     <pre><code><span class="function">dot</span>(other) {
@@ -625,7 +625,7 @@ velocity.<span class="function">multiply</span>(<span class="number">0.8</span>)
                 <p>This is the foundation of rotation in games!</p>
             </div>
 
-            <details>
+            <details data-demo-id="trig" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Trigonometry Functions Explained</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// Convert angle to direction vector</span>
@@ -1119,7 +1119,7 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="easing" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Common Easing Functions</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// t is time (0 to 1), where 0 = start and 1 = end</span>
@@ -1233,7 +1233,7 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <p>Let's put it all together and create a simple game with a player, enemies, and projectiles!</p>
 
             <h3>Complete Game Loop</h3>
-            <details>
+            <details data-demo-id="game" data-deps="vector2d,clearCanvas,clamp,randomFloat">
                 <summary>📝 Click to see: Complete Game Code</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">Player</span> {
@@ -1304,7 +1304,7 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="homingMissile" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Homing Missile Class</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">HomingMissile</span> {
@@ -1561,6 +1561,11 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
 
     <!-- Load shared utilities -->
     <script src="shared/utils.js"></script>
+
+    <!-- Export Demo Feature -->
+    <script src="shared/dependency-bundles.js"></script>
+    <script src="shared/demo-bundles.js"></script>
+    <script src="shared/export-demo.js"></script>
 
     <!-- Page-specific JavaScript -->
     <script src="beginner-demos.js"></script>

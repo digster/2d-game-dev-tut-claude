@@ -52,7 +52,7 @@
                 <p><strong>QuadTree</strong> recursively divides 2D space into four quadrants. Each quadrant can be further divided if it contains too many objects.</p>
             </div>
 
-            <details>
+            <details data-demo-id="quadtree" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: QuadTree Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">QuadTree</span> {
@@ -202,7 +202,7 @@ objects.<span class="function">forEach</span>(obj => {
                 <p>Instead of creating/destroying objects, reuse them! Create a "pool" of objects at startup, then activate/deactivate them as needed.</p>
             </div>
 
-            <details>
+            <details data-demo-id="pooling" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Object Pool Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">ObjectPool</span> {
@@ -321,7 +321,7 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 <p><strong>Perlin Noise</strong> creates smooth, natural-looking randomness - perfect for terrain!</p>
             </div>
 
-            <details>
+            <details data-demo-id="noise" data-deps="clearCanvas">
                 <summary>📝 Click to see: Simple Noise Function</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// Simplified Perlin-like noise</span>
@@ -414,7 +414,7 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="procgen" data-deps="clearCanvas">
                 <summary>📝 Click to see: Perlin Noise Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">PerlinNoise</span> {
@@ -586,7 +586,7 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="tilemap" data-deps="clearCanvas">
                 <summary>📝 Click to see: Tilemap Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">Tilemap</span> {
@@ -689,7 +689,7 @@ bulletPool.<span class="function">update</span>();</code></pre>
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="ecs" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: ECS Implementation</summary>
                 <div class="code-container">
                     <pre><code><span class="comment">// Components are pure data</span>
@@ -913,7 +913,7 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="sound" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Sound Propagation System</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">SoundSource</span> {
@@ -1065,7 +1065,7 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="network" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Network Interpolation System</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">NetworkEntity</span> {
@@ -1436,6 +1436,11 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
 
     <!-- Load shared utilities -->
     <script src="shared/utils.js"></script>
+
+    <!-- Export Demo Feature -->
+    <script src="shared/dependency-bundles.js"></script>
+    <script src="shared/demo-bundles.js"></script>
+    <script src="shared/export-demo.js"></script>
 
     <!-- Page-specific JavaScript -->
     <script src="expert-demos.js"></script>
