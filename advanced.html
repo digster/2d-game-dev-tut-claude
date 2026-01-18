@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced - Game Dev Math Guide</title>
     <link rel="stylesheet" href="shared/styles.css">
+    <!-- Prism.js Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -55,62 +59,62 @@
             <details data-demo-id="steering" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Steering Behavior Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SteeringEntity</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.maxSpeed = <span class="number">5</span>;
-        <span class="keyword">this</span>.maxForce = <span class="number">0.2</span>;
+                    <pre><code class="language-javascript">class SteeringEntity {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.maxSpeed = 5;
+        this.maxForce = 0.2;
     }
 
-    <span class="comment">// Seek: Move toward target</span>
-    <span class="function">seek</span>(target) {
-        <span class="keyword">const</span> desired = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
-        desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+    // Seek: Move toward target
+    seek(target) {
+        const desired = target.subtract(this.position);
+        desired.normalize().multiply(this.maxSpeed);
 
-        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
-        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+        const steer = desired.subtract(this.velocity);
+        steer.limit(this.maxForce);
 
-        <span class="keyword">return</span> steer;
+        return steer;
     }
 
-    <span class="comment">// Arrive: Slow down when close to target</span>
-    <span class="function">arrive</span>(target, slowingRadius = <span class="number">100</span>) {
-        <span class="keyword">const</span> desired = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
-        <span class="keyword">const</span> distance = desired.<span class="function">length</span>();
+    // Arrive: Slow down when close to target
+    arrive(target, slowingRadius = 100) {
+        const desired = target.subtract(this.position);
+        const distance = desired.length();
 
-        <span class="keyword">if</span> (distance < slowingRadius) {
-            <span class="comment">// Scale speed based on distance</span>
-            <span class="keyword">const</span> speed = <span class="function">map</span>(distance, <span class="number">0</span>, slowingRadius, <span class="number">0</span>, <span class="keyword">this</span>.maxSpeed);
-            desired.<span class="function">normalize</span>().<span class="function">multiply</span>(speed);
-        } <span class="keyword">else</span> {
-            desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+        if (distance < slowingRadius) {
+            // Scale speed based on distance
+            const speed = map(distance, 0, slowingRadius, 0, this.maxSpeed);
+            desired.normalize().multiply(speed);
+        } else {
+            desired.normalize().multiply(this.maxSpeed);
         }
 
-        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
-        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+        const steer = desired.subtract(this.velocity);
+        steer.limit(this.maxForce);
 
-        <span class="keyword">return</span> steer;
+        return steer;
     }
 
-    <span class="comment">// Flee: Move away from threat</span>
-    <span class="function">flee</span>(threat) {
-        <span class="keyword">const</span> desired = <span class="keyword">this</span>.position.<span class="function">subtract</span>(threat);
-        desired.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.maxSpeed);
+    // Flee: Move away from threat
+    flee(threat) {
+        const desired = this.position.subtract(threat);
+        desired.normalize().multiply(this.maxSpeed);
 
-        <span class="keyword">const</span> steer = desired.<span class="function">subtract</span>(<span class="keyword">this</span>.velocity);
-        steer.<span class="function">limit</span>(<span class="keyword">this</span>.maxForce);
+        const steer = desired.subtract(this.velocity);
+        steer.limit(this.maxForce);
 
-        <span class="keyword">return</span> steer;
+        return steer;
     }
 
-    <span class="function">applyForce</span>(force) {
-        <span class="keyword">this</span>.velocity.<span class="function">add</span>(force);
-        <span class="keyword">this</span>.velocity.<span class="function">limit</span>(<span class="keyword">this</span>.maxSpeed);
+    applyForce(force) {
+        this.velocity.add(force);
+        this.velocity.limit(this.maxSpeed);
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+    update() {
+        this.position.add(this.velocity);
     }
 }</code></pre>
                 </div>
@@ -158,37 +162,37 @@
             <details data-demo-id="quaternion" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Quaternion Implementation (Simplified)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Quaternion</span> {
-    <span class="keyword">constructor</span>(x = <span class="number">0</span>, y = <span class="number">0</span>, z = <span class="number">0</span>, w = <span class="number">1</span>) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
-        <span class="keyword">this</span>.z = z;
-        <span class="keyword">this</span>.w = w;
+                    <pre><code class="language-javascript">class Quaternion {
+    constructor(x = 0, y = 0, z = 0, w = 1) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
     }
 
-    <span class="comment">// Create quaternion from axis-angle rotation</span>
-    <span class="keyword">static</span> <span class="function">fromAxisAngle</span>(axis, angle) {
-        <span class="keyword">const</span> halfAngle = angle / <span class="number">2</span>;
-        <span class="keyword">const</span> s = Math.<span class="function">sin</span>(halfAngle);
+    // Create quaternion from axis-angle rotation
+    static fromAxisAngle(axis, angle) {
+        const halfAngle = angle / 2;
+        const s = Math.sin(halfAngle);
 
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+        return new Quaternion(
             axis.x * s,
             axis.y * s,
             axis.z * s,
-            Math.<span class="function">cos</span>(halfAngle)
+            Math.cos(halfAngle)
         );
     }
 
-    <span class="comment">// Create from Euler angles (in radians)</span>
-    <span class="keyword">static</span> <span class="function">fromEuler</span>(pitch, yaw, roll) {
-        <span class="keyword">const</span> cy = Math.<span class="function">cos</span>(yaw * <span class="number">0.5</span>);
-        <span class="keyword">const</span> sy = Math.<span class="function">sin</span>(yaw * <span class="number">0.5</span>);
-        <span class="keyword">const</span> cp = Math.<span class="function">cos</span>(pitch * <span class="number">0.5</span>);
-        <span class="keyword">const</span> sp = Math.<span class="function">sin</span>(pitch * <span class="number">0.5</span>);
-        <span class="keyword">const</span> cr = Math.<span class="function">cos</span>(roll * <span class="number">0.5</span>);
-        <span class="keyword">const</span> sr = Math.<span class="function">sin</span>(roll * <span class="number">0.5</span>);
+    // Create from Euler angles (in radians)
+    static fromEuler(pitch, yaw, roll) {
+        const cy = Math.cos(yaw * 0.5);
+        const sy = Math.sin(yaw * 0.5);
+        const cp = Math.cos(pitch * 0.5);
+        const sp = Math.sin(pitch * 0.5);
+        const cr = Math.cos(roll * 0.5);
+        const sr = Math.sin(roll * 0.5);
 
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+        return new Quaternion(
             sr * cp * cy - cr * sp * sy,
             cr * sp * cy + sr * cp * sy,
             cr * cp * sy - sr * sp * cy,
@@ -196,43 +200,43 @@
         );
     }
 
-    <span class="comment">// Multiply two quaternions (combine rotations)</span>
-    <span class="function">multiply</span>(q) {
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
-            <span class="keyword">this</span>.w * q.x + <span class="keyword">this</span>.x * q.w + <span class="keyword">this</span>.y * q.z - <span class="keyword">this</span>.z * q.y,
-            <span class="keyword">this</span>.w * q.y - <span class="keyword">this</span>.x * q.z + <span class="keyword">this</span>.y * q.w + <span class="keyword">this</span>.z * q.x,
-            <span class="keyword">this</span>.w * q.z + <span class="keyword">this</span>.x * q.y - <span class="keyword">this</span>.y * q.x + <span class="keyword">this</span>.z * q.w,
-            <span class="keyword">this</span>.w * q.w - <span class="keyword">this</span>.x * q.x - <span class="keyword">this</span>.y * q.y - <span class="keyword">this</span>.z * q.z
+    // Multiply two quaternions (combine rotations)
+    multiply(q) {
+        return new Quaternion(
+            this.w * q.x + this.x * q.w + this.y * q.z - this.z * q.y,
+            this.w * q.y - this.x * q.z + this.y * q.w + this.z * q.x,
+            this.w * q.z + this.x * q.y - this.y * q.x + this.z * q.w,
+            this.w * q.w - this.x * q.x - this.y * q.y - this.z * q.z
         );
     }
 
-    <span class="comment">// Spherical linear interpolation (smooth rotation)</span>
-    <span class="keyword">static</span> <span class="function">slerp</span>(q1, q2, t) {
-        <span class="keyword">let</span> dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
+    // Spherical linear interpolation (smooth rotation)
+    static slerp(q1, q2, t) {
+        let dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
 
-        <span class="comment">// If negative dot, negate one quaternion</span>
-        <span class="keyword">if</span> (dot < <span class="number">0</span>) {
-            q2 = <span class="keyword">new</span> <span class="function">Quaternion</span>(-q2.x, -q2.y, -q2.z, -q2.w);
+        // If negative dot, negate one quaternion
+        if (dot < 0) {
+            q2 = new Quaternion(-q2.x, -q2.y, -q2.z, -q2.w);
             dot = -dot;
         }
 
-        <span class="comment">// If very close, use linear interpolation</span>
-        <span class="keyword">if</span> (dot > <span class="number">0.9995</span>) {
-            <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
-                <span class="function">lerp</span>(q1.x, q2.x, t),
-                <span class="function">lerp</span>(q1.y, q2.y, t),
-                <span class="function">lerp</span>(q1.z, q2.z, t),
-                <span class="function">lerp</span>(q1.w, q2.w, t)
-            ).<span class="function">normalize</span>();
+        // If very close, use linear interpolation
+        if (dot > 0.9995) {
+            return new Quaternion(
+                lerp(q1.x, q2.x, t),
+                lerp(q1.y, q2.y, t),
+                lerp(q1.z, q2.z, t),
+                lerp(q1.w, q2.w, t)
+            ).normalize();
         }
 
-        <span class="keyword">const</span> theta = Math.<span class="function">acos</span>(dot);
-        <span class="keyword">const</span> sinTheta = Math.<span class="function">sin</span>(theta);
+        const theta = Math.acos(dot);
+        const sinTheta = Math.sin(theta);
 
-        <span class="keyword">const</span> w1 = Math.<span class="function">sin</span>((<span class="number">1</span> - t) * theta) / sinTheta;
-        <span class="keyword">const</span> w2 = Math.<span class="function">sin</span>(t * theta) / sinTheta;
+        const w1 = Math.sin((1 - t) * theta) / sinTheta;
+        const w2 = Math.sin(t * theta) / sinTheta;
 
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Quaternion</span>(
+        return new Quaternion(
             q1.x * w1 + q2.x * w2,
             q1.y * w1 + q2.y * w2,
             q1.z * w1 + q2.z * w2,
@@ -240,14 +244,14 @@
         );
     }
 
-    <span class="function">normalize</span>() {
-        <span class="keyword">const</span> len = Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y +
-                              <span class="keyword">this</span>.z * <span class="keyword">this</span>.z + <span class="keyword">this</span>.w * <span class="keyword">this</span>.w);
-        <span class="keyword">this</span>.x /= len;
-        <span class="keyword">this</span>.y /= len;
-        <span class="keyword">this</span>.z /= len;
-        <span class="keyword">this</span>.w /= len;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    normalize() {
+        const len = Math.sqrt(this.x * this.x + this.y * this.y +
+                              this.z * this.z + this.w * this.w);
+        this.x /= len;
+        this.y /= len;
+        this.z /= len;
+        this.w /= len;
+        return this;
     }
 }</code></pre>
                 </div>
@@ -290,38 +294,38 @@
             <details data-demo-id="bezier" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Bézier Curve Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Quadratic Bézier: 3 points (start, control, end)</span>
-<span class="keyword">function</span> <span class="function">quadraticBezier</span>(p0, p1, p2, t) {
-    <span class="keyword">const</span> x = (<span class="number">1</span> - t) * (<span class="number">1</span> - t) * p0.x +
-              <span class="number">2</span> * (<span class="number">1</span> - t) * t * p1.x +
+                    <pre><code class="language-javascript">// Quadratic Bezier: 3 points (start, control, end)
+function quadraticBezier(p0, p1, p2, t) {
+    const x = (1 - t) * (1 - t) * p0.x +
+              2 * (1 - t) * t * p1.x +
               t * t * p2.x;
 
-    <span class="keyword">const</span> y = (<span class="number">1</span> - t) * (<span class="number">1</span> - t) * p0.y +
-              <span class="number">2</span> * (<span class="number">1</span> - t) * t * p1.y +
+    const y = (1 - t) * (1 - t) * p0.y +
+              2 * (1 - t) * t * p1.y +
               t * t * p2.y;
 
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+    return new Vector2D(x, y);
 }
 
-<span class="comment">// Cubic Bézier: 4 points (start, control1, control2, end)</span>
-<span class="keyword">function</span> <span class="function">cubicBezier</span>(p0, p1, p2, p3, t) {
-    <span class="keyword">const</span> u = <span class="number">1</span> - t;
-    <span class="keyword">const</span> tt = t * t;
-    <span class="keyword">const</span> uu = u * u;
-    <span class="keyword">const</span> uuu = uu * u;
-    <span class="keyword">const</span> ttt = tt * t;
+// Cubic Bezier: 4 points (start, control1, control2, end)
+function cubicBezier(p0, p1, p2, p3, t) {
+    const u = 1 - t;
+    const tt = t * t;
+    const uu = u * u;
+    const uuu = uu * u;
+    const ttt = tt * t;
 
-    <span class="keyword">const</span> x = uuu * p0.x +
-              <span class="number">3</span> * uu * t * p1.x +
-              <span class="number">3</span> * u * tt * p2.x +
+    const x = uuu * p0.x +
+              3 * uu * t * p1.x +
+              3 * u * tt * p2.x +
               ttt * p3.x;
 
-    <span class="keyword">const</span> y = uuu * p0.y +
-              <span class="number">3</span> * uu * t * p1.y +
-              <span class="number">3</span> * u * tt * p2.y +
+    const y = uuu * p0.y +
+              3 * uu * t * p1.y +
+              3 * u * tt * p2.y +
               ttt * p3.y;
 
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
+    return new Vector2D(x, y);
 }</code></pre>
                 </div>
             </details>
@@ -372,65 +376,65 @@
             <details data-demo-id="astar" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: A* Implementation (Simplified)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Node</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
-        <span class="keyword">this</span>.g = <span class="number">0</span>;  <span class="comment">// Cost from start</span>
-        <span class="keyword">this</span>.h = <span class="number">0</span>;  <span class="comment">// Heuristic (estimated cost to goal)</span>
-        <span class="keyword">this</span>.f = <span class="number">0</span>;  <span class="comment">// Total cost (g + h)</span>
-        <span class="keyword">this</span>.parent = <span class="keyword">null</span>;
+                    <pre><code class="language-javascript">class Node {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.g = 0;  // Cost from start
+        this.h = 0;  // Heuristic (estimated cost to goal)
+        this.f = 0;  // Total cost (g + h)
+        this.parent = null;
     }
 }
 
-<span class="keyword">function</span> <span class="function">astar</span>(start, goal, grid) {
-    <span class="keyword">const</span> openSet = [start];
-    <span class="keyword">const</span> closedSet = [];
+function astar(start, goal, grid) {
+    const openSet = [start];
+    const closedSet = [];
 
-    <span class="keyword">while</span> (openSet.length > <span class="number">0</span>) {
-        <span class="comment">// Find node with lowest f score</span>
-        <span class="keyword">let</span> current = openSet[<span class="number">0</span>];
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < openSet.length; i++) {
-            <span class="keyword">if</span> (openSet[i].f < current.f) {
+    while (openSet.length > 0) {
+        // Find node with lowest f score
+        let current = openSet[0];
+        for (let i = 1; i < openSet.length; i++) {
+            if (openSet[i].f < current.f) {
                 current = openSet[i];
             }
         }
 
-        <span class="comment">// Found the goal!</span>
-        <span class="keyword">if</span> (current === goal) {
-            <span class="keyword">return</span> <span class="function">reconstructPath</span>(current);
+        // Found the goal!
+        if (current === goal) {
+            return reconstructPath(current);
         }
 
-        <span class="comment">// Move current from open to closed</span>
-        openSet.<span class="function">splice</span>(openSet.<span class="function">indexOf</span>(current), <span class="number">1</span>);
-        closedSet.<span class="function">push</span>(current);
+        // Move current from open to closed
+        openSet.splice(openSet.indexOf(current), 1);
+        closedSet.push(current);
 
-        <span class="comment">// Check all neighbors</span>
-        <span class="keyword">const</span> neighbors = <span class="function">getNeighbors</span>(current, grid);
-        <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
-            <span class="keyword">if</span> (closedSet.<span class="function">includes</span>(neighbor)) <span class="keyword">continue</span>;
+        // Check all neighbors
+        const neighbors = getNeighbors(current, grid);
+        for (const neighbor of neighbors) {
+            if (closedSet.includes(neighbor)) continue;
 
-            <span class="keyword">const</span> tempG = current.g + <span class="number">1</span>;  <span class="comment">// Distance to neighbor</span>
+            const tempG = current.g + 1;  // Distance to neighbor
 
-            <span class="keyword">if</span> (!openSet.<span class="function">includes</span>(neighbor)) {
-                openSet.<span class="function">push</span>(neighbor);
-            } <span class="keyword">else</span> <span class="keyword">if</span> (tempG >= neighbor.g) {
-                <span class="keyword">continue</span>;  <span class="comment">// Not a better path</span>
+            if (!openSet.includes(neighbor)) {
+                openSet.push(neighbor);
+            } else if (tempG >= neighbor.g) {
+                continue;  // Not a better path
             }
 
             neighbor.g = tempG;
-            neighbor.h = <span class="function">heuristic</span>(neighbor, goal);
+            neighbor.h = heuristic(neighbor, goal);
             neighbor.f = neighbor.g + neighbor.h;
             neighbor.parent = current;
         }
     }
 
-    <span class="keyword">return</span> [];  <span class="comment">// No path found</span>
+    return [];  // No path found
 }
 
-<span class="keyword">function</span> <span class="function">heuristic</span>(a, b) {
-    <span class="comment">// Manhattan distance</span>
-    <span class="keyword">return</span> Math.<span class="function">abs</span>(a.x - b.x) + Math.<span class="function">abs</span>(a.y - b.y);
+function heuristic(a, b) {
+    // Manhattan distance
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }</code></pre>
                 </div>
             </details>
@@ -475,162 +479,162 @@
             <details data-demo-id="flowField" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Flow Field Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">FlowField</span> {
-    <span class="keyword">constructor</span>(width, height, cellSize) {
-        <span class="keyword">this</span>.width = width;
-        <span class="keyword">this</span>.height = height;
-        <span class="keyword">this</span>.cellSize = cellSize;
-        <span class="keyword">this</span>.cols = Math.<span class="function">ceil</span>(width / cellSize);
-        <span class="keyword">this</span>.rows = Math.<span class="function">ceil</span>(height / cellSize);
+                    <pre><code class="language-javascript">class FlowField {
+    constructor(width, height, cellSize) {
+        this.width = width;
+        this.height = height;
+        this.cellSize = cellSize;
+        this.cols = Math.ceil(width / cellSize);
+        this.rows = Math.ceil(height / cellSize);
 
-        <span class="comment">// Cost field: how difficult to traverse each cell</span>
-        <span class="keyword">this</span>.costField = [];
-        <span class="comment">// Integration field: distance to goal</span>
-        <span class="keyword">this</span>.integrationField = [];
-        <span class="comment">// Flow field: direction to move</span>
-        <span class="keyword">this</span>.flowField = [];
+        // Cost field: how difficult to traverse each cell
+        this.costField = [];
+        // Integration field: distance to goal
+        this.integrationField = [];
+        // Flow field: direction to move
+        this.flowField = [];
 
-        <span class="keyword">this</span>.<span class="function">initializeFields</span>();
+        this.initializeFields();
     }
 
-    <span class="function">initializeFields</span>() {
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
-            <span class="keyword">this</span>.costField[y] = [];
-            <span class="keyword">this</span>.integrationField[y] = [];
-            <span class="keyword">this</span>.flowField[y] = [];
+    initializeFields() {
+        for (let y = 0; y < this.rows; y++) {
+            this.costField[y] = [];
+            this.integrationField[y] = [];
+            this.flowField[y] = [];
 
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
-                <span class="keyword">this</span>.costField[y][x] = <span class="number">1</span>;  <span class="comment">// Default cost</span>
-                <span class="keyword">this</span>.integrationField[y][x] = <span class="number">65535</span>;  <span class="comment">// Max value</span>
-                <span class="keyword">this</span>.flowField[y][x] = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+            for (let x = 0; x < this.cols; x++) {
+                this.costField[y][x] = 1;  // Default cost
+                this.integrationField[y][x] = 65535;  // Max value
+                this.flowField[y][x] = new Vector2D(0, 0);
             }
         }
     }
 
-    <span class="function">setObstacle</span>(x, y) {
-        <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(x, y)) {
-            <span class="keyword">this</span>.costField[y][x] = <span class="number">255</span>;  <span class="comment">// Impassable</span>
+    setObstacle(x, y) {
+        if (this.inBounds(x, y)) {
+            this.costField[y][x] = 255;  // Impassable
         }
     }
 
-    <span class="function">generateFlowField</span>(goalX, goalY) {
-        <span class="comment">// Step 1: Create integration field (distance from goal)</span>
-        <span class="keyword">this</span>.<span class="function">createIntegrationField</span>(goalX, goalY);
+    generateFlowField(goalX, goalY) {
+        // Step 1: Create integration field (distance from goal)
+        this.createIntegrationField(goalX, goalY);
 
-        <span class="comment">// Step 2: Create flow field (direction to move)</span>
-        <span class="keyword">this</span>.<span class="function">createFlowField</span>();
+        // Step 2: Create flow field (direction to move)
+        this.createFlowField();
     }
 
-    <span class="function">createIntegrationField</span>(goalX, goalY) {
-        <span class="comment">// Reset integration field</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
-                <span class="keyword">this</span>.integrationField[y][x] = <span class="number">65535</span>;
+    createIntegrationField(goalX, goalY) {
+        // Reset integration field
+        for (let y = 0; y < this.rows; y++) {
+            for (let x = 0; x < this.cols; x++) {
+                this.integrationField[y][x] = 65535;
             }
         }
 
-        <span class="comment">// Goal has distance 0</span>
-        <span class="keyword">this</span>.integrationField[goalY][goalX] = <span class="number">0</span>;
+        // Goal has distance 0
+        this.integrationField[goalY][goalX] = 0;
 
-        <span class="comment">// Dijkstra's algorithm from goal</span>
-        <span class="keyword">const</span> openList = [{x: goalX, y: goalY}];
+        // Dijkstra's algorithm from goal
+        const openList = [{x: goalX, y: goalY}];
 
-        <span class="keyword">while</span> (openList.length > <span class="number">0</span>) {
-            <span class="keyword">const</span> current = openList.<span class="function">shift</span>();
-            <span class="keyword">const</span> neighbors = <span class="keyword">this</span>.<span class="function">getNeighbors</span>(current.x, current.y);
+        while (openList.length > 0) {
+            const current = openList.shift();
+            const neighbors = this.getNeighbors(current.x, current.y);
 
-            <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
-                <span class="keyword">const</span> cost = <span class="keyword">this</span>.costField[neighbor.y][neighbor.x];
-                <span class="keyword">if</span> (cost === <span class="number">255</span>) <span class="keyword">continue</span>;  <span class="comment">// Impassable</span>
+            for (const neighbor of neighbors) {
+                const cost = this.costField[neighbor.y][neighbor.x];
+                if (cost === 255) continue;  // Impassable
 
-                <span class="keyword">const</span> newCost = <span class="keyword">this</span>.integrationField[current.y][current.x] + cost;
+                const newCost = this.integrationField[current.y][current.x] + cost;
 
-                <span class="keyword">if</span> (newCost < <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x]) {
-                    <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x] = newCost;
-                    openList.<span class="function">push</span>(neighbor);
+                if (newCost < this.integrationField[neighbor.y][neighbor.x]) {
+                    this.integrationField[neighbor.y][neighbor.x] = newCost;
+                    openList.push(neighbor);
                 }
             }
         }
     }
 
-    <span class="function">createFlowField</span>() {
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.rows; y++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.cols; x++) {
-                <span class="keyword">if</span> (<span class="keyword">this</span>.costField[y][x] === <span class="number">255</span>) <span class="keyword">continue</span>;
+    createFlowField() {
+        for (let y = 0; y < this.rows; y++) {
+            for (let x = 0; x < this.cols; x++) {
+                if (this.costField[y][x] === 255) continue;
 
-                <span class="comment">// Find neighbor with lowest integration value</span>
-                <span class="keyword">let</span> lowestCost = <span class="keyword">this</span>.integrationField[y][x];
-                <span class="keyword">let</span> bestDirection = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                // Find neighbor with lowest integration value
+                let lowestCost = this.integrationField[y][x];
+                let bestDirection = new Vector2D(0, 0);
 
-                <span class="keyword">const</span> neighbors = <span class="keyword">this</span>.<span class="function">getNeighbors</span>(x, y);
-                <span class="keyword">for</span> (<span class="keyword">const</span> neighbor <span class="keyword">of</span> neighbors) {
-                    <span class="keyword">const</span> cost = <span class="keyword">this</span>.integrationField[neighbor.y][neighbor.x];
-                    <span class="keyword">if</span> (cost < lowestCost) {
+                const neighbors = this.getNeighbors(x, y);
+                for (const neighbor of neighbors) {
+                    const cost = this.integrationField[neighbor.y][neighbor.x];
+                    if (cost < lowestCost) {
                         lowestCost = cost;
-                        bestDirection = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+                        bestDirection = new Vector2D(
                             neighbor.x - x,
                             neighbor.y - y
-                        ).<span class="function">normalize</span>();
+                        ).normalize();
                     }
                 }
 
-                <span class="keyword">this</span>.flowField[y][x] = bestDirection;
+                this.flowField[y][x] = bestDirection;
             }
         }
     }
 
-    <span class="function">getFlowDirection</span>(worldX, worldY) {
-        <span class="keyword">const</span> x = Math.<span class="function">floor</span>(worldX / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> y = Math.<span class="function">floor</span>(worldY / <span class="keyword">this</span>.cellSize);
+    getFlowDirection(worldX, worldY) {
+        const x = Math.floor(worldX / this.cellSize);
+        const y = Math.floor(worldY / this.cellSize);
 
-        <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(x, y)) {
-            <span class="keyword">return</span> <span class="keyword">this</span>.flowField[y][x];
+        if (this.inBounds(x, y)) {
+            return this.flowField[y][x];
         }
 
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+        return new Vector2D(0, 0);
     }
 
-    <span class="function">getNeighbors</span>(x, y) {
-        <span class="keyword">const</span> neighbors = [];
-        <span class="keyword">const</span> directions = [
-            {x: <span class="number">1</span>, y: <span class="number">0</span>}, {x: -<span class="number">1</span>, y: <span class="number">0</span>},
-            {x: <span class="number">0</span>, y: <span class="number">1</span>}, {x: <span class="number">0</span>, y: -<span class="number">1</span>}
+    getNeighbors(x, y) {
+        const neighbors = [];
+        const directions = [
+            {x: 1, y: 0}, {x: -1, y: 0},
+            {x: 0, y: 1}, {x: 0, y: -1}
         ];
 
-        <span class="keyword">for</span> (<span class="keyword">const</span> dir <span class="keyword">of</span> directions) {
-            <span class="keyword">const</span> nx = x + dir.x;
-            <span class="keyword">const</span> ny = y + dir.y;
-            <span class="keyword">if</span> (<span class="keyword">this</span>.<span class="function">inBounds</span>(nx, ny)) {
-                neighbors.<span class="function">push</span>({x: nx, y: ny});
+        for (const dir of directions) {
+            const nx = x + dir.x;
+            const ny = y + dir.y;
+            if (this.inBounds(nx, ny)) {
+                neighbors.push({x: nx, y: ny});
             }
         }
 
-        <span class="keyword">return</span> neighbors;
+        return neighbors;
     }
 
-    <span class="function">inBounds</span>(x, y) {
-        <span class="keyword">return</span> x >= <span class="number">0</span> && x < <span class="keyword">this</span>.cols && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.rows;
+    inBounds(x, y) {
+        return x >= 0 && x < this.cols && y >= 0 && y < this.rows;
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Using Flow Fields:</h4>
-                    <pre><code><span class="comment">// Create flow field</span>
-<span class="keyword">const</span> flowField = <span class="keyword">new</span> <span class="function">FlowField</span>(<span class="number">800</span>, <span class="number">600</span>, <span class="number">20</span>);
+                    <pre><code class="language-javascript">// Create flow field
+const flowField = new FlowField(800, 600, 20);
 
-<span class="comment">// Add obstacles</span>
-flowField.<span class="function">setObstacle</span>(<span class="number">10</span>, <span class="number">10</span>);
-flowField.<span class="function">setObstacle</span>(<span class="number">10</span>, <span class="number">11</span>);
+// Add obstacles
+flowField.setObstacle(10, 10);
+flowField.setObstacle(10, 11);
 
-<span class="comment">// Generate field toward goal</span>
-flowField.<span class="function">generateFlowField</span>(<span class="number">30</span>, <span class="number">20</span>);
+// Generate field toward goal
+flowField.generateFlowField(30, 20);
 
-<span class="comment">// Each unit follows the flow</span>
-units.<span class="function">forEach</span>(unit => {
-    <span class="keyword">const</span> direction = flowField.<span class="function">getFlowDirection</span>(unit.x, unit.y);
-    unit.velocity = direction.<span class="function">multiply</span>(unit.maxSpeed);
-    unit.<span class="function">update</span>();
+// Each unit follows the flow
+units.forEach(unit => {
+    const direction = flowField.getFlowDirection(unit.x, unit.y);
+    unit.velocity = direction.multiply(unit.maxSpeed);
+    unit.update();
 });</code></pre>
                 </div>
             </details>
@@ -673,69 +677,69 @@ units.<span class="function">forEach</span>(unit => {
             <details data-demo-id="state" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: State Machine Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">State</span> {
-    <span class="function">enter</span>(entity) {}   <span class="comment">// Called when entering this state</span>
-    <span class="function">update</span>(entity) {}  <span class="comment">// Called every frame</span>
-    <span class="function">exit</span>(entity) {}    <span class="comment">// Called when leaving this state</span>
+                    <pre><code class="language-javascript">class State {
+    enter(entity) {}   // Called when entering this state
+    update(entity) {}  // Called every frame
+    exit(entity) {}    // Called when leaving this state
 }
 
-<span class="keyword">class</span> <span class="function">PatrolState</span> <span class="keyword">extends</span> <span class="function">State</span> {
-    <span class="function">enter</span>(entity) {
-        entity.speed = <span class="number">2</span>;
-        entity.color = <span class="string">'#66bb6a'</span>;
+class PatrolState extends State {
+    enter(entity) {
+        entity.speed = 2;
+        entity.color = '#66bb6a';
     }
 
-    <span class="function">update</span>(entity) {
-        <span class="comment">// Walk around randomly</span>
-        <span class="keyword">if</span> (Math.<span class="function">random</span>() < <span class="number">0.02</span>) {
-            entity.direction = Vector2D.<span class="function">random</span>(<span class="number">1</span>);
+    update(entity) {
+        // Walk around randomly
+        if (Math.random() < 0.02) {
+            entity.direction = Vector2D.random(1);
         }
 
-        <span class="comment">// Check if player is nearby</span>
-        <span class="keyword">const</span> distToPlayer = entity.position.<span class="function">distance</span>(player.position);
-        <span class="keyword">if</span> (distToPlayer < <span class="number">150</span>) {
-            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">ChaseState</span>());
-        }
-    }
-}
-
-<span class="keyword">class</span> <span class="function">ChaseState</span> <span class="keyword">extends</span> <span class="function">State</span> {
-    <span class="function">enter</span>(entity) {
-        entity.speed = <span class="number">4</span>;
-        entity.color = <span class="string">'#ffa726'</span>;
-    }
-
-    <span class="function">update</span>(entity) {
-        <span class="comment">// Chase the player</span>
-        entity.direction = player.position.<span class="function">subtract</span>(entity.position).<span class="function">normalize</span>();
-
-        <span class="keyword">const</span> distToPlayer = entity.position.<span class="function">distance</span>(player.position);
-
-        <span class="comment">// Close enough to attack?</span>
-        <span class="keyword">if</span> (distToPlayer < <span class="number">50</span>) {
-            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">AttackState</span>());
-        }
-        <span class="comment">// Lost sight of player?</span>
-        <span class="keyword">else</span> <span class="keyword">if</span> (distToPlayer > <span class="number">300</span>) {
-            entity.<span class="function">setState</span>(<span class="keyword">new</span> <span class="function">PatrolState</span>());
+        // Check if player is nearby
+        const distToPlayer = entity.position.distance(player.position);
+        if (distToPlayer < 150) {
+            entity.setState(new ChaseState());
         }
     }
 }
 
-<span class="keyword">class</span> <span class="function">Entity</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.currentState = <span class="keyword">new</span> <span class="function">PatrolState</span>();
-        <span class="keyword">this</span>.currentState.<span class="function">enter</span>(<span class="keyword">this</span>);
+class ChaseState extends State {
+    enter(entity) {
+        entity.speed = 4;
+        entity.color = '#ffa726';
     }
 
-    <span class="function">setState</span>(newState) {
-        <span class="keyword">this</span>.currentState.<span class="function">exit</span>(<span class="keyword">this</span>);
-        <span class="keyword">this</span>.currentState = newState;
-        <span class="keyword">this</span>.currentState.<span class="function">enter</span>(<span class="keyword">this</span>);
+    update(entity) {
+        // Chase the player
+        entity.direction = player.position.subtract(entity.position).normalize();
+
+        const distToPlayer = entity.position.distance(player.position);
+
+        // Close enough to attack?
+        if (distToPlayer < 50) {
+            entity.setState(new AttackState());
+        }
+        // Lost sight of player?
+        else if (distToPlayer > 300) {
+            entity.setState(new PatrolState());
+        }
+    }
+}
+
+class Entity {
+    constructor() {
+        this.currentState = new PatrolState();
+        this.currentState.enter(this);
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.currentState.<span class="function">update</span>(<span class="keyword">this</span>);
+    setState(newState) {
+        this.currentState.exit(this);
+        this.currentState = newState;
+        this.currentState.enter(this);
+    }
+
+    update() {
+        this.currentState.update(this);
     }
 }</code></pre>
                 </div>
@@ -793,142 +797,142 @@ units.<span class="function">forEach</span>(unit => {
             <details data-demo-id="behaviorTree" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Behavior Tree Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Base Node class</span>
-<span class="keyword">class</span> <span class="function">BTNode</span> {
-    <span class="comment">// Returns: SUCCESS, FAILURE, or RUNNING</span>
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+                    <pre><code class="language-javascript">// Base Node class
+class BTNode {
+    // Returns: SUCCESS, FAILURE, or RUNNING
+    execute(agent) {
+        return 'FAILURE';
     }
 }
 
-<span class="comment">// Sequence: Runs children until one fails</span>
-<span class="keyword">class</span> <span class="function">Sequence</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
-    <span class="keyword">constructor</span>(...children) {
-        <span class="keyword">super</span>();
-        <span class="keyword">this</span>.children = children;
-        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+// Sequence: Runs children until one fails
+class Sequence extends BTNode {
+    constructor(...children) {
+        super();
+        this.children = children;
+        this.currentChild = 0;
     }
 
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">while</span> (<span class="keyword">this</span>.currentChild < <span class="keyword">this</span>.children.length) {
-            <span class="keyword">const</span> result = <span class="keyword">this</span>.children[<span class="keyword">this</span>.currentChild].<span class="function">execute</span>(agent);
+    execute(agent) {
+        while (this.currentChild < this.children.length) {
+            const result = this.children[this.currentChild].execute(agent);
 
-            <span class="keyword">if</span> (result === <span class="string">'FAILURE'</span>) {
-                <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
-                <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+            if (result === 'FAILURE') {
+                this.currentChild = 0;
+                return 'FAILURE';
             }
 
-            <span class="keyword">if</span> (result === <span class="string">'RUNNING'</span>) {
-                <span class="keyword">return</span> <span class="string">'RUNNING'</span>;
+            if (result === 'RUNNING') {
+                return 'RUNNING';
             }
 
-            <span class="keyword">this</span>.currentChild++;
+            this.currentChild++;
         }
 
-        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
-        <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
+        this.currentChild = 0;
+        return 'SUCCESS';
     }
 }
 
-<span class="comment">// Selector: Runs children until one succeeds</span>
-<span class="keyword">class</span> <span class="function">Selector</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
-    <span class="keyword">constructor</span>(...children) {
-        <span class="keyword">super</span>();
-        <span class="keyword">this</span>.children = children;
-        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
+// Selector: Runs children until one succeeds
+class Selector extends BTNode {
+    constructor(...children) {
+        super();
+        this.children = children;
+        this.currentChild = 0;
     }
 
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">while</span> (<span class="keyword">this</span>.currentChild < <span class="keyword">this</span>.children.length) {
-            <span class="keyword">const</span> result = <span class="keyword">this</span>.children[<span class="keyword">this</span>.currentChild].<span class="function">execute</span>(agent);
+    execute(agent) {
+        while (this.currentChild < this.children.length) {
+            const result = this.children[this.currentChild].execute(agent);
 
-            <span class="keyword">if</span> (result === <span class="string">'SUCCESS'</span>) {
-                <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
-                <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
+            if (result === 'SUCCESS') {
+                this.currentChild = 0;
+                return 'SUCCESS';
             }
 
-            <span class="keyword">if</span> (result === <span class="string">'RUNNING'</span>) {
-                <span class="keyword">return</span> <span class="string">'RUNNING'</span>;
+            if (result === 'RUNNING') {
+                return 'RUNNING';
             }
 
-            <span class="keyword">this</span>.currentChild++;
+            this.currentChild++;
         }
 
-        <span class="keyword">this</span>.currentChild = <span class="number">0</span>;
-        <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
+        this.currentChild = 0;
+        return 'FAILURE';
     }
 }
 
-<span class="comment">// Condition Node: Checks a condition</span>
-<span class="keyword">class</span> <span class="function">Condition</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
-    <span class="keyword">constructor</span>(conditionFn) {
-        <span class="keyword">super</span>();
-        <span class="keyword">this</span>.conditionFn = conditionFn;
+// Condition Node: Checks a condition
+class Condition extends BTNode {
+    constructor(conditionFn) {
+        super();
+        this.conditionFn = conditionFn;
     }
 
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">conditionFn</span>(agent) ? <span class="string">'SUCCESS'</span> : <span class="string">'FAILURE'</span>;
-    }
-}
-
-<span class="comment">// Action Node: Performs an action</span>
-<span class="keyword">class</span> <span class="function">Action</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
-    <span class="keyword">constructor</span>(actionFn) {
-        <span class="keyword">super</span>();
-        <span class="keyword">this</span>.actionFn = actionFn;
-    }
-
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">actionFn</span>(agent);
+    execute(agent) {
+        return this.conditionFn(agent) ? 'SUCCESS' : 'FAILURE';
     }
 }
 
-<span class="comment">// Decorator: Inverts result</span>
-<span class="keyword">class</span> <span class="function">Inverter</span> <span class="keyword">extends</span> <span class="function">BTNode</span> {
-    <span class="keyword">constructor</span>(child) {
-        <span class="keyword">super</span>();
-        <span class="keyword">this</span>.child = child;
+// Action Node: Performs an action
+class Action extends BTNode {
+    constructor(actionFn) {
+        super();
+        this.actionFn = actionFn;
     }
 
-    <span class="function">execute</span>(agent) {
-        <span class="keyword">const</span> result = <span class="keyword">this</span>.child.<span class="function">execute</span>(agent);
-        <span class="keyword">if</span> (result === <span class="string">'SUCCESS'</span>) <span class="keyword">return</span> <span class="string">'FAILURE'</span>;
-        <span class="keyword">if</span> (result === <span class="string">'FAILURE'</span>) <span class="keyword">return</span> <span class="string">'SUCCESS'</span>;
-        <span class="keyword">return</span> result;
+    execute(agent) {
+        return this.actionFn(agent);
+    }
+}
+
+// Decorator: Inverts result
+class Inverter extends BTNode {
+    constructor(child) {
+        super();
+        this.child = child;
+    }
+
+    execute(agent) {
+        const result = this.child.execute(agent);
+        if (result === 'SUCCESS') return 'FAILURE';
+        if (result === 'FAILURE') return 'SUCCESS';
+        return result;
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Enemy AI Behavior Tree</h4>
-                    <pre><code><span class="comment">// Build behavior tree for enemy</span>
-<span class="keyword">const</span> enemyBehavior = <span class="keyword">new</span> <span class="function">Selector</span>(
-    <span class="comment">// Option 1: Attack if player is close</span>
-    <span class="keyword">new</span> <span class="function">Sequence</span>(
-        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.<span class="function">isPlayerNear</span>()),
-        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">attack</span>())
+                    <pre><code class="language-javascript">// Build behavior tree for enemy
+const enemyBehavior = new Selector(
+    // Option 1: Attack if player is close
+    new Sequence(
+        new Condition(agent => agent.isPlayerNear()),
+        new Action(agent => agent.attack())
     ),
 
-    <span class="comment">// Option 2: Chase if player is visible</span>
-    <span class="keyword">new</span> <span class="function">Sequence</span>(
-        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.<span class="function">canSeePlayer</span>()),
-        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">chasePlayer</span>())
+    // Option 2: Chase if player is visible
+    new Sequence(
+        new Condition(agent => agent.canSeePlayer()),
+        new Action(agent => agent.chasePlayer())
     ),
 
-    <span class="comment">// Option 3: Patrol if health is good</span>
-    <span class="keyword">new</span> <span class="function">Sequence</span>(
-        <span class="keyword">new</span> <span class="function">Condition</span>(agent => agent.health > <span class="number">50</span>),
-        <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">patrol</span>())
+    // Option 3: Patrol if health is good
+    new Sequence(
+        new Condition(agent => agent.health > 50),
+        new Action(agent => agent.patrol())
     ),
 
-    <span class="comment">// Option 4: Flee if health is low (fallback)</span>
-    <span class="keyword">new</span> <span class="function">Action</span>(agent => agent.<span class="function">flee</span>())
+    // Option 4: Flee if health is low (fallback)
+    new Action(agent => agent.flee())
 );
 
-<span class="comment">// Run behavior tree each frame</span>
-<span class="keyword">function</span> <span class="function">update</span>() {
-    enemies.<span class="function">forEach</span>(enemy => {
-        enemyBehavior.<span class="function">execute</span>(enemy);
+// Run behavior tree each frame
+function update() {
+    enemies.forEach(enemy => {
+        enemyBehavior.execute(enemy);
     });
 }</code></pre>
                 </div>
@@ -987,74 +991,74 @@ units.<span class="function">forEach</span>(unit => {
             <details data-demo-id="ik" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Two-Joint IK Implementation (Arm/Leg)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">TwoJointIK</span> {
-    <span class="keyword">constructor</span>(baseX, baseY, length1, length2) {
-        <span class="keyword">this</span>.base = <span class="keyword">new</span> <span class="function">Vector2D</span>(baseX, baseY);
-        <span class="keyword">this</span>.length1 = length1;  <span class="comment">// Upper arm/leg length</span>
-        <span class="keyword">this</span>.length2 = length2;  <span class="comment">// Lower arm/leg length</span>
-        <span class="keyword">this</span>.joint = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.end = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">class TwoJointIK {
+    constructor(baseX, baseY, length1, length2) {
+        this.base = new Vector2D(baseX, baseY);
+        this.length1 = length1;  // Upper arm/leg length
+        this.length2 = length2;  // Lower arm/leg length
+        this.joint = new Vector2D(0, 0);
+        this.end = new Vector2D(0, 0);
     }
 
-    <span class="function">solve</span>(targetX, targetY) {
-        <span class="keyword">const</span> target = <span class="keyword">new</span> <span class="function">Vector2D</span>(targetX, targetY);
-        <span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(<span class="keyword">this</span>.base);
-        <span class="keyword">const</span> distance = toTarget.<span class="function">length</span>();
+    solve(targetX, targetY) {
+        const target = new Vector2D(targetX, targetY);
+        const toTarget = target.subtract(this.base);
+        const distance = toTarget.length();
 
-        <span class="comment">// Maximum reach</span>
-        <span class="keyword">const</span> maxReach = <span class="keyword">this</span>.length1 + <span class="keyword">this</span>.length2;
+        // Maximum reach
+        const maxReach = this.length1 + this.length2;
 
-        <span class="comment">// Target is out of reach - stretch toward it</span>
-        <span class="keyword">if</span> (distance >= maxReach) {
-            <span class="keyword">const</span> direction = toTarget.<span class="function">normalize</span>();
-            <span class="keyword">this</span>.joint = <span class="keyword">this</span>.base.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length1));
-            <span class="keyword">this</span>.end = <span class="keyword">this</span>.joint.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length2));
-            <span class="keyword">return</span>;
+        // Target is out of reach - stretch toward it
+        if (distance >= maxReach) {
+            const direction = toTarget.normalize();
+            this.joint = this.base.add(direction.multiply(this.length1));
+            this.end = this.joint.add(direction.multiply(this.length2));
+            return;
         }
 
-        <span class="comment">// Target is too close</span>
-        <span class="keyword">if</span> (distance < Math.<span class="function">abs</span>(<span class="keyword">this</span>.length1 - <span class="keyword">this</span>.length2)) {
-            <span class="keyword">const</span> direction = toTarget.<span class="function">normalize</span>();
-            <span class="keyword">this</span>.joint = <span class="keyword">this</span>.base.<span class="function">add</span>(direction.<span class="function">multiply</span>(<span class="keyword">this</span>.length1));
-            <span class="keyword">this</span>.end = target;
-            <span class="keyword">return</span>;
+        // Target is too close
+        if (distance < Math.abs(this.length1 - this.length2)) {
+            const direction = toTarget.normalize();
+            this.joint = this.base.add(direction.multiply(this.length1));
+            this.end = target;
+            return;
         }
 
-        <span class="comment">// Use law of cosines to find angles</span>
-        <span class="keyword">const</span> a = <span class="keyword">this</span>.length1;
-        <span class="keyword">const</span> b = <span class="keyword">this</span>.length2;
-        <span class="keyword">const</span> c = distance;
+        // Use law of cosines to find angles
+        const a = this.length1;
+        const b = this.length2;
+        const c = distance;
 
-        <span class="comment">// Angle at the base</span>
-        <span class="keyword">const</span> angleToTarget = Math.<span class="function">atan2</span>(toTarget.y, toTarget.x);
-        <span class="keyword">const</span> cosAngle1 = (a * a + c * c - b * b) / (<span class="number">2</span> * a * c);
-        <span class="keyword">const</span> angle1 = Math.<span class="function">acos</span>(<span class="function">clamp</span>(cosAngle1, -<span class="number">1</span>, <span class="number">1</span>));
+        // Angle at the base
+        const angleToTarget = Math.atan2(toTarget.y, toTarget.x);
+        const cosAngle1 = (a * a + c * c - b * b) / (2 * a * c);
+        const angle1 = Math.acos(clamp(cosAngle1, -1, 1));
 
-        <span class="comment">// Calculate joint position</span>
-        <span class="keyword">const</span> jointAngle = angleToTarget + angle1;
-        <span class="keyword">this</span>.joint.x = <span class="keyword">this</span>.base.x + a * Math.<span class="function">cos</span>(jointAngle);
-        <span class="keyword">this</span>.joint.y = <span class="keyword">this</span>.base.y + a * Math.<span class="function">sin</span>(jointAngle);
+        // Calculate joint position
+        const jointAngle = angleToTarget + angle1;
+        this.joint.x = this.base.x + a * Math.cos(jointAngle);
+        this.joint.y = this.base.y + a * Math.sin(jointAngle);
 
-        <span class="comment">// End effector is the target</span>
-        <span class="keyword">this</span>.end = target.<span class="function">copy</span>();
+        // End effector is the target
+        this.end = target.copy();
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Draw bones</span>
-        ctx.strokeStyle = <span class="string">'#42a5f5'</span>;
-        ctx.lineWidth = <span class="number">8</span>;
+    draw(ctx) {
+        // Draw bones
+        ctx.strokeStyle = '#42a5f5';
+        ctx.lineWidth = 8;
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.base.x, <span class="keyword">this</span>.base.y);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.joint.x, <span class="keyword">this</span>.joint.y);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.end.x, <span class="keyword">this</span>.end.y);
-        ctx.<span class="function">stroke</span>();
+        ctx.moveTo(this.base.x, this.base.y);
+        ctx.lineTo(this.joint.x, this.joint.y);
+        ctx.lineTo(this.end.x, this.end.y);
+        ctx.stroke();
 
-        <span class="comment">// Draw joints</span>
-        [<span class="keyword">this</span>.base, <span class="keyword">this</span>.joint, <span class="keyword">this</span>.end].<span class="function">forEach</span>((joint, i) => {
-            ctx.fillStyle = i === <span class="number">2</span> ? <span class="string">'#f44336'</span> : <span class="string">'#66bb6a'</span>;
+        // Draw joints
+        [this.base, this.joint, this.end].forEach((joint, i) => {
+            ctx.fillStyle = i === 2 ? '#f44336' : '#66bb6a';
             ctx.beginPath();
-            ctx.<span class="function">arc</span>(joint.x, joint.y, <span class="number">10</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-            ctx.<span class="function">fill</span>();
+            ctx.arc(joint.x, joint.y, 10, 0, Math.PI * 2);
+            ctx.fill();
         });
     }
 }</code></pre>
@@ -1103,100 +1107,100 @@ units.<span class="function">forEach</span>(unit => {
             <details data-demo-id="shadow" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Raycasting Shadow Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">ShadowCaster</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.walls = [];  <span class="comment">// Line segments that cast shadows</span>
+                    <pre><code class="language-javascript">class ShadowCaster {
+    constructor() {
+        this.walls = [];  // Line segments that cast shadows
     }
 
-    <span class="function">addWall</span>(x1, y1, x2, y2) {
-        <span class="keyword">this</span>.walls.<span class="function">push</span>({
-            p1: <span class="keyword">new</span> <span class="function">Vector2D</span>(x1, y1),
-            p2: <span class="keyword">new</span> <span class="function">Vector2D</span>(x2, y2)
+    addWall(x1, y1, x2, y2) {
+        this.walls.push({
+            p1: new Vector2D(x1, y1),
+            p2: new Vector2D(x2, y2)
         });
     }
 
-    <span class="comment">// Get all unique angles to cast rays toward</span>
-    <span class="function">getAngles</span>(source) {
-        <span class="keyword">const</span> angles = [];
+    // Get all unique angles to cast rays toward
+    getAngles(source) {
+        const angles = [];
 
-        <span class="keyword">for</span> (<span class="keyword">const</span> wall <span class="keyword">of</span> <span class="keyword">this</span>.walls) {
-            <span class="comment">// Add angles to each endpoint</span>
-            <span class="keyword">const</span> angle1 = Math.<span class="function">atan2</span>(wall.p1.y - source.y, wall.p1.x - source.x);
-            <span class="keyword">const</span> angle2 = Math.<span class="function">atan2</span>(wall.p2.y - source.y, wall.p2.x - source.x);
+        for (const wall of this.walls) {
+            // Add angles to each endpoint
+            const angle1 = Math.atan2(wall.p1.y - source.y, wall.p1.x - source.x);
+            const angle2 = Math.atan2(wall.p2.y - source.y, wall.p2.x - source.x);
 
-            <span class="comment">// Add small offsets to catch edges</span>
-            angles.<span class="function">push</span>(angle1 - <span class="number">0.0001</span>, angle1, angle1 + <span class="number">0.0001</span>);
-            angles.<span class="function">push</span>(angle2 - <span class="number">0.0001</span>, angle2, angle2 + <span class="number">0.0001</span>);
+            // Add small offsets to catch edges
+            angles.push(angle1 - 0.0001, angle1, angle1 + 0.0001);
+            angles.push(angle2 - 0.0001, angle2, angle2 + 0.0001);
         }
 
-        <span class="keyword">return</span> angles;
+        return angles;
     }
 
-    <span class="comment">// Cast a ray and find closest intersection</span>
-    <span class="function">castRay</span>(source, angle, maxDistance = <span class="number">1000</span>) {
-        <span class="keyword">const</span> direction = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            Math.<span class="function">cos</span>(angle),
-            Math.<span class="function">sin</span>(angle)
+    // Cast a ray and find closest intersection
+    castRay(source, angle, maxDistance = 1000) {
+        const direction = new Vector2D(
+            Math.cos(angle),
+            Math.sin(angle)
         );
 
-        <span class="keyword">const</span> rayEnd = source.<span class="function">add</span>(direction.<span class="function">multiply</span>(maxDistance));
+        const rayEnd = source.add(direction.multiply(maxDistance));
 
-        <span class="keyword">let</span> closestIntersection = rayEnd;
-        <span class="keyword">let</span> closestDistance = maxDistance;
+        let closestIntersection = rayEnd;
+        let closestDistance = maxDistance;
 
-        <span class="keyword">for</span> (<span class="keyword">const</span> wall <span class="keyword">of</span> <span class="keyword">this</span>.walls) {
-            <span class="keyword">const</span> intersection = <span class="function">lineIntersection</span>(
+        for (const wall of this.walls) {
+            const intersection = lineIntersection(
                 source, rayEnd,
                 wall.p1, wall.p2
             );
 
-            <span class="keyword">if</span> (intersection) {
-                <span class="keyword">const</span> dist = source.<span class="function">distance</span>(intersection);
-                <span class="keyword">if</span> (dist < closestDistance) {
+            if (intersection) {
+                const dist = source.distance(intersection);
+                if (dist < closestDistance) {
                     closestDistance = dist;
                     closestIntersection = intersection;
                 }
             }
         }
 
-        <span class="keyword">return</span> closestIntersection;
+        return closestIntersection;
     }
 
-    <span class="comment">// Calculate visible polygon</span>
-    <span class="function">getVisibleArea</span>(source) {
-        <span class="keyword">const</span> angles = <span class="keyword">this</span>.<span class="function">getAngles</span>(source);
-        <span class="keyword">const</span> intersections = [];
+    // Calculate visible polygon
+    getVisibleArea(source) {
+        const angles = this.getAngles(source);
+        const intersections = [];
 
-        <span class="keyword">for</span> (<span class="keyword">const</span> angle <span class="keyword">of</span> angles) {
-            <span class="keyword">const</span> point = <span class="keyword">this</span>.<span class="function">castRay</span>(source, angle);
-            intersections.<span class="function">push</span>({
+        for (const angle of angles) {
+            const point = this.castRay(source, angle);
+            intersections.push({
                 point: point,
-                angle: Math.<span class="function">atan2</span>(point.y - source.y, point.x - source.x)
+                angle: Math.atan2(point.y - source.y, point.x - source.x)
             });
         }
 
-        <span class="comment">// Sort by angle</span>
-        intersections.<span class="function">sort</span>((a, b) => a.angle - b.angle);
+        // Sort by angle
+        intersections.sort((a, b) => a.angle - b.angle);
 
-        <span class="keyword">return</span> intersections.<span class="function">map</span>(i => i.point);
+        return intersections.map(i => i.point);
     }
 
-    <span class="function">draw</span>(ctx, source) {
-        <span class="keyword">const</span> visibleArea = <span class="keyword">this</span>.<span class="function">getVisibleArea</span>(source);
+    draw(ctx, source) {
+        const visibleArea = this.getVisibleArea(source);
 
-        <span class="comment">// Draw visible area</span>
-        ctx.fillStyle = <span class="string">'rgba(255, 255, 100, 0.3)'</span>;
+        // Draw visible area
+        ctx.fillStyle = 'rgba(255, 255, 100, 0.3)';
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(source.x, source.y);
-        visibleArea.<span class="function">forEach</span>(p => ctx.<span class="function">lineTo</span>(p.x, p.y));
-        ctx.<span class="function">closePath</span>();
-        ctx.<span class="function">fill</span>();
+        ctx.moveTo(source.x, source.y);
+        visibleArea.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
 
-        <span class="comment">// Draw light source</span>
-        ctx.fillStyle = <span class="string">'#ffeb3b'</span>;
+        // Draw light source
+        ctx.fillStyle = '#ffeb3b';
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(source.x, source.y, <span class="number">8</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
+        ctx.arc(source.x, source.y, 8, 0, Math.PI * 2);
+        ctx.fill();
     }
 }</code></pre>
                 </div>
@@ -1240,144 +1244,144 @@ units.<span class="function">forEach</span>(unit => {
             <details data-demo-id="spatialHash" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Spatial Hash Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SpatialHash</span> {
-    <span class="keyword">constructor</span>(cellSize) {
-        <span class="keyword">this</span>.cellSize = cellSize;
-        <span class="keyword">this</span>.cells = <span class="keyword">new</span> <span class="function">Map</span>();  <span class="comment">// Hash map of cell coordinates to objects</span>
+                    <pre><code class="language-javascript">class SpatialHash {
+    constructor(cellSize) {
+        this.cellSize = cellSize;
+        this.cells = new Map();  // Hash map of cell coordinates to objects
     }
 
-    <span class="comment">// Convert world position to cell key</span>
-    <span class="function">getKey</span>(x, y) {
-        <span class="keyword">const</span> cellX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> cellY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">return</span> `${cellX},${cellY}`;
+    // Convert world position to cell key
+    getKey(x, y) {
+        const cellX = Math.floor(x / this.cellSize);
+        const cellY = Math.floor(y / this.cellSize);
+        return `${cellX},${cellY}`;
     }
 
-    <span class="comment">// Insert object into hash</span>
-    <span class="function">insert</span>(object) {
-        <span class="keyword">const</span> key = <span class="keyword">this</span>.<span class="function">getKey</span>(object.position.x, object.position.y);
+    // Insert object into hash
+    insert(object) {
+        const key = this.getKey(object.position.x, object.position.y);
 
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.cells.<span class="function">has</span>(key)) {
-            <span class="keyword">this</span>.cells.<span class="function">set</span>(key, []);
+        if (!this.cells.has(key)) {
+            this.cells.set(key, []);
         }
 
-        <span class="keyword">this</span>.cells.<span class="function">get</span>(key).<span class="function">push</span>(object);
-        object.cellKey = key;  <span class="comment">// Store for removal</span>
+        this.cells.get(key).push(object);
+        object.cellKey = key;  // Store for removal
     }
 
-    <span class="comment">// Remove object from hash</span>
-    <span class="function">remove</span>(object) {
-        <span class="keyword">if</span> (!object.cellKey) <span class="keyword">return</span>;
+    // Remove object from hash
+    remove(object) {
+        if (!object.cellKey) return;
 
-        <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(object.cellKey);
-        <span class="keyword">if</span> (cell) {
-            <span class="keyword">const</span> index = cell.<span class="function">indexOf</span>(object);
-            <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
-                cell.<span class="function">splice</span>(index, <span class="number">1</span>);
+        const cell = this.cells.get(object.cellKey);
+        if (cell) {
+            const index = cell.indexOf(object);
+            if (index !== -1) {
+                cell.splice(index, 1);
             }
         }
 
-        object.cellKey = <span class="keyword">null</span>;
+        object.cellKey = null;
     }
 
-    <span class="comment">// Update object position (remove from old cell, add to new)</span>
-    <span class="function">update</span>(object) {
-        <span class="keyword">const</span> newKey = <span class="keyword">this</span>.<span class="function">getKey</span>(object.position.x, object.position.y);
+    // Update object position (remove from old cell, add to new)
+    update(object) {
+        const newKey = this.getKey(object.position.x, object.position.y);
 
-        <span class="comment">// Only update if cell changed</span>
-        <span class="keyword">if</span> (object.cellKey !== newKey) {
-            <span class="keyword">this</span>.<span class="function">remove</span>(object);
-            <span class="keyword">this</span>.<span class="function">insert</span>(object);
+        // Only update if cell changed
+        if (object.cellKey !== newKey) {
+            this.remove(object);
+            this.insert(object);
         }
     }
 
-    <span class="comment">// Get all objects in nearby cells</span>
-    <span class="function">getNearby</span>(x, y, range = <span class="number">1</span>) {
-        <span class="keyword">const</span> nearby = [];
-        <span class="keyword">const</span> cellX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> cellY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
+    // Get all objects in nearby cells
+    getNearby(x, y, range = 1) {
+        const nearby = [];
+        const cellX = Math.floor(x / this.cellSize);
+        const cellY = Math.floor(y / this.cellSize);
 
-        <span class="comment">// Check surrounding cells</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> dx = -range; dx <= range; dx++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> dy = -range; dy <= range; dy++) {
-                <span class="keyword">const</span> key = `${cellX + dx},${cellY + dy}`;
-                <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(key);
+        // Check surrounding cells
+        for (let dx = -range; dx <= range; dx++) {
+            for (let dy = -range; dy <= range; dy++) {
+                const key = `${cellX + dx},${cellY + dy}`;
+                const cell = this.cells.get(key);
 
-                <span class="keyword">if</span> (cell) {
-                    nearby.<span class="function">push</span>(...cell);
+                if (cell) {
+                    nearby.push(...cell);
                 }
             }
         }
 
-        <span class="keyword">return</span> nearby;
+        return nearby;
     }
 
-    <span class="comment">// Get objects in a rectangular area</span>
-    <span class="function">queryRect</span>(x, y, width, height) {
-        <span class="keyword">const</span> objects = <span class="keyword">new</span> <span class="function">Set</span>();
+    // Get objects in a rectangular area
+    queryRect(x, y, width, height) {
+        const objects = new Set();
 
-        <span class="keyword">const</span> startX = Math.<span class="function">floor</span>(x / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> startY = Math.<span class="function">floor</span>(y / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> endX = Math.<span class="function">ceil</span>((x + width) / <span class="keyword">this</span>.cellSize);
-        <span class="keyword">const</span> endY = Math.<span class="function">ceil</span>((y + height) / <span class="keyword">this</span>.cellSize);
+        const startX = Math.floor(x / this.cellSize);
+        const startY = Math.floor(y / this.cellSize);
+        const endX = Math.ceil((x + width) / this.cellSize);
+        const endY = Math.ceil((y + height) / this.cellSize);
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> cx = startX; cx <= endX; cx++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> cy = startY; cy <= endY; cy++) {
-                <span class="keyword">const</span> key = `${cx},${cy}`;
-                <span class="keyword">const</span> cell = <span class="keyword">this</span>.cells.<span class="function">get</span>(key);
+        for (let cx = startX; cx <= endX; cx++) {
+            for (let cy = startY; cy <= endY; cy++) {
+                const key = `${cx},${cy}`;
+                const cell = this.cells.get(key);
 
-                <span class="keyword">if</span> (cell) {
-                    cell.<span class="function">forEach</span>(obj => objects.<span class="function">add</span>(obj));
+                if (cell) {
+                    cell.forEach(obj => objects.add(obj));
                 }
             }
         }
 
-        <span class="keyword">return</span> Array.<span class="function">from</span>(objects);
+        return Array.from(objects);
     }
 
-    <span class="comment">// Clear all objects</span>
-    <span class="function">clear</span>() {
-        <span class="keyword">this</span>.cells.<span class="function">clear</span>();
+    // Clear all objects
+    clear() {
+        this.cells.clear();
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Using Spatial Hash for Collision Detection:</h4>
-                    <pre><code><span class="comment">// Create spatial hash with 50px cells</span>
-<span class="keyword">const</span> spatialHash = <span class="keyword">new</span> <span class="function">SpatialHash</span>(<span class="number">50</span>);
+                    <pre><code class="language-javascript">// Create spatial hash with 50px cells
+const spatialHash = new SpatialHash(50);
 
-<span class="comment">// Insert all game objects</span>
-gameObjects.<span class="function">forEach</span>(obj => spatialHash.<span class="function">insert</span>(obj));
+// Insert all game objects
+gameObjects.forEach(obj => spatialHash.insert(obj));
 
-<span class="comment">// Each frame: update objects and check collisions</span>
-<span class="keyword">function</span> <span class="function">update</span>() {
-    gameObjects.<span class="function">forEach</span>(obj => {
-        <span class="comment">// Move object</span>
-        obj.<span class="function">update</span>();
+// Each frame: update objects and check collisions
+function update() {
+    gameObjects.forEach(obj => {
+        // Move object
+        obj.update();
 
-        <span class="comment">// Update its cell in the hash</span>
-        spatialHash.<span class="function">update</span>(obj);
+        // Update its cell in the hash
+        spatialHash.update(obj);
 
-        <span class="comment">// Check collisions only with nearby objects</span>
-        <span class="keyword">const</span> nearby = spatialHash.<span class="function">getNearby</span>(
+        // Check collisions only with nearby objects
+        const nearby = spatialHash.getNearby(
             obj.position.x,
             obj.position.y,
-            <span class="number">1</span>  <span class="comment">// Check 1 cell in each direction</span>
+            1  // Check 1 cell in each direction
         );
 
-        nearby.<span class="function">forEach</span>(other => {
-            <span class="keyword">if</span> (obj !== other && obj.<span class="function">collidesWith</span>(other)) {
-                <span class="function">handleCollision</span>(obj, other);
+        nearby.forEach(other => {
+            if (obj !== other && obj.collidesWith(other)) {
+                handleCollision(obj, other);
             }
         });
     });
 }
 
-<span class="comment">// Example: Find all enemies near player</span>
-<span class="keyword">const</span> nearbyEnemies = spatialHash
-    .<span class="function">getNearby</span>(player.x, player.y, <span class="number">2</span>)
-    .<span class="function">filter</span>(obj => obj.type === <span class="string">'enemy'</span>);</code></pre>
+// Example: Find all enemies near player
+const nearbyEnemies = spatialHash
+    .getNearby(player.x, player.y, 2)
+    .filter(obj => obj.type === 'enemy');</code></pre>
                 </div>
             </details>
 

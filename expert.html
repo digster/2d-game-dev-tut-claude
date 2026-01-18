@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expert - Game Dev Math Guide</title>
     <link rel="stylesheet" href="shared/styles.css">
+    <!-- Prism.js Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -55,117 +59,247 @@
             <details data-demo-id="quadtree" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: QuadTree Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">QuadTree</span> {
-    <span class="keyword">constructor</span>(boundary, capacity = <span class="number">4</span>) {
-        <span class="keyword">this</span>.boundary = boundary;  <span class="comment">// Rectangle defining this quad</span>
-        <span class="keyword">this</span>.capacity = capacity;  <span class="comment">// Max objects before subdividing</span>
-        <span class="keyword">this</span>.objects = [];
-        <span class="keyword">this</span>.divided = <span class="keyword">false</span>;
+                    <pre><code class="language-javascript">class QuadTree {
+    constructor(boundary, capacity = 4) {
+        this.boundary = boundary;  // Rectangle defining this quad
+        this.capacity = capacity;  // Max objects before subdividing
+        this.objects = [];
+        this.divided = false;
     }
 
-    <span class="function">subdivide</span>() {
-        <span class="keyword">const</span> x = <span class="keyword">this</span>.boundary.x;
-        <span class="keyword">const</span> y = <span class="keyword">this</span>.boundary.y;
-        <span class="keyword">const</span> w = <span class="keyword">this</span>.boundary.width / <span class="number">2</span>;
-        <span class="keyword">const</span> h = <span class="keyword">this</span>.boundary.height / <span class="number">2</span>;
+    subdivide() {
+        const x = this.boundary.x;
+        const y = this.boundary.y;
+        const w = this.boundary.width / 2;
+        const h = this.boundary.height / 2;
 
-        <span class="keyword">this</span>.northeast = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x + w, y: y, width: w, height: h}, <span class="keyword">this</span>.capacity);
-        <span class="keyword">this</span>.northwest = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x, y: y, width: w, height: h}, <span class="keyword">this</span>.capacity);
-        <span class="keyword">this</span>.southeast = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x + w, y: y + h, width: w, height: h}, <span class="keyword">this</span>.capacity);
-        <span class="keyword">this</span>.southwest = <span class="keyword">new</span> <span class="function">QuadTree</span>({x: x, y: y + h, width: w, height: h}, <span class="keyword">this</span>.capacity);
+        this.northeast = new QuadTree({x: x + w, y: y, width: w, height: h}, this.capacity);
+        this.northwest = new QuadTree({x: x, y: y, width: w, height: h}, this.capacity);
+        this.southeast = new QuadTree({x: x + w, y: y + h, width: w, height: h}, this.capacity);
+        this.southwest = new QuadTree({x: x, y: y + h, width: w, height: h}, this.capacity);
 
-        <span class="keyword">this</span>.divided = <span class="keyword">true</span>;
+        this.divided = true;
     }
 
-    <span class="function">insert</span>(object) {
-        <span class="comment">// Check if object is in this boundary</span>
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.<span class="function">contains</span>(object)) {
-            <span class="keyword">return</span> <span class="keyword">false</span>;
+    insert(object) {
+        // Check if object is in this boundary
+        if (!this.contains(object)) {
+            return false;
         }
 
-        <span class="comment">// If there's room, add it here</span>
-        <span class="keyword">if</span> (<span class="keyword">this</span>.objects.length < <span class="keyword">this</span>.capacity) {
-            <span class="keyword">this</span>.objects.<span class="function">push</span>(object);
-            <span class="keyword">return</span> <span class="keyword">true</span>;
+        // If there's room, add it here
+        if (this.objects.length < this.capacity) {
+            this.objects.push(object);
+            return true;
         }
 
-        <span class="comment">// Otherwise, subdivide and add to child</span>
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.divided) {
-            <span class="keyword">this</span>.<span class="function">subdivide</span>();
+        // Otherwise, subdivide and add to child
+        if (!this.divided) {
+            this.subdivide();
         }
 
-        <span class="keyword">return</span> <span class="keyword">this</span>.northeast.<span class="function">insert</span>(object) ||
-               <span class="keyword">this</span>.northwest.<span class="function">insert</span>(object) ||
-               <span class="keyword">this</span>.southeast.<span class="function">insert</span>(object) ||
-               <span class="keyword">this</span>.southwest.<span class="function">insert</span>(object);
+        return this.northeast.insert(object) ||
+               this.northwest.insert(object) ||
+               this.southeast.insert(object) ||
+               this.southwest.insert(object);
     }
 
-    <span class="function">query</span>(range, found = []) {
-        <span class="comment">// Check if range intersects this quad's boundary</span>
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.<span class="function">intersects</span>(range)) {
-            <span class="keyword">return</span> found;
+    query(range, found = []) {
+        // Check if range intersects this quad's boundary
+        if (!this.intersects(range)) {
+            return found;
         }
 
-        <span class="comment">// Check objects in this quad</span>
-        <span class="keyword">for</span> (<span class="keyword">const</span> obj <span class="keyword">of</span> <span class="keyword">this</span>.objects) {
-            <span class="keyword">if</span> (<span class="function">rangeContains</span>(range, obj)) {
-                found.<span class="function">push</span>(obj);
+        // Check objects in this quad
+        for (const obj of this.objects) {
+            if (rangeContains(range, obj)) {
+                found.push(obj);
             }
         }
 
-        <span class="comment">// Recursively search children</span>
-        <span class="keyword">if</span> (<span class="keyword">this</span>.divided) {
-            <span class="keyword">this</span>.northeast.<span class="function">query</span>(range, found);
-            <span class="keyword">this</span>.northwest.<span class="function">query</span>(range, found);
-            <span class="keyword">this</span>.southeast.<span class="function">query</span>(range, found);
-            <span class="keyword">this</span>.southwest.<span class="function">query</span>(range, found);
+        // Recursively search children
+        if (this.divided) {
+            this.northeast.query(range, found);
+            this.northwest.query(range, found);
+            this.southeast.query(range, found);
+            this.southwest.query(range, found);
         }
 
-        <span class="keyword">return</span> found;
+        return found;
     }
 
-    <span class="function">contains</span>(object) {
-        <span class="keyword">return</span> object.x >= <span class="keyword">this</span>.boundary.x &&
-               object.x < <span class="keyword">this</span>.boundary.x + <span class="keyword">this</span>.boundary.width &&
-               object.y >= <span class="keyword">this</span>.boundary.y &&
-               object.y < <span class="keyword">this</span>.boundary.y + <span class="keyword">this</span>.boundary.height;
+    contains(object) {
+        return object.x >= this.boundary.x &&
+               object.x < this.boundary.x + this.boundary.width &&
+               object.y >= this.boundary.y &&
+               object.y < this.boundary.y + this.boundary.height;
     }
 
-    <span class="function">intersects</span>(range) {
-        <span class="keyword">return</span> !(<span class="keyword">this</span>.boundary.x > range.x + range.width ||
-                 <span class="keyword">this</span>.boundary.x + <span class="keyword">this</span>.boundary.width < range.x ||
-                 <span class="keyword">this</span>.boundary.y > range.y + range.height ||
-                 <span class="keyword">this</span>.boundary.y + <span class="keyword">this</span>.boundary.height < range.y);
+    intersects(range) {
+        return !(this.boundary.x > range.x + range.width ||
+                 this.boundary.x + this.boundary.width < range.x ||
+                 this.boundary.y > range.y + range.height ||
+                 this.boundary.y + this.boundary.height < range.y);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Using QuadTree for Collision Detection:</h4>
-                    <pre><code><span class="comment">// Create quadtree</span>
-<span class="keyword">const</span> boundary = {x: <span class="number">0</span>, y: <span class="number">0</span>, width: <span class="number">800</span>, height: <span class="number">600</span>};
-<span class="keyword">const</span> quadtree = <span class="keyword">new</span> <span class="function">QuadTree</span>(boundary);
+                    <pre><code class="language-javascript">// Create quadtree
+const boundary = {x: 0, y: 0, width: 800, height: 600};
+const quadtree = new QuadTree(boundary);
 
-<span class="comment">// Insert all objects</span>
-objects.<span class="function">forEach</span>(obj => quadtree.<span class="function">insert</span>(obj));
+// Insert all objects
+objects.forEach(obj => quadtree.insert(obj));
 
-<span class="comment">// For each object, only check nearby objects</span>
-objects.<span class="function">forEach</span>(obj => {
-    <span class="keyword">const</span> range = {
-        x: obj.x - obj.radius * <span class="number">2</span>,
-        y: obj.y - obj.radius * <span class="number">2</span>,
-        width: obj.radius * <span class="number">4</span>,
-        height: obj.radius * <span class="number">4</span>
+// For each object, only check nearby objects
+objects.forEach(obj => {
+    const range = {
+        x: obj.x - obj.radius * 2,
+        y: obj.y - obj.radius * 2,
+        width: obj.radius * 4,
+        height: obj.radius * 4
     };
 
-    <span class="keyword">const</span> nearby = quadtree.<span class="function">query</span>(range);
-    nearby.<span class="function">forEach</span>(other => {
-        <span class="keyword">if</span> (obj !== other && obj.<span class="function">collidesWith</span>(other)) {
-            <span class="function">handleCollision</span>(obj, other);
+    const nearby = quadtree.query(range);
+    nearby.forEach(other => {
+        if (obj !== other && obj.collidesWith(other)) {
+            handleCollision(obj, other);
         }
     });
 });</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: QuadTree Visualization</summary>
+                <pre><code class="language-javascript">// ===================================
+// QUADTREE - Complete Implementation
+// ===================================
+
+class QuadTree {
+    constructor(boundary, capacity = 4) {
+        this.boundary = boundary;  // { x, y, width, height }
+        this.capacity = capacity;   // Max objects before subdividing
+        this.objects = [];
+        this.divided = false;
+    }
+
+    subdivide() {
+        const { x, y, width, height } = this.boundary;
+        const w = width / 2, h = height / 2;
+
+        this.northeast = new QuadTree({x: x + w, y, width: w, height: h}, this.capacity);
+        this.northwest = new QuadTree({x, y, width: w, height: h}, this.capacity);
+        this.southeast = new QuadTree({x: x + w, y: y + h, width: w, height: h}, this.capacity);
+        this.southwest = new QuadTree({x, y: y + h, width: w, height: h}, this.capacity);
+        this.divided = true;
+    }
+
+    insert(point) {
+        if (!this.contains(point)) return false;
+
+        if (this.objects.length < this.capacity) {
+            this.objects.push(point);
+            return true;
+        }
+
+        if (!this.divided) this.subdivide();
+
+        return this.northeast.insert(point) || this.northwest.insert(point) ||
+               this.southeast.insert(point) || this.southwest.insert(point);
+    }
+
+    contains(point) {
+        return point.x >= this.boundary.x &&
+               point.x < this.boundary.x + this.boundary.width &&
+               point.y >= this.boundary.y &&
+               point.y < this.boundary.y + this.boundary.height;
+    }
+
+    // Query: Find all points within a range
+    query(range, found = []) {
+        if (!this.intersects(range)) return found;
+
+        for (const point of this.objects) {
+            if (this.rangeContains(range, point)) {
+                found.push(point);
+            }
+        }
+
+        if (this.divided) {
+            this.northeast.query(range, found);
+            this.northwest.query(range, found);
+            this.southeast.query(range, found);
+            this.southwest.query(range, found);
+        }
+        return found;
+    }
+
+    intersects(range) {
+        return !(this.boundary.x > range.x + range.width ||
+                 this.boundary.x + this.boundary.width < range.x ||
+                 this.boundary.y > range.y + range.height ||
+                 this.boundary.y + this.boundary.height < range.y);
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = '#2a2f4a';
+        ctx.strokeRect(this.boundary.x, this.boundary.y,
+                       this.boundary.width, this.boundary.height);
+        if (this.divided) {
+            this.northeast.draw(ctx);
+            this.northwest.draw(ctx);
+            this.southeast.draw(ctx);
+            this.southwest.draw(ctx);
+        }
+    }
+}
+
+// Usage
+const points = [];
+let mousePos = new Vector2D(400, 300);
+let showTree = true;
+
+// Add points on button click
+document.getElementById('btnAddMany').addEventListener('click', () => {
+    for (let i = 0; i < 100; i++) {
+        points.push(new Vector2D(randomFloat(0, canvas.width), randomFloat(0, canvas.height)));
+    }
+});
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    // Rebuild tree each frame (for moving objects)
+    const boundary = {x: 0, y: 0, width: canvas.width, height: canvas.height};
+    const quadtree = new QuadTree(boundary);
+    points.forEach(p => quadtree.insert(p));
+
+    if (showTree) quadtree.draw(ctx);
+
+    // Query area around mouse
+    const queryRange = {
+        x: mousePos.x - 75, y: mousePos.y - 75, width: 150, height: 150
+    };
+    const found = quadtree.query(queryRange);
+
+    // Draw query range
+    ctx.strokeStyle = '#4fc3f7';
+    ctx.strokeRect(queryRange.x, queryRange.y, queryRange.width, queryRange.height);
+
+    // Draw points (highlight found ones)
+    points.forEach(p => {
+        ctx.fillStyle = found.includes(p) ? '#ffa726' : '#66bb6a';
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: QuadTree Visualization</h3>
@@ -205,56 +339,56 @@ objects.<span class="function">forEach</span>(obj => {
             <details data-demo-id="pooling" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Object Pool Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">ObjectPool</span> {
-    <span class="keyword">constructor</span>(createFn, resetFn, initialSize = <span class="number">50</span>) {
-        <span class="keyword">this</span>.createFn = createFn;  <span class="comment">// Function to create new objects</span>
-        <span class="keyword">this</span>.resetFn = resetFn;    <span class="comment">// Function to reset objects for reuse</span>
-        <span class="keyword">this</span>.pool = [];
-        <span class="keyword">this</span>.active = [];
+                    <pre><code class="language-javascript">class ObjectPool {
+    constructor(createFn, resetFn, initialSize = 50) {
+        this.createFn = createFn;  // Function to create new objects
+        this.resetFn = resetFn;    // Function to reset objects for reuse
+        this.pool = [];
+        this.active = [];
 
-        <span class="comment">// Pre-create objects</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < initialSize; i++) {
-            <span class="keyword">this</span>.pool.<span class="function">push</span>(<span class="keyword">this</span>.<span class="function">createFn</span>());
+        // Pre-create objects
+        for (let i = 0; i < initialSize; i++) {
+            this.pool.push(this.createFn());
         }
     }
 
-    <span class="function">get</span>(...args) {
-        <span class="keyword">let</span> object;
+    get(...args) {
+        let object;
 
-        <span class="keyword">if</span> (<span class="keyword">this</span>.pool.length > <span class="number">0</span>) {
-            <span class="comment">// Reuse from pool</span>
-            object = <span class="keyword">this</span>.pool.<span class="function">pop</span>();
-        } <span class="keyword">else</span> {
-            <span class="comment">// Pool is empty, create new</span>
-            object = <span class="keyword">this</span>.<span class="function">createFn</span>();
+        if (this.pool.length > 0) {
+            // Reuse from pool
+            object = this.pool.pop();
+        } else {
+            // Pool is empty, create new
+            object = this.createFn();
         }
 
-        <span class="comment">// Reset and activate</span>
-        <span class="keyword">this</span>.<span class="function">resetFn</span>(object, ...args);
-        <span class="keyword">this</span>.active.<span class="function">push</span>(object);
+        // Reset and activate
+        this.resetFn(object, ...args);
+        this.active.push(object);
 
-        <span class="keyword">return</span> object;
+        return object;
     }
 
-    <span class="function">release</span>(object) {
-        <span class="comment">// Remove from active</span>
-        <span class="keyword">const</span> index = <span class="keyword">this</span>.active.<span class="function">indexOf</span>(object);
-        <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
-            <span class="keyword">this</span>.active.<span class="function">splice</span>(index, <span class="number">1</span>);
+    release(object) {
+        // Remove from active
+        const index = this.active.indexOf(object);
+        if (index !== -1) {
+            this.active.splice(index, 1);
         }
 
-        <span class="comment">// Return to pool</span>
-        <span class="keyword">this</span>.pool.<span class="function">push</span>(object);
+        // Return to pool
+        this.pool.push(object);
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Update all active objects</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="keyword">this</span>.active.length - <span class="number">1</span>; i >= <span class="number">0</span>; i--) {
-            <span class="keyword">const</span> obj = <span class="keyword">this</span>.active[i];
+    update() {
+        // Update all active objects
+        for (let i = this.active.length - 1; i >= 0; i--) {
+            const obj = this.active[i];
 
-            <span class="comment">// Update returns false when object should be released</span>
-            <span class="keyword">if</span> (!obj.<span class="function">update</span>()) {
-                <span class="keyword">this</span>.<span class="function">release</span>(obj);
+            // Update returns false when object should be released
+            if (!obj.update()) {
+                this.release(obj);
             }
         }
     }
@@ -263,33 +397,134 @@ objects.<span class="function">forEach</span>(obj => {
 
                 <div class="example-box">
                     <h4>🎮 Example: Bullet Pool</h4>
-                    <pre><code><span class="comment">// Create bullet pool</span>
-<span class="keyword">const</span> bulletPool = <span class="keyword">new</span> <span class="function">ObjectPool</span>(
-    <span class="comment">// Create function</span>
+                    <pre><code class="language-javascript">// Create bullet pool
+const bulletPool = new ObjectPool(
+    // Create function
     () => ({
-        position: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
-        velocity: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
-        active: <span class="keyword">false</span>,
+        position: new Vector2D(0, 0),
+        velocity: new Vector2D(0, 0),
+        active: false,
         update() {
-            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
-            <span class="comment">// Return false if out of bounds</span>
-            <span class="keyword">return</span> <span class="keyword">this</span>.position.x >= <span class="number">0</span> && <span class="keyword">this</span>.position.x <= <span class="number">800</span>;
+            this.position.add(this.velocity);
+            // Return false if out of bounds
+            return this.position.x >= 0 && this.position.x <= 800;
         }
     }),
-    <span class="comment">// Reset function</span>
+    // Reset function
     (bullet, x, y, vx, vy) => {
-        bullet.position.<span class="function">set</span>(x, y);
-        bullet.velocity.<span class="function">set</span>(vx, vy);
-        bullet.active = <span class="keyword">true</span>;
+        bullet.position.set(x, y);
+        bullet.velocity.set(vx, vy);
+        bullet.active = true;
     }
 );
 
-<span class="comment">// Spawn a bullet (no garbage creation!)</span>
-<span class="keyword">const</span> bullet = bulletPool.<span class="function">get</span>(playerX, playerY, <span class="number">10</span>, <span class="number">0</span>);
+// Spawn a bullet (no garbage creation!)
+const bullet = bulletPool.get(playerX, playerY, 10, 0);
 
-<span class="comment">// Update all active bullets</span>
-bulletPool.<span class="function">update</span>();</code></pre>
+// Update all active bullets
+bulletPool.update();</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Object Pooling</summary>
+                <pre><code class="language-javascript">// ===================================
+// OBJECT POOLING - Complete Implementation
+// ===================================
+
+class ObjectPool {
+    constructor(createFn, resetFn, initialSize = 50) {
+        this.createFn = createFn;    // Function to create new objects
+        this.resetFn = resetFn;      // Function to reset objects for reuse
+        this.pool = [];              // Available (inactive) objects
+        this.active = [];            // Currently in-use objects
+
+        // Pre-populate pool
+        for (let i = 0; i < initialSize; i++) {
+            this.pool.push(this.createFn());
+        }
+    }
+
+    // Get object from pool (or create if empty)
+    get(...args) {
+        let object;
+        if (this.pool.length > 0) {
+            object = this.pool.pop();  // Reuse existing
+        } else {
+            object = this.createFn();  // Create new if needed
+        }
+
+        this.resetFn(object, ...args);  // Initialize for use
+        this.active.push(object);
+        return object;
+    }
+
+    // Return object to pool
+    release(object) {
+        const index = this.active.indexOf(object);
+        if (index !== -1) {
+            this.active.splice(index, 1);
+        }
+        this.pool.push(object);  // Ready for reuse
+    }
+
+    // Update all active objects, release dead ones
+    update() {
+        for (let i = this.active.length - 1; i >= 0; i--) {
+            if (!this.active[i].update()) {
+                this.release(this.active[i]);
+            }
+        }
+    }
+}
+
+// Usage: Particle pool
+const particlePool = new ObjectPool(
+    // Create function
+    () => ({
+        position: new Vector2D(0, 0),
+        velocity: new Vector2D(0, 0),
+        life: 1.0,
+        update() {
+            this.position.add(this.velocity);
+            this.life -= 0.01;
+            return this.life > 0;  // Return false when dead
+        }
+    }),
+    // Reset function
+    (particle, x, y) => {
+        particle.position.set(x, y);
+        particle.velocity = Vector2D.random(randomFloat(2, 5));
+        particle.life = 1.0;
+    }
+);
+
+// Spawn particles on click
+canvas.addEventListener('click', (e) => {
+    for (let i = 0; i < 10; i++) {
+        particlePool.get(e.clientX, e.clientY);
+    }
+});
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    particlePool.update();
+
+    particlePool.active.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = '#4fc3f7';
+        ctx.arc(p.position.x, p.position.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+    info.textContent = `Active: ${particlePool.active.length} | Pool: ${particlePool.pool.length}`;
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Object Pooling</h3>
@@ -324,62 +559,62 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <details data-demo-id="noise" data-deps="clearCanvas">
                 <summary>📝 Click to see: Simple Noise Function</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Simplified Perlin-like noise</span>
-<span class="keyword">class</span> <span class="function">NoiseGenerator</span> {
-    <span class="keyword">constructor</span>(seed = <span class="number">0</span>) {
-        <span class="keyword">this</span>.seed = seed;
+                    <pre><code class="language-javascript">// Simplified Perlin-like noise
+class NoiseGenerator {
+    constructor(seed = 0) {
+        this.seed = seed;
     }
 
-    <span class="comment">// Simple hash function for pseudo-random values</span>
-    <span class="function">hash</span>(x, y) {
-        <span class="keyword">let</span> h = <span class="keyword">this</span>.seed + x * <span class="number">374761393</span> + y * <span class="number">668265263</span>;
-        h = (h ^ (h >> <span class="number">13</span>)) * <span class="number">1274126177</span>;
-        <span class="keyword">return</span> (h ^ (h >> <span class="number">16</span>)) / <span class="number">2147483648</span> + <span class="number">0.5</span>;
+    // Simple hash function for pseudo-random values
+    hash(x, y) {
+        let h = this.seed + x * 374761393 + y * 668265263;
+        h = (h ^ (h >> 13)) * 1274126177;
+        return (h ^ (h >> 16)) / 2147483648 + 0.5;
     }
 
-    <span class="comment">// Smooth interpolation</span>
-    <span class="function">smoothstep</span>(t) {
-        <span class="keyword">return</span> t * t * (<span class="number">3</span> - <span class="number">2</span> * t);
+    // Smooth interpolation
+    smoothstep(t) {
+        return t * t * (3 - 2 * t);
     }
 
-    <span class="comment">// 2D noise function</span>
-    <span class="function">noise</span>(x, y) {
-        <span class="keyword">const</span> xi = Math.<span class="function">floor</span>(x);
-        <span class="keyword">const</span> yi = Math.<span class="function">floor</span>(y);
-        <span class="keyword">const</span> xf = x - xi;
-        <span class="keyword">const</span> yf = y - yi;
+    // 2D noise function
+    noise(x, y) {
+        const xi = Math.floor(x);
+        const yi = Math.floor(y);
+        const xf = x - xi;
+        const yf = y - yi;
 
-        <span class="comment">// Get corner values</span>
-        <span class="keyword">const</span> n00 = <span class="keyword">this</span>.<span class="function">hash</span>(xi, yi);
-        <span class="keyword">const</span> n10 = <span class="keyword">this</span>.<span class="function">hash</span>(xi + <span class="number">1</span>, yi);
-        <span class="keyword">const</span> n01 = <span class="keyword">this</span>.<span class="function">hash</span>(xi, yi + <span class="number">1</span>);
-        <span class="keyword">const</span> n11 = <span class="keyword">this</span>.<span class="function">hash</span>(xi + <span class="number">1</span>, yi + <span class="number">1</span>);
+        // Get corner values
+        const n00 = this.hash(xi, yi);
+        const n10 = this.hash(xi + 1, yi);
+        const n01 = this.hash(xi, yi + 1);
+        const n11 = this.hash(xi + 1, yi + 1);
 
-        <span class="comment">// Smooth interpolation</span>
-        <span class="keyword">const</span> sx = <span class="keyword">this</span>.<span class="function">smoothstep</span>(xf);
-        <span class="keyword">const</span> sy = <span class="keyword">this</span>.<span class="function">smoothstep</span>(yf);
+        // Smooth interpolation
+        const sx = this.smoothstep(xf);
+        const sy = this.smoothstep(yf);
 
-        <span class="keyword">const</span> nx0 = <span class="function">lerp</span>(n00, n10, sx);
-        <span class="keyword">const</span> nx1 = <span class="function">lerp</span>(n01, n11, sx);
+        const nx0 = lerp(n00, n10, sx);
+        const nx1 = lerp(n01, n11, sx);
 
-        <span class="keyword">return</span> <span class="function">lerp</span>(nx0, nx1, sy);
+        return lerp(nx0, nx1, sy);
     }
 
-    <span class="comment">// Multi-octave noise (more detail)</span>
-    <span class="function">fractalNoise</span>(x, y, octaves = <span class="number">4</span>) {
-        <span class="keyword">let</span> value = <span class="number">0</span>;
-        <span class="keyword">let</span> amplitude = <span class="number">1</span>;
-        <span class="keyword">let</span> frequency = <span class="number">1</span>;
-        <span class="keyword">let</span> maxValue = <span class="number">0</span>;
+    // Multi-octave noise (more detail)
+    fractalNoise(x, y, octaves = 4) {
+        let value = 0;
+        let amplitude = 1;
+        let frequency = 1;
+        let maxValue = 0;
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < octaves; i++) {
-            value += <span class="keyword">this</span>.<span class="function">noise</span>(x * frequency, y * frequency) * amplitude;
+        for (let i = 0; i < octaves; i++) {
+            value += this.noise(x * frequency, y * frequency) * amplitude;
             maxValue += amplitude;
-            amplitude *= <span class="number">0.5</span>;
-            frequency *= <span class="number">2</span>;
+            amplitude *= 0.5;
+            frequency *= 2;
         }
 
-        <span class="keyword">return</span> value / maxValue;
+        return value / maxValue;
     }
 }</code></pre>
                 </div>
@@ -417,130 +652,130 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <details data-demo-id="procgen" data-deps="clearCanvas">
                 <summary>📝 Click to see: Perlin Noise Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">PerlinNoise</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="comment">// Permutation table (256 values, repeated)</span>
-        <span class="keyword">this</span>.p = [];
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">256</span>; i++) {
-            <span class="keyword">this</span>.p[i] = Math.<span class="function">floor</span>(Math.<span class="function">random</span>() * <span class="number">256</span>);
+                    <pre><code class="language-javascript">class PerlinNoise {
+    constructor() {
+        // Permutation table (256 values, repeated)
+        this.p = [];
+        for (let i = 0; i < 256; i++) {
+            this.p[i] = Math.floor(Math.random() * 256);
         }
-        <span class="comment">// Duplicate for overflow</span>
-        <span class="keyword">this</span>.p = <span class="keyword">this</span>.p.<span class="function">concat</span>(<span class="keyword">this</span>.p);
+        // Duplicate for overflow
+        this.p = this.p.concat(this.p);
     }
 
-    <span class="function">fade</span>(t) {
-        <span class="comment">// Smoothstep: 6t^5 - 15t^4 + 10t^3</span>
-        <span class="keyword">return</span> t * t * t * (t * (t * <span class="number">6</span> - <span class="number">15</span>) + <span class="number">10</span>);
+    fade(t) {
+        // Smoothstep: 6t^5 - 15t^4 + 10t^3
+        return t * t * t * (t * (t * 6 - 15) + 10);
     }
 
-    <span class="function">lerp</span>(a, b, t) {
-        <span class="keyword">return</span> a + t * (b - a);
+    lerp(a, b, t) {
+        return a + t * (b - a);
     }
 
-    <span class="function">grad</span>(hash, x, y) {
-        <span class="comment">// Convert hash to gradient vector</span>
-        <span class="keyword">const</span> h = hash & <span class="number">3</span>;
-        <span class="keyword">const</span> u = h < <span class="number">2</span> ? x : y;
-        <span class="keyword">const</span> v = h < <span class="number">2</span> ? y : x;
-        <span class="keyword">return</span> ((h & <span class="number">1</span>) ? -u : u) + ((h & <span class="number">2</span>) ? -v : v);
+    grad(hash, x, y) {
+        // Convert hash to gradient vector
+        const h = hash & 3;
+        const u = h < 2 ? x : y;
+        const v = h < 2 ? y : x;
+        return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
     }
 
-    <span class="function">noise</span>(x, y) {
-        <span class="comment">// Find grid cell</span>
-        <span class="keyword">const</span> X = Math.<span class="function">floor</span>(x) & <span class="number">255</span>;
-        <span class="keyword">const</span> Y = Math.<span class="function">floor</span>(y) & <span class="number">255</span>;
+    noise(x, y) {
+        // Find grid cell
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
 
-        <span class="comment">// Relative position within cell</span>
-        x -= Math.<span class="function">floor</span>(x);
-        y -= Math.<span class="function">floor</span>(y);
+        // Relative position within cell
+        x -= Math.floor(x);
+        y -= Math.floor(y);
 
-        <span class="comment">// Fade curves</span>
-        <span class="keyword">const</span> u = <span class="keyword">this</span>.<span class="function">fade</span>(x);
-        <span class="keyword">const</span> v = <span class="keyword">this</span>.<span class="function">fade</span>(y);
+        // Fade curves
+        const u = this.fade(x);
+        const v = this.fade(y);
 
-        <span class="comment">// Hash coordinates of 4 cube corners</span>
-        <span class="keyword">const</span> a = <span class="keyword">this</span>.p[X] + Y;
-        <span class="keyword">const</span> aa = <span class="keyword">this</span>.p[a];
-        <span class="keyword">const</span> ab = <span class="keyword">this</span>.p[a + <span class="number">1</span>];
-        <span class="keyword">const</span> b = <span class="keyword">this</span>.p[X + <span class="number">1</span>] + Y;
-        <span class="keyword">const</span> ba = <span class="keyword">this</span>.p[b];
-        <span class="keyword">const</span> bb = <span class="keyword">this</span>.p[b + <span class="number">1</span>];
+        // Hash coordinates of 4 cube corners
+        const a = this.p[X] + Y;
+        const aa = this.p[a];
+        const ab = this.p[a + 1];
+        const b = this.p[X + 1] + Y;
+        const ba = this.p[b];
+        const bb = this.p[b + 1];
 
-        <span class="comment">// Blend results from 4 corners</span>
-        <span class="keyword">return</span> <span class="keyword">this</span>.<span class="function">lerp</span>(
-            <span class="keyword">this</span>.<span class="function">lerp</span>(<span class="keyword">this</span>.<span class="function">grad</span>(aa, x, y), <span class="keyword">this</span>.<span class="function">grad</span>(ba, x - <span class="number">1</span>, y), u),
-            <span class="keyword">this</span>.<span class="function">lerp</span>(<span class="keyword">this</span>.<span class="function">grad</span>(ab, x, y - <span class="number">1</span>), <span class="keyword">this</span>.<span class="function">grad</span>(bb, x - <span class="number">1</span>, y - <span class="number">1</span>), u),
+        // Blend results from 4 corners
+        return this.lerp(
+            this.lerp(this.grad(aa, x, y), this.grad(ba, x - 1, y), u),
+            this.lerp(this.grad(ab, x, y - 1), this.grad(bb, x - 1, y - 1), u),
             v
         );
     }
 
-    <span class="comment">// Octave noise - combine multiple frequencies</span>
-    <span class="function">octaveNoise</span>(x, y, octaves = <span class="number">4</span>, persistence = <span class="number">0.5</span>) {
-        <span class="keyword">let</span> total = <span class="number">0</span>;
-        <span class="keyword">let</span> frequency = <span class="number">1</span>;
-        <span class="keyword">let</span> amplitude = <span class="number">1</span>;
-        <span class="keyword">let</span> maxValue = <span class="number">0</span>;
+    // Octave noise - combine multiple frequencies
+    octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+        let total = 0;
+        let frequency = 1;
+        let amplitude = 1;
+        let maxValue = 0;
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < octaves; i++) {
-            total += <span class="keyword">this</span>.<span class="function">noise</span>(x * frequency, y * frequency) * amplitude;
+        for (let i = 0; i < octaves; i++) {
+            total += this.noise(x * frequency, y * frequency) * amplitude;
             maxValue += amplitude;
             amplitude *= persistence;
-            frequency *= <span class="number">2</span>;
+            frequency *= 2;
         }
 
-        <span class="keyword">return</span> total / maxValue;
+        return total / maxValue;
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Terrain Generation Example:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">TerrainGenerator</span> {
-    <span class="keyword">constructor</span>(width, height) {
-        <span class="keyword">this</span>.width = width;
-        <span class="keyword">this</span>.height = height;
-        <span class="keyword">this</span>.noise = <span class="keyword">new</span> <span class="function">PerlinNoise</span>();
-        <span class="keyword">this</span>.heightmap = [];
+                    <pre><code class="language-javascript">class TerrainGenerator {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.noise = new PerlinNoise();
+        this.heightmap = [];
     }
 
-    <span class="function">generate</span>(scale = <span class="number">0.05</span>) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < <span class="keyword">this</span>.height; y++) {
-            <span class="keyword">this</span>.heightmap[y] = [];
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < <span class="keyword">this</span>.width; x++) {
-                <span class="comment">// Get noise value (0-1)</span>
-                <span class="keyword">const</span> value = <span class="keyword">this</span>.noise.<span class="function">octaveNoise</span>(
+    generate(scale = 0.05) {
+        for (let y = 0; y < this.height; y++) {
+            this.heightmap[y] = [];
+            for (let x = 0; x < this.width; x++) {
+                // Get noise value (0-1)
+                const value = this.noise.octaveNoise(
                     x * scale,
                     y * scale,
-                    <span class="number">4</span>,      <span class="comment">// 4 octaves</span>
-                    <span class="number">0.5</span>     <span class="comment">// persistence</span>
+                    4,      // 4 octaves
+                    0.5     // persistence
                 );
 
-                <span class="comment">// Normalize to 0-1 range</span>
-                <span class="keyword">this</span>.heightmap[y][x] = (value + <span class="number">1</span>) / <span class="number">2</span>;
+                // Normalize to 0-1 range
+                this.heightmap[y][x] = (value + 1) / 2;
             }
         }
     }
 
-    <span class="function">getTileType</span>(x, y) {
-        <span class="keyword">const</span> height = <span class="keyword">this</span>.heightmap[y][x];
+    getTileType(x, y) {
+        const height = this.heightmap[y][x];
 
-        <span class="comment">// Map height to terrain types</span>
-        <span class="keyword">if</span> (height < <span class="number">0.3</span>) <span class="keyword">return</span> <span class="string">'water'</span>;
-        <span class="keyword">if</span> (height < <span class="number">0.4</span>) <span class="keyword">return</span> <span class="string">'sand'</span>;
-        <span class="keyword">if</span> (height < <span class="number">0.7</span>) <span class="keyword">return</span> <span class="string">'grass'</span>;
-        <span class="keyword">if</span> (height < <span class="number">0.9</span>) <span class="keyword">return</span> <span class="string">'mountain'</span>;
-        <span class="keyword">return</span> <span class="string">'snow'</span>;
+        // Map height to terrain types
+        if (height < 0.3) return 'water';
+        if (height < 0.4) return 'sand';
+        if (height < 0.7) return 'grass';
+        if (height < 0.9) return 'mountain';
+        return 'snow';
     }
 
-    <span class="function">getColor</span>(tileType) {
-        <span class="keyword">const</span> colors = {
-            water: <span class="string">'#4A90E2'</span>,
-            sand: <span class="string">'#F5DEB3'</span>,
-            grass: <span class="string">'#7EC850'</span>,
-            mountain: <span class="string">'#8B7355'</span>,
-            snow: <span class="string">'#FFFFFF'</span>
+    getColor(tileType) {
+        const colors = {
+            water: '#4A90E2',
+            sand: '#F5DEB3',
+            grass: '#7EC850',
+            mountain: '#8B7355',
+            snow: '#FFFFFF'
         };
-        <span class="keyword">return</span> colors[tileType];
+        return colors[tileType];
     }
 }</code></pre>
                 </div>
@@ -589,61 +824,61 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <details data-demo-id="tilemap" data-deps="clearCanvas">
                 <summary>📝 Click to see: Tilemap Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Tilemap</span> {
-    <span class="keyword">constructor</span>(width, height, tileSize) {
-        <span class="keyword">this</span>.width = width;
-        <span class="keyword">this</span>.height = height;
-        <span class="keyword">this</span>.tileSize = tileSize;
-        <span class="keyword">this</span>.tiles = [];
+                    <pre><code class="language-javascript">class Tilemap {
+    constructor(width, height, tileSize) {
+        this.width = width;
+        this.height = height;
+        this.tileSize = tileSize;
+        this.tiles = [];
 
-        <span class="comment">// Initialize empty map</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y < height; y++) {
-            <span class="keyword">this</span>.tiles[y] = [];
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x < width; x++) {
-                <span class="keyword">this</span>.tiles[y][x] = <span class="number">0</span>;  <span class="comment">// 0 = empty</span>
+        // Initialize empty map
+        for (let y = 0; y < height; y++) {
+            this.tiles[y] = [];
+            for (let x = 0; x < width; x++) {
+                this.tiles[y][x] = 0;  // 0 = empty
             }
         }
     }
 
-    <span class="function">setTile</span>(x, y, type) {
-        <span class="keyword">if</span> (x >= <span class="number">0</span> && x < <span class="keyword">this</span>.width && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.height) {
-            <span class="keyword">this</span>.tiles[y][x] = type;
+    setTile(x, y, type) {
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+            this.tiles[y][x] = type;
         }
     }
 
-    <span class="function">getTile</span>(x, y) {
-        <span class="keyword">if</span> (x >= <span class="number">0</span> && x < <span class="keyword">this</span>.width && y >= <span class="number">0</span> && y < <span class="keyword">this</span>.height) {
-            <span class="keyword">return</span> <span class="keyword">this</span>.tiles[y][x];
+    getTile(x, y) {
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+            return this.tiles[y][x];
         }
-        <span class="keyword">return</span> -<span class="number">1</span>;  <span class="comment">// Out of bounds</span>
+        return -1;  // Out of bounds
     }
 
-    <span class="comment">// Convert world position to tile coordinates</span>
-    <span class="function">worldToTile</span>(worldX, worldY) {
-        <span class="keyword">return</span> {
-            x: Math.<span class="function">floor</span>(worldX / <span class="keyword">this</span>.tileSize),
-            y: Math.<span class="function">floor</span>(worldY / <span class="keyword">this</span>.tileSize)
+    // Convert world position to tile coordinates
+    worldToTile(worldX, worldY) {
+        return {
+            x: Math.floor(worldX / this.tileSize),
+            y: Math.floor(worldY / this.tileSize)
         };
     }
 
-    <span class="comment">// Check if tile is solid (for collision)</span>
-    <span class="function">isSolid</span>(x, y) {
-        <span class="keyword">const</span> tile = <span class="keyword">this</span>.<span class="function">getTile</span>(x, y);
-        <span class="keyword">return</span> tile === <span class="number">1</span>;  <span class="comment">// 1 = wall</span>
+    // Check if tile is solid (for collision)
+    isSolid(x, y) {
+        const tile = this.getTile(x, y);
+        return tile === 1;  // 1 = wall
     }
 
-    <span class="function">render</span>(ctx, camera) {
-        <span class="comment">// Only render visible tiles</span>
-        <span class="keyword">const</span> startX = Math.<span class="function">max</span>(<span class="number">0</span>, Math.<span class="function">floor</span>(camera.x / <span class="keyword">this</span>.tileSize));
-        <span class="keyword">const</span> startY = Math.<span class="function">max</span>(<span class="number">0</span>, Math.<span class="function">floor</span>(camera.y / <span class="keyword">this</span>.tileSize));
-        <span class="keyword">const</span> endX = Math.<span class="function">min</span>(<span class="keyword">this</span>.width, startX + camera.width / <span class="keyword">this</span>.tileSize + <span class="number">1</span>);
-        <span class="keyword">const</span> endY = Math.<span class="function">min</span>(<span class="keyword">this</span>.height, startY + camera.height / <span class="keyword">this</span>.tileSize + <span class="number">1</span>);
+    render(ctx, camera) {
+        // Only render visible tiles
+        const startX = Math.max(0, Math.floor(camera.x / this.tileSize));
+        const startY = Math.max(0, Math.floor(camera.y / this.tileSize));
+        const endX = Math.min(this.width, startX + camera.width / this.tileSize + 1);
+        const endY = Math.min(this.height, startY + camera.height / this.tileSize + 1);
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> y = startY; y < endY; y++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> x = startX; x < endX; x++) {
-                <span class="keyword">const</span> tile = <span class="keyword">this</span>.tiles[y][x];
-                <span class="keyword">if</span> (tile !== <span class="number">0</span>) {
-                    <span class="keyword">this</span>.<span class="function">renderTile</span>(ctx, x, y, tile, camera);
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const tile = this.tiles[y][x];
+                if (tile !== 0) {
+                    this.renderTile(ctx, x, y, tile, camera);
                 }
             }
         }
@@ -692,112 +927,112 @@ bulletPool.<span class="function">update</span>();</code></pre>
             <details data-demo-id="ecs" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: ECS Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Components are pure data</span>
-<span class="keyword">class</span> <span class="function">Position</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
+                    <pre><code class="language-javascript">// Components are pure data
+class Position {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 }
 
-<span class="keyword">class</span> <span class="function">Velocity</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
+class Velocity {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 }
 
-<span class="keyword">class</span> <span class="function">Renderable</span> {
-    <span class="keyword">constructor</span>(sprite, color) {
-        <span class="keyword">this</span>.sprite = sprite;
-        <span class="keyword">this</span>.color = color;
+class Renderable {
+    constructor(sprite, color) {
+        this.sprite = sprite;
+        this.color = color;
     }
 }
 
-<span class="keyword">class</span> <span class="function">Health</span> {
-    <span class="keyword">constructor</span>(max) {
-        <span class="keyword">this</span>.current = max;
-        <span class="keyword">this</span>.max = max;
+class Health {
+    constructor(max) {
+        this.current = max;
+        this.max = max;
     }
 }
 
-<span class="comment">// Entity is just an ID with components</span>
-<span class="keyword">class</span> <span class="function">Entity</span> {
-    <span class="keyword">static</span> nextId = <span class="number">0</span>;
+// Entity is just an ID with components
+class Entity {
+    static nextId = 0;
 
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.id = Entity.nextId++;
-        <span class="keyword">this</span>.components = <span class="keyword">new</span> <span class="function">Map</span>();
+    constructor() {
+        this.id = Entity.nextId++;
+        this.components = new Map();
     }
 
-    <span class="function">addComponent</span>(component) {
-        <span class="keyword">this</span>.components.<span class="function">set</span>(component.constructor, component);
-        <span class="keyword">return</span> <span class="keyword">this</span>;  <span class="comment">// For chaining</span>
+    addComponent(component) {
+        this.components.set(component.constructor, component);
+        return this;  // For chaining
     }
 
-    <span class="function">getComponent</span>(componentClass) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.components.<span class="function">get</span>(componentClass);
+    getComponent(componentClass) {
+        return this.components.get(componentClass);
     }
 
-    <span class="function">hasComponent</span>(componentClass) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.components.<span class="function">has</span>(componentClass);
+    hasComponent(componentClass) {
+        return this.components.has(componentClass);
     }
 
-    <span class="function">removeComponent</span>(componentClass) {
-        <span class="keyword">this</span>.components.<span class="function">delete</span>(componentClass);
+    removeComponent(componentClass) {
+        this.components.delete(componentClass);
     }
 }
 
-<span class="comment">// World manages all entities</span>
-<span class="keyword">class</span> <span class="function">World</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.entities = [];
-        <span class="keyword">this</span>.systems = [];
+// World manages all entities
+class World {
+    constructor() {
+        this.entities = [];
+        this.systems = [];
     }
 
-    <span class="function">createEntity</span>() {
-        <span class="keyword">const</span> entity = <span class="keyword">new</span> <span class="function">Entity</span>();
-        <span class="keyword">this</span>.entities.<span class="function">push</span>(entity);
-        <span class="keyword">return</span> entity;
+    createEntity() {
+        const entity = new Entity();
+        this.entities.push(entity);
+        return entity;
     }
 
-    <span class="function">removeEntity</span>(entity) {
-        <span class="keyword">const</span> index = <span class="keyword">this</span>.entities.<span class="function">indexOf</span>(entity);
-        <span class="keyword">if</span> (index !== -<span class="number">1</span>) {
-            <span class="keyword">this</span>.entities.<span class="function">splice</span>(index, <span class="number">1</span>);
+    removeEntity(entity) {
+        const index = this.entities.indexOf(entity);
+        if (index !== -1) {
+            this.entities.splice(index, 1);
         }
     }
 
-    <span class="function">addSystem</span>(system) {
-        <span class="keyword">this</span>.systems.<span class="function">push</span>(system);
+    addSystem(system) {
+        this.systems.push(system);
     }
 
-    <span class="function">update</span>(deltaTime) {
-        <span class="keyword">for</span> (<span class="keyword">const</span> system <span class="keyword">of</span> <span class="keyword">this</span>.systems) {
-            system.<span class="function">update</span>(<span class="keyword">this</span>.entities, deltaTime);
+    update(deltaTime) {
+        for (const system of this.systems) {
+            system.update(this.entities, deltaTime);
         }
     }
 
-    <span class="comment">// Query entities with specific components</span>
-    <span class="function">query</span>(...componentClasses) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.entities.<span class="function">filter</span>(entity =>
-            componentClasses.<span class="function">every</span>(comp => entity.<span class="function">hasComponent</span>(comp))
+    // Query entities with specific components
+    query(...componentClasses) {
+        return this.entities.filter(entity =>
+            componentClasses.every(comp => entity.hasComponent(comp))
         );
     }
 }
 
-<span class="comment">// Systems contain the logic</span>
-<span class="keyword">class</span> <span class="function">MovementSystem</span> {
-    <span class="function">update</span>(entities, deltaTime) {
-        <span class="comment">// Process only entities with Position and Velocity</span>
-        <span class="keyword">for</span> (<span class="keyword">const</span> entity <span class="keyword">of</span> entities) {
-            <span class="keyword">if</span> (!entity.<span class="function">hasComponent</span>(Position) ||
-                !entity.<span class="function">hasComponent</span>(Velocity)) {
-                <span class="keyword">continue</span>;
+// Systems contain the logic
+class MovementSystem {
+    update(entities, deltaTime) {
+        // Process only entities with Position and Velocity
+        for (const entity of entities) {
+            if (!entity.hasComponent(Position) ||
+                !entity.hasComponent(Velocity)) {
+                continue;
             }
 
-            <span class="keyword">const</span> pos = entity.<span class="function">getComponent</span>(Position);
-            <span class="keyword">const</span> vel = entity.<span class="function">getComponent</span>(Velocity);
+            const pos = entity.getComponent(Position);
+            const vel = entity.getComponent(Velocity);
 
             pos.x += vel.x * deltaTime;
             pos.y += vel.y * deltaTime;
@@ -805,25 +1040,25 @@ bulletPool.<span class="function">update</span>();</code></pre>
     }
 }
 
-<span class="keyword">class</span> <span class="function">RenderSystem</span> {
-    <span class="keyword">constructor</span>(ctx) {
-        <span class="keyword">this</span>.ctx = ctx;
+class RenderSystem {
+    constructor(ctx) {
+        this.ctx = ctx;
     }
 
-    <span class="function">update</span>(entities) {
-        <span class="keyword">for</span> (<span class="keyword">const</span> entity <span class="keyword">of</span> entities) {
-            <span class="keyword">if</span> (!entity.<span class="function">hasComponent</span>(Position) ||
-                !entity.<span class="function">hasComponent</span>(Renderable)) {
-                <span class="keyword">continue</span>;
+    update(entities) {
+        for (const entity of entities) {
+            if (!entity.hasComponent(Position) ||
+                !entity.hasComponent(Renderable)) {
+                continue;
             }
 
-            <span class="keyword">const</span> pos = entity.<span class="function">getComponent</span>(Position);
-            <span class="keyword">const</span> rend = entity.<span class="function">getComponent</span>(Renderable);
+            const pos = entity.getComponent(Position);
+            const rend = entity.getComponent(Renderable);
 
-            <span class="keyword">this</span>.ctx.fillStyle = rend.color;
-            <span class="keyword">this</span>.ctx.beginPath();
-            <span class="keyword">this</span>.ctx.<span class="function">arc</span>(pos.x, pos.y, <span class="number">10</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-            <span class="keyword">this</span>.ctx.<span class="function">fill</span>();
+            this.ctx.fillStyle = rend.color;
+            this.ctx.beginPath();
+            this.ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
+            this.ctx.fill();
         }
     }
 }</code></pre>
@@ -831,49 +1066,49 @@ bulletPool.<span class="function">update</span>();</code></pre>
 
                 <div class="example-box">
                     <h4>🎮 Using ECS:</h4>
-                    <pre><code><span class="comment">// Create world</span>
-<span class="keyword">const</span> world = <span class="keyword">new</span> <span class="function">World</span>();
+                    <pre><code class="language-javascript">// Create world
+const world = new World();
 
-<span class="comment">// Add systems</span>
-world.<span class="function">addSystem</span>(<span class="keyword">new</span> <span class="function">MovementSystem</span>());
-world.<span class="function">addSystem</span>(<span class="keyword">new</span> <span class="function">RenderSystem</span>(ctx));
+// Add systems
+world.addSystem(new MovementSystem());
+world.addSystem(new RenderSystem(ctx));
 
-<span class="comment">// Create a moving, visible entity (like a player)</span>
-world.<span class="function">createEntity</span>()
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Position</span>(<span class="number">100</span>, <span class="number">100</span>))
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Velocity</span>(<span class="number">2</span>, <span class="number">1</span>))
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Renderable</span>(<span class="string">'circle'</span>, <span class="string">'blue'</span>))
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Health</span>(<span class="number">100</span>));
+// Create a moving, visible entity (like a player)
+world.createEntity()
+    .addComponent(new Position(100, 100))
+    .addComponent(new Velocity(2, 1))
+    .addComponent(new Renderable('circle', 'blue'))
+    .addComponent(new Health(100));
 
-<span class="comment">// Create a static, visible entity (like a tree)</span>
-world.<span class="function">createEntity</span>()
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Position</span>(<span class="number">300</span>, <span class="number">200</span>))
-    .<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Renderable</span>(<span class="string">'tree'</span>, <span class="string">'green'</span>));
-    <span class="comment">// No Velocity = doesn't move!</span>
+// Create a static, visible entity (like a tree)
+world.createEntity()
+    .addComponent(new Position(300, 200))
+    .addComponent(new Renderable('tree', 'green'));
+    // No Velocity = doesn't move!
 
-<span class="comment">// Game loop</span>
-<span class="keyword">function</span> <span class="function">update</span>(deltaTime) {
-    world.<span class="function">update</span>(deltaTime);
+// Game loop
+function update(deltaTime) {
+    world.update(deltaTime);
 }
 
-<span class="comment">// Query examples</span>
-<span class="keyword">const</span> movingThings = world.<span class="function">query</span>(Position, Velocity);
-<span class="keyword">const</span> damageable = world.<span class="function">query</span>(Health);</code></pre>
+// Query examples
+const movingThings = world.query(Position, Velocity);
+const damageable = world.query(Health);</code></pre>
                 </div>
 
                 <div class="thinking-prompt">
                     <h4>🧠 ECS vs Traditional OOP:</h4>
                     <p><strong>Traditional (Inheritance):</strong></p>
-                    <pre><code><span class="keyword">class</span> <span class="function">Enemy</span> <span class="keyword">extends</span> <span class="function">GameObject</span> {
-    <span class="comment">// What if we want a moving tree?</span>
-    <span class="comment">// Or a static enemy?</span>
-    <span class="comment">// Inheritance is rigid!</span>
+                    <pre><code class="language-javascript">class Enemy extends GameObject {
+    // What if we want a moving tree?
+    // Or a static enemy?
+    // Inheritance is rigid!
 }</code></pre>
                     <p><strong>ECS (Composition):</strong></p>
-                    <pre><code><span class="comment">// Mix and match components freely!</span>
-<span class="comment">// Tree that moves? Add Velocity</span>
-<span class="comment">// Enemy that's frozen? Remove Velocity</span>
-entity.<span class="function">addComponent</span>(<span class="keyword">new</span> <span class="function">Frozen</span>(<span class="number">5</span>));</code></pre>
+                    <pre><code class="language-javascript">// Mix and match components freely!
+// Tree that moves? Add Velocity
+// Enemy that's frozen? Remove Velocity
+entity.addComponent(new Frozen(5));</code></pre>
                 </div>
             </details>
 
@@ -916,116 +1151,116 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
             <details data-demo-id="sound" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Sound Propagation System</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SoundSource</span> {
-    <span class="keyword">constructor</span>(x, y, maxDistance = <span class="number">500</span>) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.maxDistance = maxDistance;
-        <span class="keyword">this</span>.baseVolume = <span class="number">1.0</span>;
+                    <pre><code class="language-javascript">class SoundSource {
+    constructor(x, y, maxDistance = 500) {
+        this.position = new Vector2D(x, y);
+        this.maxDistance = maxDistance;
+        this.baseVolume = 1.0;
     }
 
-    <span class="comment">// Calculate volume based on distance</span>
-    <span class="function">calculateVolume</span>(listenerPos) {
-        <span class="keyword">const</span> distance = <span class="keyword">this</span>.position.<span class="function">distance</span>(listenerPos);
+    // Calculate volume based on distance
+    calculateVolume(listenerPos) {
+        const distance = this.position.distance(listenerPos);
 
-        <span class="keyword">if</span> (distance >= <span class="keyword">this</span>.maxDistance) {
-            <span class="keyword">return</span> <span class="number">0</span>;
+        if (distance >= this.maxDistance) {
+            return 0;
         }
 
-        <span class="comment">// Linear falloff (can also use inverse square law)</span>
-        <span class="keyword">const</span> attenuation = <span class="number">1</span> - (distance / <span class="keyword">this</span>.maxDistance);
+        // Linear falloff (can also use inverse square law)
+        const attenuation = 1 - (distance / this.maxDistance);
 
-        <span class="keyword">return</span> <span class="keyword">this</span>.baseVolume * attenuation;
+        return this.baseVolume * attenuation;
     }
 
-    <span class="comment">// Calculate stereo panning (-1 = left, 0 = center, 1 = right)</span>
-    <span class="function">calculatePanning</span>(listenerPos, listenerForward) {
-        <span class="keyword">const</span> toSound = <span class="keyword">this</span>.position.<span class="function">subtract</span>(listenerPos);
-        <span class="keyword">const</span> right = <span class="keyword">new</span> <span class="function">Vector2D</span>(-listenerForward.y, listenerForward.x);
+    // Calculate stereo panning (-1 = left, 0 = center, 1 = right)
+    calculatePanning(listenerPos, listenerForward) {
+        const toSound = this.position.subtract(listenerPos);
+        const right = new Vector2D(-listenerForward.y, listenerForward.x);
 
-        <span class="comment">// Dot product with right vector</span>
-        <span class="keyword">const</span> pan = toSound.<span class="function">normalize</span>().<span class="function">dot</span>(right);
+        // Dot product with right vector
+        const pan = toSound.normalize().dot(right);
 
-        <span class="keyword">return</span> <span class="function">clamp</span>(pan, -<span class="number">1</span>, <span class="number">1</span>);
+        return clamp(pan, -1, 1);
     }
 
-    <span class="comment">// Check if sound is occluded by obstacles</span>
-    <span class="function">calculateOcclusion</span>(listenerPos, obstacles) {
-        <span class="keyword">let</span> occlusionFactor = <span class="number">1.0</span>;
+    // Check if sound is occluded by obstacles
+    calculateOcclusion(listenerPos, obstacles) {
+        let occlusionFactor = 1.0;
 
-        <span class="keyword">for</span> (<span class="keyword">const</span> obstacle <span class="keyword">of</span> obstacles) {
-            <span class="comment">// Cast ray from listener to sound source</span>
-            <span class="keyword">const</span> intersection = <span class="function">lineIntersectsRect</span>(
+        for (const obstacle of obstacles) {
+            // Cast ray from listener to sound source
+            const intersection = lineIntersectsRect(
                 listenerPos,
-                <span class="keyword">this</span>.position,
+                this.position,
                 obstacle
             );
 
-            <span class="keyword">if</span> (intersection) {
-                <span class="comment">// Sound is muffled by obstacle</span>
-                occlusionFactor *= <span class="number">0.3</span>;  <span class="comment">// 70% reduction</span>
+            if (intersection) {
+                // Sound is muffled by obstacle
+                occlusionFactor *= 0.3;  // 70% reduction
             }
         }
 
-        <span class="keyword">return</span> occlusionFactor;
+        return occlusionFactor;
     }
 }
 
-<span class="keyword">class</span> <span class="function">AudioManager</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.listener = {
-            position: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>),
-            forward: <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">1</span>)  <span class="comment">// Facing up</span>
+class AudioManager {
+    constructor() {
+        this.listener = {
+            position: new Vector2D(0, 0),
+            forward: new Vector2D(0, -1)  // Facing up
         };
-        <span class="keyword">this</span>.sources = [];
-        <span class="keyword">this</span>.obstacles = [];
+        this.sources = [];
+        this.obstacles = [];
     }
 
-    <span class="function">addSource</span>(x, y, audioElement) {
-        <span class="keyword">const</span> source = <span class="keyword">new</span> <span class="function">SoundSource</span>(x, y);
+    addSource(x, y, audioElement) {
+        const source = new SoundSource(x, y);
         source.audio = audioElement;
-        <span class="keyword">this</span>.sources.<span class="function">push</span>(source);
-        <span class="keyword">return</span> source;
+        this.sources.push(source);
+        return source;
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">for</span> (<span class="keyword">const</span> source <span class="keyword">of</span> <span class="keyword">this</span>.sources) {
-            <span class="comment">// Calculate volume with distance and occlusion</span>
-            <span class="keyword">let</span> volume = source.<span class="function">calculateVolume</span>(<span class="keyword">this</span>.listener.position);
-            <span class="keyword">const</span> occlusion = source.<span class="function">calculateOcclusion</span>(
-                <span class="keyword">this</span>.listener.position,
-                <span class="keyword">this</span>.obstacles
+    update() {
+        for (const source of this.sources) {
+            // Calculate volume with distance and occlusion
+            let volume = source.calculateVolume(this.listener.position);
+            const occlusion = source.calculateOcclusion(
+                this.listener.position,
+                this.obstacles
             );
             volume *= occlusion;
 
-            <span class="comment">// Calculate panning</span>
-            <span class="keyword">const</span> pan = source.<span class="function">calculatePanning</span>(
-                <span class="keyword">this</span>.listener.position,
-                <span class="keyword">this</span>.listener.forward
+            // Calculate panning
+            const pan = source.calculatePanning(
+                this.listener.position,
+                this.listener.forward
             );
 
-            <span class="comment">// Apply to Web Audio API (if available)</span>
-            <span class="keyword">if</span> (source.audio) {
+            // Apply to Web Audio API (if available)
+            if (source.audio) {
                 source.audio.volume = volume;
-                <span class="comment">// For stereo panning, you'd use a StereoPannerNode</span>
+                // For stereo panning, you'd use a StereoPannerNode
             }
         }
     }
 
-    <span class="comment">// Doppler effect (pitch shift based on velocity)</span>
-    <span class="function">calculateDopplerShift</span>(sourcePos, sourceVel, listenerPos, listenerVel) {
-        <span class="keyword">const</span> speedOfSound = <span class="number">343</span>;  <span class="comment">// m/s (or arbitrary game units)</span>
+    // Doppler effect (pitch shift based on velocity)
+    calculateDopplerShift(sourcePos, sourceVel, listenerPos, listenerVel) {
+        const speedOfSound = 343;  // m/s (or arbitrary game units)
 
-        <span class="keyword">const</span> toListener = listenerPos.<span class="function">subtract</span>(sourcePos).<span class="function">normalize</span>();
+        const toListener = listenerPos.subtract(sourcePos).normalize();
 
-        <span class="comment">// Velocity components toward each other</span>
-        <span class="keyword">const</span> sourceSpeed = sourceVel.<span class="function">dot</span>(toListener);
-        <span class="keyword">const</span> listenerSpeed = listenerVel.<span class="function">dot</span>(toListener);
+        // Velocity components toward each other
+        const sourceSpeed = sourceVel.dot(toListener);
+        const listenerSpeed = listenerVel.dot(toListener);
 
-        <span class="comment">// Doppler formula</span>
-        <span class="keyword">const</span> pitchShift = (speedOfSound + listenerSpeed) /
+        // Doppler formula
+        const pitchShift = (speedOfSound + listenerSpeed) /
                            (speedOfSound - sourceSpeed);
 
-        <span class="keyword">return</span> <span class="function">clamp</span>(pitchShift, <span class="number">0.5</span>, <span class="number">2.0</span>);  <span class="comment">// Limit to reasonable range</span>
+        return clamp(pitchShift, 0.5, 2.0);  // Limit to reasonable range
     }
 }</code></pre>
                 </div>
@@ -1068,63 +1303,63 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
             <details data-demo-id="network" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Network Interpolation System</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">NetworkEntity</span> {
-    <span class="keyword">constructor</span>(id) {
-        <span class="keyword">this</span>.id = id;
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.renderPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">class NetworkEntity {
+    constructor(id) {
+        this.id = id;
+        this.position = new Vector2D(0, 0);
+        this.renderPosition = new Vector2D(0, 0);
 
-        <span class="comment">// Buffer of recent server updates</span>
-        <span class="keyword">this</span>.positionBuffer = [];
-        <span class="keyword">this</span>.interpolationDelay = <span class="number">100</span>;  <span class="comment">// ms behind server</span>
+        // Buffer of recent server updates
+        this.positionBuffer = [];
+        this.interpolationDelay = 100;  // ms behind server
     }
 
-    <span class="comment">// Receive position update from server</span>
-    <span class="function">receiveServerUpdate</span>(position, timestamp) {
-        <span class="keyword">this</span>.positionBuffer.<span class="function">push</span>({
-            position: position.<span class="function">copy</span>(),
+    // Receive position update from server
+    receiveServerUpdate(position, timestamp) {
+        this.positionBuffer.push({
+            position: position.copy(),
             timestamp: timestamp
         });
 
-        <span class="comment">// Keep only last 1 second of updates</span>
-        <span class="keyword">const</span> cutoff = timestamp - <span class="number">1000</span>;
-        <span class="keyword">this</span>.positionBuffer = <span class="keyword">this</span>.positionBuffer.<span class="function">filter</span>(
+        // Keep only last 1 second of updates
+        const cutoff = timestamp - 1000;
+        this.positionBuffer = this.positionBuffer.filter(
             update => update.timestamp > cutoff
         );
     }
 
-    <span class="comment">// Interpolate position based on buffered updates</span>
-    <span class="function">updateInterpolation</span>(currentTime) {
-        <span class="comment">// Render time is slightly behind server</span>
-        <span class="keyword">const</span> renderTime = currentTime - <span class="keyword">this</span>.interpolationDelay;
+    // Interpolate position based on buffered updates
+    updateInterpolation(currentTime) {
+        // Render time is slightly behind server
+        const renderTime = currentTime - this.interpolationDelay;
 
-        <span class="comment">// Find two updates to interpolate between</span>
-        <span class="keyword">let</span> target = <span class="keyword">null</span>;
-        <span class="keyword">let</span> previous = <span class="keyword">null</span>;
+        // Find two updates to interpolate between
+        let target = null;
+        let previous = null;
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.positionBuffer.length; i++) {
-            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer[i].timestamp <= renderTime) {
-                previous = <span class="keyword">this</span>.positionBuffer[i];
+        for (let i = 0; i < this.positionBuffer.length; i++) {
+            if (this.positionBuffer[i].timestamp <= renderTime) {
+                previous = this.positionBuffer[i];
             }
-            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer[i].timestamp >= renderTime) {
-                target = <span class="keyword">this</span>.positionBuffer[i];
-                <span class="keyword">break</span>;
+            if (this.positionBuffer[i].timestamp >= renderTime) {
+                target = this.positionBuffer[i];
+                break;
             }
         }
 
-        <span class="comment">// No interpolation data available</span>
-        <span class="keyword">if</span> (!previous || !target) {
-            <span class="keyword">if</span> (<span class="keyword">this</span>.positionBuffer.length > <span class="number">0</span>) {
-                <span class="keyword">this</span>.renderPosition = <span class="keyword">this</span>.positionBuffer[<span class="number">0</span>].position.<span class="function">copy</span>();
+        // No interpolation data available
+        if (!previous || !target) {
+            if (this.positionBuffer.length > 0) {
+                this.renderPosition = this.positionBuffer[0].position.copy();
             }
-            <span class="keyword">return</span>;
+            return;
         }
 
-        <span class="comment">// Interpolate between the two positions</span>
-        <span class="keyword">const</span> timeDiff = target.timestamp - previous.timestamp;
-        <span class="keyword">const</span> t = (renderTime - previous.timestamp) / timeDiff;
+        // Interpolate between the two positions
+        const timeDiff = target.timestamp - previous.timestamp;
+        const t = (renderTime - previous.timestamp) / timeDiff;
 
-        <span class="keyword">this</span>.renderPosition = Vector2D.<span class="function">lerp</span>(
+        this.renderPosition = Vector2D.lerp(
             previous.position,
             target.position,
             t
@@ -1132,55 +1367,55 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
     }
 }
 
-<span class="comment">// Client-side prediction for local player</span>
-<span class="keyword">class</span> <span class="function">PredictedPlayer</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.inputSequence = <span class="number">0</span>;
+// Client-side prediction for local player
+class PredictedPlayer {
+    constructor() {
+        this.position = new Vector2D(0, 0);
+        this.velocity = new Vector2D(0, 0);
+        this.inputSequence = 0;
 
-        <span class="comment">// Store inputs for reconciliation</span>
-        <span class="keyword">this</span>.pendingInputs = [];
+        // Store inputs for reconciliation
+        this.pendingInputs = [];
     }
 
-    <span class="comment">// Apply input immediately (prediction)</span>
-    <span class="function">applyInput</span>(input) {
-        <span class="keyword">this</span>.inputSequence++;
+    // Apply input immediately (prediction)
+    applyInput(input) {
+        this.inputSequence++;
 
-        <span class="comment">// Store input with sequence number</span>
-        <span class="keyword">this</span>.pendingInputs.<span class="function">push</span>({
+        // Store input with sequence number
+        this.pendingInputs.push({
             input: input,
-            sequence: <span class="keyword">this</span>.inputSequence
+            sequence: this.inputSequence
         });
 
-        <span class="comment">// Apply movement immediately</span>
-        <span class="keyword">this</span>.velocity.<span class="function">set</span>(input.x * <span class="number">5</span>, input.y * <span class="number">5</span>);
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Apply movement immediately
+        this.velocity.set(input.x * 5, input.y * 5);
+        this.position.add(this.velocity);
 
-        <span class="comment">// Send to server</span>
-        <span class="keyword">this</span>.<span class="function">sendToServer</span>(input, <span class="keyword">this</span>.inputSequence);
+        // Send to server
+        this.sendToServer(input, this.inputSequence);
     }
 
-    <span class="comment">// Reconcile with server state</span>
-    <span class="function">reconcileWithServer</span>(serverPosition, lastProcessedInput) {
-        <span class="comment">// Remove inputs already processed by server</span>
-        <span class="keyword">this</span>.pendingInputs = <span class="keyword">this</span>.pendingInputs.<span class="function">filter</span>(
+    // Reconcile with server state
+    reconcileWithServer(serverPosition, lastProcessedInput) {
+        // Remove inputs already processed by server
+        this.pendingInputs = this.pendingInputs.filter(
             i => i.sequence > lastProcessedInput
         );
 
-        <span class="comment">// Rewind to server position</span>
-        <span class="keyword">this</span>.position = serverPosition.<span class="function">copy</span>();
+        // Rewind to server position
+        this.position = serverPosition.copy();
 
-        <span class="comment">// Replay unprocessed inputs</span>
-        <span class="keyword">for</span> (<span class="keyword">const</span> input <span class="keyword">of</span> <span class="keyword">this</span>.pendingInputs) {
-            <span class="keyword">this</span>.velocity.<span class="function">set</span>(input.input.x * <span class="number">5</span>, input.input.y * <span class="number">5</span>);
-            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Replay unprocessed inputs
+        for (const input of this.pendingInputs) {
+            this.velocity.set(input.input.x * 5, input.input.y * 5);
+            this.position.add(this.velocity);
         }
     }
 
-    <span class="function">sendToServer</span>(input, sequence) {
-        <span class="comment">// Send input to server (websocket, etc.)</span>
-        <span class="comment">// server.send({ input, sequence });</span>
+    sendToServer(input, sequence) {
+        // Send input to server (websocket, etc.)
+        // server.send({ input, sequence });
     }
 }</code></pre>
                 </div>
@@ -1220,36 +1455,36 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
             <details>
                 <summary>📝 Click to see: Delta Time Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// WRONG: Frame-rate dependent (bad!)</span>
-<span class="keyword">function</span> <span class="function">badUpdate</span>() {
-    player.x += <span class="number">5</span>;  <span class="comment">// Moves 5px per frame</span>
-    <span class="comment">// At 60fps: moves 300px/sec</span>
-    <span class="comment">// At 30fps: moves 150px/sec (half speed!)</span>
+                    <pre><code class="language-javascript">// WRONG: Frame-rate dependent (bad!)
+function badUpdate() {
+    player.x += 5;  // Moves 5px per frame
+    // At 60fps: moves 300px/sec
+    // At 30fps: moves 150px/sec (half speed!)
 }
 
-<span class="comment">// CORRECT: Frame-rate independent (good!)</span>
-<span class="keyword">let</span> lastTime = <span class="number">0</span>;
+// CORRECT: Frame-rate independent (good!)
+let lastTime = 0;
 
-<span class="keyword">function</span> <span class="function">goodUpdate</span>(currentTime) {
-    <span class="keyword">const</span> deltaTime = (currentTime - lastTime) / <span class="number">1000</span>;  <span class="comment">// Convert to seconds</span>
+function goodUpdate(currentTime) {
+    const deltaTime = (currentTime - lastTime) / 1000;  // Convert to seconds
     lastTime = currentTime;
 
-    <span class="keyword">const</span> speed = <span class="number">300</span>;  <span class="comment">// pixels per second</span>
+    const speed = 300;  // pixels per second
     player.x += speed * deltaTime;
-    <span class="comment">// At 60fps (dt≈0.016): moves 300 * 0.016 = 4.8px per frame = 300px/sec</span>
-    <span class="comment">// At 30fps (dt≈0.033): moves 300 * 0.033 = 10px per frame = 300px/sec</span>
-    <span class="comment">// Same speed regardless of framerate!</span>
+    // At 60fps (dt≈0.016): moves 300 * 0.016 = 4.8px per frame = 300px/sec
+    // At 30fps (dt≈0.033): moves 300 * 0.033 = 10px per frame = 300px/sec
+    // Same speed regardless of framerate!
 }
 
-<span class="comment">// Game loop with delta time</span>
-<span class="keyword">function</span> <span class="function">gameLoop</span>(timestamp) {
-    <span class="keyword">const</span> deltaTime = (timestamp - lastTime) / <span class="number">1000</span>;
+// Game loop with delta time
+function gameLoop(timestamp) {
+    const deltaTime = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
-    <span class="function">update</span>(deltaTime);
-    <span class="function">render</span>();
+    update(deltaTime);
+    render();
 
-    <span class="function">requestAnimationFrame</span>(gameLoop);
+    requestAnimationFrame(gameLoop);
 }</code></pre>
                 </div>
             </details>
@@ -1265,89 +1500,89 @@ entity.<span class="function">addComponent</span>(<span class="keyword">new</spa
             <details>
                 <summary>📝 Click to see: Fixed Timestep Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">FixedTimestepGame</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.accumulator = <span class="number">0</span>;
-        <span class="keyword">this</span>.fixedTimeStep = <span class="number">1</span> / <span class="number">60</span>;  <span class="comment">// 60 Hz physics</span>
-        <span class="keyword">this</span>.lastTime = <span class="number">0</span>;
-        <span class="keyword">this</span>.maxFrameTime = <span class="number">0.25</span>;  <span class="comment">// Cap at 4 FPS to prevent spiral</span>
+                    <pre><code class="language-javascript">class FixedTimestepGame {
+    constructor() {
+        this.accumulator = 0;
+        this.fixedTimeStep = 1 / 60;  // 60 Hz physics
+        this.lastTime = 0;
+        this.maxFrameTime = 0.25;  // Cap at 4 FPS to prevent spiral
     }
 
-    <span class="function">update</span>(currentTime) {
-        <span class="comment">// Calculate frame time</span>
-        <span class="keyword">let</span> frameTime = (currentTime - <span class="keyword">this</span>.lastTime) / <span class="number">1000</span>;
-        <span class="keyword">this</span>.lastTime = currentTime;
+    update(currentTime) {
+        // Calculate frame time
+        let frameTime = (currentTime - this.lastTime) / 1000;
+        this.lastTime = currentTime;
 
-        <span class="comment">// Cap frame time to prevent spiral of death</span>
-        <span class="keyword">if</span> (frameTime > <span class="keyword">this</span>.maxFrameTime) {
-            frameTime = <span class="keyword">this</span>.maxFrameTime;
+        // Cap frame time to prevent spiral of death
+        if (frameTime > this.maxFrameTime) {
+            frameTime = this.maxFrameTime;
         }
 
-        <span class="comment">// Add to accumulator</span>
-        <span class="keyword">this</span>.accumulator += frameTime;
+        // Add to accumulator
+        this.accumulator += frameTime;
 
-        <span class="comment">// Consume accumulator in fixed-size chunks</span>
-        <span class="keyword">while</span> (<span class="keyword">this</span>.accumulator >= <span class="keyword">this</span>.fixedTimeStep) {
-            <span class="keyword">this</span>.<span class="function">fixedUpdate</span>(<span class="keyword">this</span>.fixedTimeStep);
-            <span class="keyword">this</span>.accumulator -= <span class="keyword">this</span>.fixedTimeStep;
+        // Consume accumulator in fixed-size chunks
+        while (this.accumulator >= this.fixedTimeStep) {
+            this.fixedUpdate(this.fixedTimeStep);
+            this.accumulator -= this.fixedTimeStep;
         }
 
-        <span class="comment">// Interpolation factor for smooth rendering</span>
-        <span class="keyword">const</span> alpha = <span class="keyword">this</span>.accumulator / <span class="keyword">this</span>.fixedTimeStep;
-        <span class="keyword">this</span>.<span class="function">render</span>(alpha);
+        // Interpolation factor for smooth rendering
+        const alpha = this.accumulator / this.fixedTimeStep;
+        this.render(alpha);
     }
 
-    <span class="function">fixedUpdate</span>(dt) {
-        <span class="comment">// Physics updates here (always constant dt)</span>
-        <span class="keyword">this</span>.<span class="function">updatePhysics</span>(dt);
-        <span class="keyword">this</span>.<span class="function">updateGameLogic</span>(dt);
+    fixedUpdate(dt) {
+        // Physics updates here (always constant dt)
+        this.updatePhysics(dt);
+        this.updateGameLogic(dt);
     }
 
-    <span class="function">render</span>(alpha) {
-        <span class="comment">// Interpolate between current and previous state</span>
-        <span class="comment">// for smooth rendering even if physics runs slower</span>
-        entities.<span class="function">forEach</span>(entity => {
-            <span class="keyword">const</span> renderPos = Vector2D.<span class="function">lerp</span>(
+    render(alpha) {
+        // Interpolate between current and previous state
+        // for smooth rendering even if physics runs slower
+        entities.forEach(entity => {
+            const renderPos = Vector2D.lerp(
                 entity.previousPosition,
                 entity.position,
                 alpha
             );
-            entity.<span class="function">draw</span>(renderPos);
+            entity.draw(renderPos);
         });
     }
 }
 
-<span class="comment">// Game loop</span>
-<span class="keyword">const</span> game = <span class="keyword">new</span> <span class="function">FixedTimestepGame</span>();
+// Game loop
+const game = new FixedTimestepGame();
 
-<span class="keyword">function</span> <span class="function">gameLoop</span>(timestamp) {
-    game.<span class="function">update</span>(timestamp);
-    <span class="function">requestAnimationFrame</span>(gameLoop);
+function gameLoop(timestamp) {
+    game.update(timestamp);
+    requestAnimationFrame(gameLoop);
 }
 
-<span class="function">requestAnimationFrame</span>(gameLoop);</code></pre>
+requestAnimationFrame(gameLoop);</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 How it Works:</h4>
-                    <pre><code><span class="comment">// Example timeline:</span>
-<span class="comment">// Frame 1: dt = 16ms (60fps)</span>
-<span class="comment">//   accumulator = 16ms</span>
-<span class="comment">//   Run physics once (16.6ms consumed)</span>
-<span class="comment">//   accumulator = 0ms</span>
+                    <pre><code class="language-javascript">// Example timeline:
+// Frame 1: dt = 16ms (60fps)
+//   accumulator = 16ms
+//   Run physics once (16.6ms consumed)
+//   accumulator = 0ms
 
-<span class="comment">// Frame 2: dt = 33ms (30fps - slow frame!)</span>
-<span class="comment">//   accumulator = 33ms</span>
-<span class="comment">//   Run physics twice (16.6ms × 2 = 33.2ms consumed)</span>
-<span class="comment">//   accumulator = 0ms</span>
+// Frame 2: dt = 33ms (30fps - slow frame!)
+//   accumulator = 33ms
+//   Run physics twice (16.6ms × 2 = 33.2ms consumed)
+//   accumulator = 0ms
 
-<span class="comment">// Frame 3: dt = 8ms (120fps - fast frame!)</span>
-<span class="comment">//   accumulator = 8ms</span>
-<span class="comment">//   Don't run physics (not enough time)</span>
-<span class="comment">//   accumulator = 8ms (carry over)</span>
+// Frame 3: dt = 8ms (120fps - fast frame!)
+//   accumulator = 8ms
+//   Don't run physics (not enough time)
+//   accumulator = 8ms (carry over)
 
-<span class="comment">// Result: Physics ALWAYS runs at 60Hz,</span>
-<span class="comment">// regardless of rendering framerate!</span></code></pre>
+// Result: Physics ALWAYS runs at 60Hz,
+// regardless of rendering framerate!</code></pre>
                 </div>
             </details>
 

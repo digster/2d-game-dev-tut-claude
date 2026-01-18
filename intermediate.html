@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intermediate - Game Dev Math Guide</title>
     <link rel="stylesheet" href="shared/styles.css">
+    <!-- Prism.js Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -60,29 +64,29 @@
             <details data-demo-id="lerp" data-deps="vector2d,clearCanvas,drawGrid">
                 <summary>📝 Click to see: Lerp Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Basic lerp function</span>
-<span class="keyword">function</span> <span class="function">lerp</span>(start, end, t) {
-    <span class="keyword">return</span> start + (end - start) * t;
+                    <pre><code class="language-javascript">// Basic lerp function
+function lerp(start, end, t) {
+    return start + (end - start) * t;
 }
 
-<span class="comment">// Vector lerp</span>
-Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">function</span>(target, t) {
-    <span class="keyword">this</span>.x += (target.x - <span class="keyword">this</span>.x) * t;
-    <span class="keyword">this</span>.y += (target.y - <span class="keyword">this</span>.y) * t;
-    <span class="keyword">return</span> <span class="keyword">this</span>;
+// Vector lerp
+Vector2D.prototype.lerp = function(target, t) {
+    this.x += (target.x - this.x) * t;
+    this.y += (target.y - this.y) * t;
+    return this;
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Smooth Camera Follow:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">Camera</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">class Camera {
+    constructor() {
+        this.position = new Vector2D(0, 0);
     }
 
-    <span class="function">follow</span>(target, smoothing = <span class="number">0.1</span>) {
-        <span class="comment">// Smoothly move camera toward target</span>
-        <span class="keyword">this</span>.position.<span class="function">lerp</span>(target, smoothing);
+    follow(target, smoothing = 0.1) {
+        // Smoothly move camera toward target
+        this.position.lerp(target, smoothing);
     }
 }</code></pre>
                 </div>
@@ -127,44 +131,169 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <details data-demo-id="physics" data-deps="vector2d,clearCanvas,randomFloat,clamp,drawVector">
                 <summary>📝 Click to see: Physics Entity Class</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">PhysicsEntity</span> {
-    <span class="keyword">constructor</span>(x, y, mass = <span class="number">1</span>) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.mass = mass;
+                    <pre><code class="language-javascript">class PhysicsEntity {
+    constructor(x, y, mass = 1) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.acceleration = new Vector2D(0, 0);
+        this.mass = mass;
     }
 
-    <span class="function">applyForce</span>(force) {
-        <span class="comment">// F = ma, so a = F/m</span>
-        <span class="keyword">const</span> f = force.<span class="function">copy</span>().<span class="function">divide</span>(<span class="keyword">this</span>.mass);
-        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(f);
+    applyForce(force) {
+        // F = ma, so a = F/m
+        const f = force.copy().divide(this.mass);
+        this.acceleration.add(f);
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Update velocity based on acceleration</span>
-        <span class="keyword">this</span>.velocity.<span class="function">add</span>(<span class="keyword">this</span>.acceleration);
+    update() {
+        // Update velocity based on acceleration
+        this.velocity.add(this.acceleration);
 
-        <span class="comment">// Update position based on velocity</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Update position based on velocity
+        this.position.add(this.velocity);
 
-        <span class="comment">// Reset acceleration (forces are applied each frame)</span>
-        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+        // Reset acceleration (forces are applied each frame)
+        this.acceleration.multiply(0);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Adding Gravity:</h4>
-                    <pre><code><span class="keyword">const</span> gravity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0.5</span>);  <span class="comment">// Downward force</span>
+                    <pre><code class="language-javascript">const gravity = new Vector2D(0, 0.5);  // Downward force
 
-<span class="keyword">function</span> <span class="function">gameLoop</span>() {
-    entities.<span class="function">forEach</span>(entity => {
-        entity.<span class="function">applyForce</span>(gravity);
-        entity.<span class="function">update</span>();
+function gameLoop() {
+    entities.forEach(entity => {
+        entity.applyForce(gravity);
+        entity.update();
     });
 }</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Physics Simulation</summary>
+                <pre><code class="language-javascript">// ===================================
+// PHYSICS SIMULATION - Complete Implementation
+// ===================================
+
+// Ball class with physics properties
+class Ball {
+    constructor(x, y, radius = 15) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(randomFloat(-2, 2), randomFloat(-2, 2));
+        this.acceleration = new Vector2D(0, 0);
+        this.mass = radius;  // Mass proportional to size
+        this.radius = radius;
+    }
+
+    applyForce(force) {
+        // F = ma, so a = F/m
+        const f = force.copy().divide(this.mass);
+        this.acceleration.add(f);
+    }
+
+    update() {
+        this.velocity.add(this.acceleration);
+        this.velocity.multiply(0.99);  // Air resistance
+        this.position.add(this.velocity);
+        this.acceleration.multiply(0);  // Reset forces each frame
+
+        // Bounce off walls with energy loss
+        if (this.position.x < this.radius ||
+            this.position.x > canvas.width - this.radius) {
+            this.velocity.x *= -0.8;
+            this.position.x = clamp(this.position.x, this.radius,
+                                    canvas.width - this.radius);
+        }
+        if (this.position.y < this.radius ||
+            this.position.y > canvas.height - this.radius) {
+            this.velocity.y *= -0.8;
+            this.position.y = clamp(this.position.y, this.radius,
+                                    canvas.height - this.radius);
+        }
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw velocity vector
+        const end = new Vector2D(
+            this.position.x + this.velocity.x * 5,
+            this.position.y + this.velocity.y * 5
+        );
+        drawVector(ctx, this.position, end, '#ffa726', 2);
+    }
+}
+
+// State variables
+const balls = [];
+let gravityEnabled = true;
+let windEnabled = false;
+const gravity = new Vector2D(0, 0.3);
+const wind = new Vector2D(0.1, 0);
+
+// Button event handlers
+document.getElementById('btnAddBall').addEventListener('click', () => {
+    const x = randomFloat(50, canvas.width - 50);
+    const y = randomFloat(50, 200);
+    balls.push(new Ball(x, y, randomFloat(10, 20)));
+});
+
+document.getElementById('btnToggleGravity').addEventListener('click', () => {
+    gravityEnabled = !gravityEnabled;
+});
+
+document.getElementById('btnAddWind').addEventListener('click', () => {
+    windEnabled = !windEnabled;
+});
+
+document.getElementById('btnResetPhysics').addEventListener('click', () => {
+    balls.length = 0;  // Clear all balls
+});
+
+// Click to apply force to nearby balls
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickPos = new Vector2D(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+    );
+
+    balls.forEach(ball => {
+        const dist = ball.position.distance(clickPos);
+        if (dist < 150) {
+            // Apply force away from click point
+            const force = ball.position.subtract(clickPos)
+                               .normalize().multiply(10);
+            ball.applyForce(force);
+        }
+    });
+});
+
+// Animation loop
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    balls.forEach(ball => {
+        if (gravityEnabled) ball.applyForce(gravity);
+        if (windEnabled) ball.applyForce(wind);
+        ball.update();
+        ball.draw(ctx);
+    });
+
+    requestAnimationFrame(animate);
+}
+
+// Initialize with some balls
+for (let i = 0; i < 3; i++) {
+    balls.push(new Ball(randomFloat(100, canvas.width - 100), 100, 15));
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Physics Simulation</h3>
@@ -202,91 +331,293 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <details data-demo-id="spaceship" data-deps="vector2d,clearCanvas,randomFloat,clamp,drawVector">
                 <summary>📝 Click to see: Spaceship Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Spaceship</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">class Spaceship {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.acceleration = new Vector2D(0, 0);
 
-        <span class="keyword">this</span>.angle = <span class="number">0</span>;  <span class="comment">// Direction ship is facing</span>
-        <span class="keyword">this</span>.rotation = <span class="number">0</span>;  <span class="comment">// Angular velocity</span>
+        this.angle = 0;  // Direction ship is facing
+        this.rotation = 0;  // Angular velocity
 
-        <span class="keyword">this</span>.mass = <span class="number">1</span>;
-        <span class="keyword">this</span>.thrustPower = <span class="number">0.15</span>;
-        <span class="keyword">this</span>.rotationSpeed = <span class="number">0.08</span>;
+        this.mass = 1;
+        this.thrustPower = 0.15;
+        this.rotationSpeed = 0.08;
     }
 
-    <span class="function">applyForce</span>(force) {
-        <span class="comment">// F = ma, so a = F/m</span>
-        <span class="keyword">const</span> f = force.<span class="function">copy</span>().<span class="function">divide</span>(<span class="keyword">this</span>.mass);
-        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(f);
+    applyForce(force) {
+        // F = ma, so a = F/m
+        const f = force.copy().divide(this.mass);
+        this.acceleration.add(f);
     }
 
-    <span class="function">thrust</span>() {
-        <span class="comment">// Apply force in the direction ship is facing</span>
-        <span class="keyword">const</span> thrustForce = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.thrustPower,
-            Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.thrustPower
+    thrust() {
+        // Apply force in the direction ship is facing
+        const thrustForce = new Vector2D(
+            Math.cos(this.angle) * this.thrustPower,
+            Math.sin(this.angle) * this.thrustPower
         );
-        <span class="keyword">this</span>.<span class="function">applyForce</span>(thrustForce);
+        this.applyForce(thrustForce);
     }
 
-    <span class="function">rotateLeft</span>() {
-        <span class="keyword">this</span>.rotation = -<span class="keyword">this</span>.rotationSpeed;
+    rotateLeft() {
+        this.rotation = -this.rotationSpeed;
     }
 
-    <span class="function">rotateRight</span>() {
-        <span class="keyword">this</span>.rotation = <span class="keyword">this</span>.rotationSpeed;
+    rotateRight() {
+        this.rotation = this.rotationSpeed;
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Update rotation</span>
-        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.rotation;
-        <span class="keyword">this</span>.rotation *= <span class="number">0.9</span>;  <span class="comment">// Damping</span>
+    update() {
+        // Update rotation
+        this.angle += this.rotation;
+        this.rotation *= 0.9;  // Damping
 
-        <span class="comment">// Update physics</span>
-        <span class="keyword">this</span>.velocity.<span class="function">add</span>(<span class="keyword">this</span>.acceleration);
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Update physics
+        this.velocity.add(this.acceleration);
+        this.position.add(this.velocity);
 
-        <span class="comment">// Reset acceleration</span>
-        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+        // Reset acceleration
+        this.acceleration.multiply(0);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Gravity Well Physics:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">GravityWell</span> {
-    <span class="keyword">constructor</span>(x, y, mass = <span class="number">100</span>) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.mass = mass;
-        <span class="keyword">this</span>.radius = Math.<span class="function">sqrt</span>(mass) * <span class="number">2</span>;
+                    <pre><code class="language-javascript">class GravityWell {
+    constructor(x, y, mass = 100) {
+        this.position = new Vector2D(x, y);
+        this.mass = mass;
+        this.radius = Math.sqrt(mass) * 2;
     }
 
-    <span class="function">attract</span>(entity) {
-        <span class="comment">// Calculate direction to gravity well</span>
-        <span class="keyword">const</span> force = <span class="keyword">this</span>.position.<span class="function">copy</span>().<span class="function">subtract</span>(entity.position);
-        <span class="keyword">const</span> distance = <span class="function">clamp</span>(force.<span class="function">length</span>(), <span class="number">5</span>, <span class="number">100</span>);
+    attract(entity) {
+        // Calculate direction to gravity well
+        const force = this.position.copy().subtract(entity.position);
+        const distance = clamp(force.length(), 5, 100);
 
-        <span class="comment">// Newton's law of gravitation: F = G × (m1 × m2) / r²</span>
-        <span class="keyword">const</span> G = <span class="number">1</span>;  <span class="comment">// Gravitational constant (simplified)</span>
-        <span class="keyword">const</span> strength = (G * <span class="keyword">this</span>.mass * entity.mass) / (distance * distance);
+        // Newton's law of gravitation: F = G × (m1 × m2) / r²
+        const G = 1;  // Gravitational constant (simplified)
+        const strength = (G * this.mass * entity.mass) / (distance * distance);
 
-        force.<span class="function">normalize</span>().<span class="function">multiply</span>(strength);
-        entity.<span class="function">applyForce</span>(force);
+        force.normalize().multiply(strength);
+        entity.applyForce(force);
     }
 }
 
-<span class="comment">// In game loop:</span>
-<span class="keyword">function</span> <span class="function">update</span>() {
-    <span class="comment">// Apply gravity from all wells</span>
-    gravityWells.<span class="function">forEach</span>(well => {
-        well.<span class="function">attract</span>(spaceship);
+// In game loop:
+function update() {
+    // Apply gravity from all wells
+    gravityWells.forEach(well => {
+        well.attract(spaceship);
     });
 
-    spaceship.<span class="function">update</span>();
+    spaceship.update();
 }</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Spaceship with Gravity Wells</summary>
+                <pre><code class="language-javascript">// ===================================
+// SPACESHIP WITH GRAVITY WELLS - Complete Implementation
+// ===================================
+
+class Spaceship {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.acceleration = new Vector2D(0, 0);
+        this.angle = -Math.PI / 2;  // Start pointing up
+        this.rotation = 0;
+        this.mass = 1;
+        this.thrustPower = 0.15;
+        this.rotationSpeed = 0.08;
+        this.thrusting = false;
+        this.size = 15;
+    }
+
+    applyForce(force) {
+        const f = force.copy().divide(this.mass);
+        this.acceleration.add(f);
+    }
+
+    thrust() {
+        const thrustForce = new Vector2D(
+            Math.cos(this.angle) * this.thrustPower,
+            Math.sin(this.angle) * this.thrustPower
+        );
+        this.applyForce(thrustForce);
+        this.thrusting = true;
+    }
+
+    rotateLeft() { this.rotation = -this.rotationSpeed; }
+    rotateRight() { this.rotation = this.rotationSpeed; }
+
+    update() {
+        this.angle += this.rotation;
+        this.rotation *= 0.85;  // Damping
+
+        this.velocity.add(this.acceleration);
+
+        // Speed limit
+        const speed = this.velocity.length();
+        if (speed > 10) {
+            this.velocity.normalize().multiply(10);
+        }
+
+        this.position.add(this.velocity);
+        this.acceleration.multiply(0);
+
+        // Wrap around screen edges
+        if (this.position.x < 0) this.position.x = canvas.width;
+        if (this.position.x > canvas.width) this.position.x = 0;
+        if (this.position.y < 0) this.position.y = canvas.height;
+        if (this.position.y > canvas.height) this.position.y = 0;
+
+        this.thrusting = false;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.position.x, this.position.y);
+        ctx.rotate(this.angle);
+
+        // Draw spaceship as triangle
+        ctx.fillStyle = '#4fc3f7';
+        ctx.strokeStyle = '#81d4fa';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.size, 0);
+        ctx.lineTo(-this.size, -this.size * 0.7);
+        ctx.lineTo(-this.size * 0.5, 0);
+        ctx.lineTo(-this.size, this.size * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw thrust flame when thrusting
+        if (this.thrusting) {
+            ctx.fillStyle = '#ff6b35';
+            ctx.beginPath();
+            ctx.moveTo(-this.size * 0.5, -this.size * 0.4);
+            ctx.lineTo(-this.size * 1.5, 0);
+            ctx.lineTo(-this.size * 0.5, this.size * 0.4);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.restore();
+
+        // Draw velocity vector
+        const velEnd = new Vector2D(
+            this.position.x + this.velocity.x * 10,
+            this.position.y + this.velocity.y * 10
+        );
+        if (this.velocity.length() > 0.5) {
+            drawVector(ctx, this.position, velEnd, '#66bb6a', 2);
+        }
+    }
+}
+
+class GravityWell {
+    constructor(x, y, mass = 100) {
+        this.position = new Vector2D(x, y);
+        this.mass = mass;
+        this.radius = Math.sqrt(mass) * 2;
+    }
+
+    attract(entity) {
+        const force = this.position.copy().subtract(entity.position);
+        const distance = clamp(force.length(), 10, 250);
+
+        // Newton's law of gravitation
+        const G = 1;
+        const strength = (G * this.mass * entity.mass) / (distance * distance);
+
+        force.normalize().multiply(strength);
+        entity.applyForce(force);
+    }
+
+    draw(ctx) {
+        // Draw gravity well
+        ctx.fillStyle = '#9c27b0';
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw gravity field rings
+        ctx.strokeStyle = 'rgba(156, 39, 176, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 3; i++) {
+            ctx.beginPath();
+            ctx.arc(this.position.x, this.position.y,
+                    this.radius + i * 30, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Draw center
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// State
+let spaceship = new Spaceship(400, 300);
+const gravityWells = [new GravityWell(400, 450, 150)];
+
+// Keyboard controls
+const keys = {};
+window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+// Button controls (mousedown/mouseup for continuous thrust)
+document.getElementById('btnSpaceshipThrust')
+    .addEventListener('mousedown', () => keys['w'] = true);
+document.getElementById('btnSpaceshipThrust')
+    .addEventListener('mouseup', () => keys['w'] = false);
+// ... similar for left/right buttons
+
+// Click canvas to add gravity well
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    gravityWells.push(new GravityWell(x, y, 120));
+});
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    // Draw starfield background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    for (let i = 0; i < 50; i++) {
+        const x = (i * 137.5) % canvas.width;
+        const y = (i * 217.3) % canvas.height;
+        ctx.fillRect(x, y, 2, 2);
+    }
+
+    // Handle input
+    if (keys['w'] || keys['arrowup']) spaceship.thrust();
+    if (keys['a'] || keys['arrowleft']) spaceship.rotateLeft();
+    if (keys['d'] || keys['arrowright']) spaceship.rotateRight();
+
+    // Apply gravity from all wells
+    gravityWells.forEach(well => {
+        well.attract(spaceship);
+        well.draw(ctx);
+    });
+
+    spaceship.update();
+    spaceship.draw(ctx);
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Spaceship with Gravity Wells</h3>
@@ -340,62 +671,166 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <details data-demo-id="spring" data-deps="vector2d,clearCanvas,randomFloat,clamp">
                 <summary>📝 Click to see: Spring Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Spring</span> {
-    <span class="keyword">constructor</span>(stiffness = <span class="number">0.1</span>, damping = <span class="number">0.8</span>) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.target = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">class Spring {
+    constructor(stiffness = 0.1, damping = 0.8) {
+        this.position = new Vector2D(0, 0);
+        this.velocity = new Vector2D(0, 0);
+        this.target = new Vector2D(0, 0);
 
-        <span class="keyword">this</span>.stiffness = stiffness;  <span class="comment">// How tight the spring is</span>
-        <span class="keyword">this</span>.damping = damping;      <span class="comment">// How much it slows down</span>
+        this.stiffness = stiffness;  // How tight the spring is
+        this.damping = damping;      // How much it slows down
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Calculate spring force</span>
-        <span class="keyword">const</span> displacement = <span class="keyword">this</span>.target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
-        <span class="keyword">const</span> springForce = displacement.<span class="function">multiply</span>(<span class="keyword">this</span>.stiffness);
+    update() {
+        // Calculate spring force
+        const displacement = this.target.subtract(this.position);
+        const springForce = displacement.multiply(this.stiffness);
 
-        <span class="comment">// Apply force to velocity</span>
-        <span class="keyword">this</span>.velocity.<span class="function">add</span>(springForce);
+        // Apply force to velocity
+        this.velocity.add(springForce);
 
-        <span class="comment">// Apply damping (friction)</span>
-        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="keyword">this</span>.damping);
+        // Apply damping (friction)
+        this.velocity.multiply(this.damping);
 
-        <span class="comment">// Update position</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Update position
+        this.position.add(this.velocity);
     }
 
-    <span class="function">setTarget</span>(x, y) {
-        <span class="keyword">this</span>.target.<span class="function">set</span>(x, y);
+    setTarget(x, y) {
+        this.target.set(x, y);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Smooth Camera Follow</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">Camera</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.spring = <span class="keyword">new</span> <span class="function">Spring</span>(<span class="number">0.08</span>, <span class="number">0.85</span>);
+                    <pre><code class="language-javascript">class Camera {
+    constructor() {
+        this.spring = new Spring(0.08, 0.85);
     }
 
-    <span class="function">follow</span>(player) {
-        <span class="comment">// Set target to player position</span>
-        <span class="keyword">this</span>.spring.<span class="function">setTarget</span>(player.x, player.y);
+    follow(player) {
+        // Set target to player position
+        this.spring.setTarget(player.x, player.y);
 
-        <span class="comment">// Update spring physics</span>
-        <span class="keyword">this</span>.spring.<span class="function">update</span>();
+        // Update spring physics
+        this.spring.update();
 
-        <span class="comment">// Camera position is spring position</span>
-        <span class="keyword">this</span>.x = <span class="keyword">this</span>.spring.position.x;
-        <span class="keyword">this</span>.y = <span class="keyword">this</span>.spring.position.y;
+        // Camera position is spring position
+        this.x = this.spring.position.x;
+        this.y = this.spring.position.y;
     }
 }
 
-<span class="comment">// Higher stiffness = tighter follow (0.2)</span>
-<span class="comment">// Lower damping = more bouncy (0.7)</span>
-<span class="comment">// Lower stiffness = looser follow (0.05)</span>
-<span class="comment">// Higher damping = less bouncy (0.95)</span></code></pre>
+// Higher stiffness = tighter follow (0.2)
+// Lower damping = more bouncy (0.7)
+// Lower stiffness = looser follow (0.05)
+// Higher damping = less bouncy (0.95)</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Spring Launcher</summary>
+                <pre><code class="language-javascript">// ===================================
+// SPRING LAUNCHER - Complete Implementation
+// ===================================
+
+const anchorPos = new Vector2D(150, 400);
+let stiffness = 0.15;  // Spring constant (k)
+
+class Projectile {
+    constructor(x, y, vx, vy) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(vx, vy);
+        this.radius = 12;
+        this.trail = [];
+        this.alive = true;
+    }
+
+    update() {
+        this.velocity.y += 0.3;  // Gravity
+        this.position.add(this.velocity);
+
+        // Trail for visual effect
+        this.trail.push(this.position.copy());
+        if (this.trail.length > 40) this.trail.shift();
+
+        // Ground bounce
+        if (this.position.y > canvas.height - this.radius) {
+            this.position.y = canvas.height - this.radius;
+            this.velocity.y *= -0.6;  // Bounce with energy loss
+            this.velocity.x *= 0.9;   // Ground friction
+        }
+    }
+}
+
+let projectiles = [];
+let isDragging = false;
+let dragPos = anchorPos.copy();
+
+canvas.addEventListener('mousedown', (e) => {
+    const mousePos = getMousePos(e);
+    if (mousePos.distance(anchorPos) < 100) {
+        isDragging = true;
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        dragPos = getMousePos(e);
+
+        // Limit drag distance
+        const displacement = dragPos.subtract(anchorPos);
+        const maxDistance = 150;
+        if (displacement.length() > maxDistance) {
+            dragPos = anchorPos.copy().add(
+                displacement.normalize().multiply(maxDistance)
+            );
+        }
+    }
+});
+
+canvas.addEventListener('mouseup', () => {
+    if (isDragging) {
+        // Hooke's Law: F = -kx
+        const displacement = anchorPos.subtract(dragPos);
+        const launchForce = displacement.multiply(stiffness);
+
+        projectiles.push(new Projectile(
+            dragPos.x, dragPos.y,
+            launchForce.x, launchForce.y
+        ));
+
+        isDragging = false;
+        dragPos = anchorPos.copy();
+    }
+});
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    // Draw spring visualization while dragging
+    if (isDragging) {
+        const dist = dragPos.distance(anchorPos);
+        const segments = 15;
+        const springWidth = 20;
+
+        ctx.strokeStyle = '#66bb6a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        // Draw zig-zag spring...
+    }
+
+    // Update and draw projectiles
+    projectiles.forEach(p => {
+        p.update();
+        p.draw(ctx);
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Spring Launcher</h3>
@@ -467,51 +902,51 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <details data-demo-id="verlet" data-deps="vector2d,clearCanvas,drawGrid,randomFloat">
                 <summary>📝 Click to see: Verlet Point Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">VerletPoint</span> {
-    <span class="keyword">constructor</span>(x, y, pinned = <span class="keyword">false</span>) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.oldPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.acceleration = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.pinned = pinned;  <span class="comment">// Fixed points don't move</span>
+                    <pre><code class="language-javascript">class VerletPoint {
+    constructor(x, y, pinned = false) {
+        this.position = new Vector2D(x, y);
+        this.oldPosition = new Vector2D(x, y);
+        this.acceleration = new Vector2D(0, 0);
+        this.pinned = pinned;  // Fixed points don't move
     }
 
-    <span class="function">update</span>(dt = <span class="number">1</span>) {
-        <span class="keyword">if</span> (<span class="keyword">this</span>.pinned) <span class="keyword">return</span>;
+    update(dt = 1) {
+        if (this.pinned) return;
 
-        <span class="comment">// Calculate velocity implicitly</span>
-        <span class="keyword">const</span> velocity = <span class="keyword">this</span>.position.<span class="function">copy</span>().<span class="function">subtract</span>(<span class="keyword">this</span>.oldPosition);
+        // Calculate velocity implicitly
+        const velocity = this.position.copy().subtract(this.oldPosition);
 
-        <span class="comment">// Save current position</span>
-        <span class="keyword">const</span> temp = <span class="keyword">this</span>.position.<span class="function">copy</span>();
+        // Save current position
+        const temp = this.position.copy();
 
-        <span class="comment">// Verlet integration: new_pos = pos + velocity + acceleration</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(velocity);
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.acceleration.<span class="function">copy</span>().<span class="function">multiply</span>(dt * dt));
+        // Verlet integration: new_pos = pos + velocity + acceleration
+        this.position.add(velocity);
+        this.position.add(this.acceleration.copy().multiply(dt * dt));
 
-        <span class="comment">// Store old position for next frame</span>
-        <span class="keyword">this</span>.oldPosition = temp;
+        // Store old position for next frame
+        this.oldPosition = temp;
 
-        <span class="comment">// Reset acceleration</span>
-        <span class="keyword">this</span>.acceleration.<span class="function">multiply</span>(<span class="number">0</span>);
+        // Reset acceleration
+        this.acceleration.multiply(0);
     }
 
-    <span class="function">applyForce</span>(force) {
-        <span class="keyword">this</span>.acceleration.<span class="function">add</span>(force);
+    applyForce(force) {
+        this.acceleration.add(force);
     }
 
-    <span class="function">constrain</span>(bounds) {
-        <span class="comment">// Keep point within bounds (with bouncing)</span>
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.x < bounds.left) {
-            <span class="keyword">this</span>.position.x = bounds.left;
+    constrain(bounds) {
+        // Keep point within bounds (with bouncing)
+        if (this.position.x < bounds.left) {
+            this.position.x = bounds.left;
         }
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.x > bounds.right) {
-            <span class="keyword">this</span>.position.x = bounds.right;
+        if (this.position.x > bounds.right) {
+            this.position.x = bounds.right;
         }
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y > bounds.bottom) {
-            <span class="keyword">this</span>.position.y = bounds.bottom;
+        if (this.position.y > bounds.bottom) {
+            this.position.y = bounds.bottom;
         }
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y < bounds.top) {
-            <span class="keyword">this</span>.position.y = bounds.top;
+        if (this.position.y < bounds.top) {
+            this.position.y = bounds.top;
         }
     }
 }</code></pre>
@@ -520,31 +955,31 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
                 <div class="example-box">
                     <h4>🔗 Constraints: The Magic of Verlet</h4>
                     <p>Constraints are what make Verlet physics special. After updating positions, we enforce constraints (like "these two points must stay exactly 50 pixels apart"). This creates rope, cloth, and rigid structures!</p>
-                    <pre><code><span class="keyword">class</span> <span class="function">Constraint</span> {
-    <span class="keyword">constructor</span>(p1, p2, length = <span class="keyword">null</span>) {
-        <span class="keyword">this</span>.p1 = p1;
-        <span class="keyword">this</span>.p2 = p2;
-        <span class="comment">// If no length specified, use current distance</span>
-        <span class="keyword">this</span>.length = length || p1.position.<span class="function">distance</span>(p2.position);
+                    <pre><code class="language-javascript">class Constraint {
+    constructor(p1, p2, length = null) {
+        this.p1 = p1;
+        this.p2 = p2;
+        // If no length specified, use current distance
+        this.length = length || p1.position.distance(p2.position);
     }
 
-    <span class="function">solve</span>() {
-        <span class="comment">// Calculate current distance between points</span>
-        <span class="keyword">const</span> diff = <span class="keyword">this</span>.p2.position.<span class="function">copy</span>().<span class="function">subtract</span>(<span class="keyword">this</span>.p1.position);
-        <span class="keyword">const</span> currentDistance = diff.<span class="function">length</span>();
+    solve() {
+        // Calculate current distance between points
+        const diff = this.p2.position.copy().subtract(this.p1.position);
+        const currentDistance = diff.length();
 
-        <span class="comment">// Calculate how much to correct</span>
-        <span class="keyword">const</span> correction = (currentDistance - <span class="keyword">this</span>.length) / currentDistance;
+        // Calculate how much to correct
+        const correction = (currentDistance - this.length) / currentDistance;
 
-        <span class="comment">// Move both points to satisfy constraint</span>
-        <span class="keyword">const</span> correctionVector = diff.<span class="function">multiply</span>(correction * <span class="number">0.5</span>);
+        // Move both points to satisfy constraint
+        const correctionVector = diff.multiply(correction * 0.5);
 
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.p1.pinned) {
-            <span class="keyword">this</span>.p1.position.<span class="function">add</span>(correctionVector);
+        if (!this.p1.pinned) {
+            this.p1.position.add(correctionVector);
         }
 
-        <span class="keyword">if</span> (!<span class="keyword">this</span>.p2.pinned) {
-            <span class="keyword">this</span>.p2.position.<span class="function">subtract</span>(correctionVector);
+        if (!this.p2.pinned) {
+            this.p2.position.subtract(correctionVector);
         }
     }
 }</code></pre>
@@ -554,69 +989,69 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
             <details>
                 <summary>📝 Click to see: Complete Rope System</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Rope</span> {
-    <span class="keyword">constructor</span>(startX, startY, segments = <span class="number">10</span>, segmentLength = <span class="number">20</span>) {
-        <span class="keyword">this</span>.points = [];
-        <span class="keyword">this</span>.constraints = [];
+                    <pre><code class="language-javascript">class Rope {
+    constructor(startX, startY, segments = 10, segmentLength = 20) {
+        this.points = [];
+        this.constraints = [];
 
-        <span class="comment">// Create points along the rope</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i <= segments; i++) {
-            <span class="keyword">const</span> x = startX;
-            <span class="keyword">const</span> y = startY + i * segmentLength;
-            <span class="keyword">const</span> pinned = (i === <span class="number">0</span>);  <span class="comment">// Pin the first point</span>
+        // Create points along the rope
+        for (let i = 0; i <= segments; i++) {
+            const x = startX;
+            const y = startY + i * segmentLength;
+            const pinned = (i === 0);  // Pin the first point
 
-            <span class="keyword">this</span>.points.<span class="function">push</span>(<span class="keyword">new</span> <span class="function">VerletPoint</span>(x, y, pinned));
+            this.points.push(new VerletPoint(x, y, pinned));
         }
 
-        <span class="comment">// Create constraints between adjacent points</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < segments; i++) {
-            <span class="keyword">const</span> constraint = <span class="keyword">new</span> <span class="function">Constraint</span>(
-                <span class="keyword">this</span>.points[i],
-                <span class="keyword">this</span>.points[i + <span class="number">1</span>],
+        // Create constraints between adjacent points
+        for (let i = 0; i < segments; i++) {
+            const constraint = new Constraint(
+                this.points[i],
+                this.points[i + 1],
                 segmentLength
             );
-            <span class="keyword">this</span>.constraints.<span class="function">push</span>(constraint);
+            this.constraints.push(constraint);
         }
     }
 
-    <span class="function">update</span>(gravity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0.5</span>)) {
-        <span class="comment">// Apply forces to all points</span>
-        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
-            point.<span class="function">applyForce</span>(gravity);
+    update(gravity = new Vector2D(0, 0.5)) {
+        // Apply forces to all points
+        this.points.forEach(point => {
+            point.applyForce(gravity);
         });
 
-        <span class="comment">// Update positions</span>
-        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
-            point.<span class="function">update</span>();
+        // Update positions
+        this.points.forEach(point => {
+            point.update();
         });
 
-        <span class="comment">// Solve constraints multiple times for stability</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">3</span>; i++) {
-            <span class="keyword">this</span>.constraints.<span class="function">forEach</span>(constraint => {
-                constraint.<span class="function">solve</span>();
+        // Solve constraints multiple times for stability
+        for (let i = 0; i < 3; i++) {
+            this.constraints.forEach(constraint => {
+                constraint.solve();
             });
         }
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Draw the rope as connected line segments</span>
-        ctx.strokeStyle = <span class="string">'#8b4513'</span>;
-        ctx.lineWidth = <span class="number">3</span>;
+    draw(ctx) {
+        // Draw the rope as connected line segments
+        ctx.strokeStyle = '#8b4513';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.points[<span class="number">0</span>].position.x, <span class="keyword">this</span>.points[<span class="number">0</span>].position.y);
+        ctx.moveTo(this.points[0].position.x, this.points[0].position.y);
 
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < <span class="keyword">this</span>.points.length; i++) {
-            ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.points[i].position.x, <span class="keyword">this</span>.points[i].position.y);
+        for (let i = 1; i < this.points.length; i++) {
+            ctx.lineTo(this.points[i].position.x, this.points[i].position.y);
         }
 
-        ctx.<span class="function">stroke</span>();
+        ctx.stroke();
 
-        <span class="comment">// Draw points</span>
-        <span class="keyword">this</span>.points.<span class="function">forEach</span>(point => {
-            ctx.fillStyle = point.pinned ? <span class="string">'#ff5252'</span> : <span class="string">'#42a5f5'</span>;
+        // Draw points
+        this.points.forEach(point => {
+            ctx.fillStyle = point.pinned ? '#ff5252' : '#42a5f5';
             ctx.beginPath();
-            ctx.<span class="function">arc</span>(point.position.x, point.position.y, <span class="number">4</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-            ctx.<span class="function">fill</span>();
+            ctx.arc(point.position.x, point.position.y, 4, 0, Math.PI * 2);
+            ctx.fill();
         });
     }
 }</code></pre>
@@ -624,33 +1059,250 @@ Vector2D.prototype.<span class="function">lerp</span> = <span class="keyword">fu
 
                 <div class="example-box">
                     <h4>🎮 Usage Example:</h4>
-                    <pre><code><span class="comment">// Create a rope hanging from the top</span>
-<span class="keyword">const</span> rope = <span class="keyword">new</span> <span class="function">Rope</span>(<span class="number">400</span>, <span class="number">50</span>, <span class="number">15</span>, <span class="number">20</span>);
+                    <pre><code class="language-javascript">// Create a rope hanging from the top
+const rope = new Rope(400, 50, 15, 20);
 
-<span class="keyword">function</span> <span class="function">gameLoop</span>() {
-    <span class="comment">// Update rope physics</span>
-    rope.<span class="function">update</span>();
+function gameLoop() {
+    // Update rope physics
+    rope.update();
 
-    <span class="comment">// Draw rope</span>
-    rope.<span class="function">draw</span>(ctx);
+    // Draw rope
+    rope.draw(ctx);
 
-    <span class="function">requestAnimationFrame</span>(gameLoop);
+    requestAnimationFrame(gameLoop);
 }
 
-<span class="comment">// Make the rope interactive!</span>
-canvas.<span class="function">addEventListener</span>(<span class="string">'mousemove'</span>, (e) => {
-    <span class="keyword">const</span> mousePos = <span class="keyword">new</span> <span class="function">Vector2D</span>(e.offsetX, e.offsetY);
+// Make the rope interactive!
+canvas.addEventListener('mousemove', (e) => {
+    const mousePos = new Vector2D(e.offsetX, e.offsetY);
 
-    <span class="comment">// Find closest point and apply force</span>
-    rope.points.<span class="function">forEach</span>(point => {
-        <span class="keyword">const</span> dist = point.position.<span class="function">distance</span>(mousePos);
-        <span class="keyword">if</span> (dist < <span class="number">50</span>) {
-            <span class="keyword">const</span> force = mousePos.<span class="function">subtract</span>(point.position).<span class="function">multiply</span>(<span class="number">0.02</span>);
-            point.<span class="function">applyForce</span>(force);
+    // Find closest point and apply force
+    rope.points.forEach(point => {
+        const dist = point.position.distance(mousePos);
+        if (dist < 50) {
+            const force = mousePos.subtract(point.position).multiply(0.02);
+            point.applyForce(force);
         }
     });
 });</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Verlet Physics Playground</summary>
+                <pre><code class="language-javascript">// ===================================
+// VERLET PHYSICS - Complete Implementation
+// ===================================
+
+// VerletPoint - A point that uses Verlet integration
+class VerletPoint {
+    constructor(x, y, pinned = false) {
+        this.position = new Vector2D(x, y);
+        this.oldPosition = new Vector2D(x, y);  // Previous position
+        this.acceleration = new Vector2D(0, 0);
+        this.pinned = pinned;  // Pinned points don't move
+        this.radius = 5;
+    }
+
+    update(dt = 1) {
+        if (this.pinned) return;
+
+        // Velocity = current - previous (implicit)
+        const velocity = this.position.copy().subtract(this.oldPosition);
+        const temp = this.position.copy();
+
+        // Verlet: new = current + velocity + acceleration
+        this.position.add(velocity);
+        this.position.add(this.acceleration.copy().multiply(dt * dt));
+
+        this.oldPosition = temp;
+        this.acceleration.multiply(0);  // Reset
+    }
+
+    applyForce(force) {
+        this.acceleration.add(force);
+    }
+
+    constrain(bounds) {
+        // Keep within canvas
+        if (this.position.x < 0) this.position.x = 0;
+        if (this.position.x > bounds.width) this.position.x = bounds.width;
+        if (this.position.y < 0) this.position.y = 0;
+        if (this.position.y > bounds.height) this.position.y = bounds.height;
+    }
+}
+
+// Constraint - Keeps two points at fixed distance
+class Constraint {
+    constructor(p1, p2, length = null) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.length = length || p1.position.distance(p2.position);
+        this.active = true;
+    }
+
+    solve() {
+        if (!this.active) return;
+
+        const diff = this.p2.position.copy().subtract(this.p1.position);
+        const currentDistance = diff.length();
+        if (currentDistance === 0) return;
+
+        // How much to correct
+        const correction = (currentDistance - this.length) / currentDistance;
+        const correctionVector = diff.copy().multiply(correction * 0.5);
+
+        // Move both points toward each other
+        if (!this.p1.pinned) this.p1.position.add(correctionVector);
+        if (!this.p2.pinned) this.p2.position.add(correctionVector.multiply(-1));
+    }
+}
+
+// Rope - Chain of connected points
+class Rope {
+    constructor(startX, startY, segments = 10, segmentLength = 20) {
+        this.points = [];
+        this.constraints = [];
+
+        for (let i = 0; i <= segments; i++) {
+            const pinned = (i === 0);  // Pin first point
+            this.points.push(new VerletPoint(startX, startY + i * segmentLength, pinned));
+        }
+
+        for (let i = 0; i < segments; i++) {
+            this.constraints.push(new Constraint(this.points[i], this.points[i + 1]));
+        }
+    }
+
+    update(gravity, wind) {
+        this.points.forEach(p => {
+            p.applyForce(gravity);
+            p.applyForce(wind);
+            p.update();
+            p.constrain({ width: canvas.width, height: canvas.height });
+        });
+
+        // Solve constraints multiple times for stability
+        for (let i = 0; i < 3; i++) {
+            this.constraints.forEach(c => c.solve());
+        }
+    }
+}
+
+// Cloth - 2D grid of connected points
+class Cloth {
+    constructor(startX, startY, cols, rows, spacing) {
+        this.points = [];
+        this.constraints = [];
+
+        // Create grid
+        for (let y = 0; y <= rows; y++) {
+            this.points[y] = [];
+            for (let x = 0; x <= cols; x++) {
+                const pinned = (y === 0);  // Pin top row
+                this.points[y][x] = new VerletPoint(
+                    startX + x * spacing,
+                    startY + y * spacing,
+                    pinned
+                );
+            }
+        }
+
+        // Create constraints (horizontal, vertical, diagonal)
+        for (let y = 0; y <= rows; y++) {
+            for (let x = 0; x <= cols; x++) {
+                if (x < cols) this.constraints.push(
+                    new Constraint(this.points[y][x], this.points[y][x + 1]));
+                if (y < rows) this.constraints.push(
+                    new Constraint(this.points[y][x], this.points[y + 1][x]));
+                // Diagonal for shear resistance
+                if (x < cols && y < rows) {
+                    this.constraints.push(
+                        new Constraint(this.points[y][x], this.points[y + 1][x + 1]));
+                    this.constraints.push(
+                        new Constraint(this.points[y][x + 1], this.points[y + 1][x]));
+                }
+            }
+        }
+    }
+}
+
+// Ragdoll - Stick figure with joints
+class Ragdoll {
+    constructor(x, y, scale = 1) {
+        this.points = {};
+        this.constraints = [];
+        const s = scale;
+
+        // Create body parts
+        this.points.head = new VerletPoint(x, y);
+        this.points.neck = new VerletPoint(x, y + 20 * s);
+        this.points.chest = new VerletPoint(x, y + 40 * s);
+        this.points.waist = new VerletPoint(x, y + 70 * s);
+
+        // Arms and legs...
+        this.points.leftShoulder = new VerletPoint(x - 10 * s, y + 35 * s);
+        this.points.leftHand = new VerletPoint(x - 35 * s, y + 75 * s);
+        this.points.rightShoulder = new VerletPoint(x + 10 * s, y + 35 * s);
+        this.points.rightHand = new VerletPoint(x + 35 * s, y + 75 * s);
+        this.points.leftFoot = new VerletPoint(x - 12 * s, y + 135 * s);
+        this.points.rightFoot = new VerletPoint(x + 12 * s, y + 135 * s);
+
+        // Connect with constraints (spine, limbs, cross-body)
+        this.addConstraint('head', 'neck');
+        this.addConstraint('neck', 'chest');
+        // ... more constraints for full skeleton
+    }
+
+    addConstraint(name1, name2) {
+        this.constraints.push(new Constraint(this.points[name1], this.points[name2]));
+    }
+}
+
+// State
+let ropes = [new Rope(400, 50, 15, 20)];
+let cloths = [];
+let ragdolls = [];
+const gravity = new Vector2D(0, 0.5);
+let wind = new Vector2D(0, 0);
+let cutMode = false;
+let draggedPoint = null;
+
+// Mouse dragging
+canvas.addEventListener('mousedown', (e) => {
+    const mousePos = getMousePos(e);
+    if (cutMode) {
+        // Find and cut nearby constraints
+        allConstraints.forEach(c => {
+            const midPoint = getMidpoint(c.p1.position, c.p2.position);
+            if (mousePos.distance(midPoint) < 10) c.active = false;
+        });
+    } else {
+        // Find nearest point to drag
+        draggedPoint = findNearestPoint(mousePos, 20);
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (draggedPoint) {
+        const mousePos = getMousePos(e);
+        draggedPoint.position = mousePos.copy();
+        draggedPoint.oldPosition = mousePos.copy();
+    }
+});
+
+// Animation loop
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    ropes.forEach(rope => { rope.update(gravity, wind); rope.draw(ctx); });
+    cloths.forEach(cloth => { cloth.update(gravity, wind); cloth.draw(ctx); });
+    ragdolls.forEach(ragdoll => { ragdoll.update(gravity, wind); ragdoll.draw(ctx); });
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Verlet Physics Playground</h3>
@@ -735,88 +1387,229 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="procedural" data-deps="vector2d,clearCanvas,drawGrid,randomFloat">
                 <summary>📝 Click to see: Procedural Animation Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Butterfly - Wing flapping with figure-8 flight pattern</span>
-<span class="keyword">class</span> <span class="function">Butterfly</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.time = <span class="number">0</span>;
-        <span class="keyword">this</span>.wingPhase = <span class="number">0</span>;
+                    <pre><code class="language-javascript">// Butterfly - Wing flapping with figure-8 flight pattern
+class Butterfly {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.time = 0;
+        this.wingPhase = 0;
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="keyword">this</span>.time += dt;
-        <span class="keyword">this</span>.wingPhase += dt * <span class="number">12</span>; <span class="comment">// Wing flapping speed</span>
+    update(dt) {
+        this.time += dt;
+        this.wingPhase += dt * 12; // Wing flapping speed
 
-        <span class="comment">// Figure-8 flight pattern using Lissajous curve</span>
-        <span class="keyword">this</span>.position.x += Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="number">0.8</span>) * <span class="number">0.5</span>;
-        <span class="keyword">this</span>.position.y += Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="number">1.6</span>) * <span class="number">0.3</span>;
+        // Figure-8 flight pattern using Lissajous curve
+        this.position.x += Math.sin(this.time * 0.8) * 0.5;
+        this.position.y += Math.sin(this.time * 1.6) * 0.3;
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Wing flapping animation</span>
-        <span class="keyword">const</span> wingAngle = Math.<span class="function">sin</span>(<span class="keyword">this</span>.wingPhase) * <span class="number">0.5</span>;
-        <span class="comment">// Draw wings with rotating angles...</span>
+    draw(ctx) {
+        // Wing flapping animation
+        const wingAngle = Math.sin(this.wingPhase) * 0.5;
+        // Draw wings with rotating angles...
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🐟 Fish - Swimming with tail wagging:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">Fish</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.tailPhase = <span class="number">0</span>;
-        <span class="keyword">this</span>.targetAngle = <span class="number">0</span>;
-        <span class="keyword">this</span>.currentAngle = <span class="number">0</span>;
+                    <pre><code class="language-javascript">class Fish {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.tailPhase = 0;
+        this.targetAngle = 0;
+        this.currentAngle = 0;
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="keyword">this</span>.tailPhase += dt * <span class="number">8</span>;
+    update(dt) {
+        this.tailPhase += dt * 8;
 
-        <span class="comment">// Smoothly rotate toward target direction</span>
-        <span class="keyword">let</span> angleDiff = <span class="keyword">this</span>.targetAngle - <span class="keyword">this</span>.currentAngle;
-        <span class="keyword">this</span>.currentAngle += angleDiff * dt * <span class="number">2</span>;
+        // Smoothly rotate toward target direction
+        let angleDiff = this.targetAngle - this.currentAngle;
+        this.currentAngle += angleDiff * dt * 2;
 
-        <span class="comment">// Move in current direction</span>
-        <span class="keyword">this</span>.velocity.x = Math.<span class="function">cos</span>(<span class="keyword">this</span>.currentAngle) * speed * dt;
-        <span class="keyword">this</span>.velocity.y = Math.<span class="function">sin</span>(<span class="keyword">this</span>.currentAngle) * speed * dt;
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Move in current direction
+        this.velocity.x = Math.cos(this.currentAngle) * speed * dt;
+        this.velocity.y = Math.sin(this.currentAngle) * speed * dt;
+        this.position.add(this.velocity);
 
-        <span class="comment">// Tail wagging for swimming effect</span>
-        <span class="keyword">const</span> tailWag = Math.<span class="function">sin</span>(<span class="keyword">this</span>.tailPhase) * <span class="number">0.4</span>;
+        // Tail wagging for swimming effect
+        const tailWag = Math.sin(this.tailPhase) * 0.4;
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎐 Jellyfish - Pulsing with tentacle chains:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">Jellyfish</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.tentacles = []; <span class="comment">// Array of segment chains</span>
-        <span class="keyword">this</span>.pulsePhase = <span class="number">0</span>;
+                    <pre><code class="language-javascript">class Jellyfish {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.tentacles = []; // Array of segment chains
+        this.pulsePhase = 0;
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="keyword">this</span>.pulsePhase += dt * <span class="number">4</span>;
+    update(dt) {
+        this.pulsePhase += dt * 4;
 
-        <span class="comment">// Pulsing propulsion - only push when contracting</span>
-        <span class="keyword">const</span> pulse = Math.<span class="function">sin</span>(<span class="keyword">this</span>.pulsePhase);
-        <span class="keyword">if</span> (pulse > <span class="number">0</span>) {
-            <span class="keyword">this</span>.velocity.y -= pulse * <span class="number">0.3</span>;
+        // Pulsing propulsion - only push when contracting
+        const pulse = Math.sin(this.pulsePhase);
+        if (pulse > 0) {
+            this.velocity.y -= pulse * 0.3;
         }
 
-        <span class="comment">// Update tentacles with chain following</span>
-        <span class="keyword">this</span>.tentacles.<span class="function">forEach</span>(segments => {
-            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j < segments.length; j++) {
-                <span class="comment">// Each segment follows previous with delay</span>
-                segments[j].<span class="function">lerp</span>(segments[j - <span class="number">1</span>], <span class="number">0.15</span>);
+        // Update tentacles with chain following
+        this.tentacles.forEach(segments => {
+            for (let j = 1; j < segments.length; j++) {
+                // Each segment follows previous with delay
+                segments[j].lerp(segments[j - 1], 0.15);
             }
         });
     }
 }</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Procedural Animation</summary>
+                <pre><code class="language-javascript">// ===================================
+// PROCEDURAL ANIMATION - Complete Implementation
+// ===================================
+
+// Butterfly - Figure-8 flight with wing flapping
+class Butterfly {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.time = Math.random() * Math.PI * 2;
+        this.speed = randomFloat(0.8, 1.5);
+        this.wingPhase = 0;
+    }
+
+    update(dt) {
+        this.time += dt * this.speed;
+        this.wingPhase += dt * 12;  // Wing flap speed
+
+        // Figure-8 flight (Lissajous curve)
+        this.position.x += Math.sin(this.time * 0.8) * 0.5;
+        this.position.y += Math.sin(this.time * 1.6) * 0.3;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.position.x, this.position.y);
+
+        // Calculate direction from movement
+        const angle = Math.atan2(
+            Math.sin(this.time * 1.6), Math.sin(this.time * 0.8)
+        );
+        ctx.rotate(angle);
+
+        // Wing flapping using sin
+        const wingAngle = Math.sin(this.wingPhase) * 0.5;
+        // Draw wings with rotating angles...
+        ctx.restore();
+    }
+}
+
+// Fish - Swimming with tail wag
+class Fish {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.tailPhase = 0;
+        this.currentAngle = 0;
+        this.targetAngle = Math.random() * Math.PI * 2;
+    }
+
+    update(dt) {
+        this.tailPhase += dt * 8;
+
+        // Smooth rotation toward target
+        let angleDiff = this.targetAngle - this.currentAngle;
+        this.currentAngle += angleDiff * dt * 2;
+
+        // Move in facing direction
+        const speed = 50;
+        this.position.x += Math.cos(this.currentAngle) * speed * dt;
+        this.position.y += Math.sin(this.currentAngle) * speed * dt;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.position.x, this.position.y);
+        ctx.rotate(this.currentAngle);
+
+        // Body (ellipse)
+        ctx.fillStyle = this.color;
+        ctx.ellipse(0, 0, this.size, this.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tail wag using sin
+        const tailWag = Math.sin(this.tailPhase) * 0.4;
+        ctx.save();
+        ctx.translate(-this.size, 0);
+        ctx.rotate(tailWag);  // Rotation creates wag effect
+        // Draw tail triangle...
+        ctx.restore();
+        ctx.restore();
+    }
+}
+
+// Jellyfish - Pulsing with trailing tentacles
+class Jellyfish {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.pulsePhase = 0;
+        this.tentacles = [];  // Arrays of segment positions
+
+        // Create tentacle chains
+        for (let i = 0; i < 8; i++) {
+            const segments = [];
+            for (let j = 0; j < 6; j++) {
+                segments.push(new Vector2D(x, y + j * 10));
+            }
+            this.tentacles.push(segments);
+        }
+    }
+
+    update(dt) {
+        this.pulsePhase += dt * 4;
+
+        // Pulsing propulsion (only push when contracting)
+        const pulse = Math.sin(this.pulsePhase);
+        if (pulse > 0) {
+            this.velocity.y -= pulse * 0.3;
+        }
+
+        this.position.add(this.velocity);
+        this.velocity.multiply(0.98);  // Damping
+
+        // Update tentacles - each segment follows previous
+        this.tentacles.forEach(segments => {
+            segments[0] = this.position.copy();
+            for (let j = 1; j < segments.length; j++) {
+                segments[j].lerp(segments[j - 1], 0.15);
+            }
+        });
+    }
+}
+
+const creatures = [];
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    const dt = 1 / 60;
+    creatures.forEach(c => {
+        c.update(dt);
+        c.draw(ctx);
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Bringing Math to Life</h3>
@@ -877,36 +1670,36 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="wave" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Wave Simulation Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// 1D Wave System - Perfect for water surfaces, ropes, flags</span>
-<span class="keyword">class</span> <span class="function">Wave1D</span> {
-    <span class="keyword">constructor</span>(points, length) {
-        <span class="keyword">this</span>.points = points;      <span class="comment">// Number of points in the wave</span>
-        <span class="keyword">this</span>.length = length;      <span class="comment">// Physical length</span>
-        <span class="keyword">this</span>.y = <span class="keyword">new</span> <span class="function">Array</span>(points).<span class="function">fill</span>(<span class="number">0</span>);       <span class="comment">// Current positions</span>
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Array</span>(points).<span class="function">fill</span>(<span class="number">0</span>); <span class="comment">// Velocities</span>
-        <span class="keyword">this</span>.damping = <span class="number">0.99</span>;   <span class="comment">// Energy loss (0.95-0.99 typical)</span>
-        <span class="keyword">this</span>.tension = <span class="number">0.025</span>;  <span class="comment">// Wave propagation speed</span>
+                    <pre><code class="language-javascript">// 1D Wave System - Perfect for water surfaces, ropes, flags
+class Wave1D {
+    constructor(points, length) {
+        this.points = points;      // Number of points in the wave
+        this.length = length;      // Physical length
+        this.y = new Array(points).fill(0);       // Current positions
+        this.velocity = new Array(points).fill(0); // Velocities
+        this.damping = 0.99;   // Energy loss (0.95-0.99 typical)
+        this.tension = 0.025;  // Wave propagation speed
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Calculate forces based on neighbors</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i < <span class="keyword">this</span>.points - <span class="number">1</span>; i++) {
-            <span class="comment">// Force from left and right neighbors</span>
-            <span class="keyword">const</span> force = (<span class="keyword">this</span>.y[i - <span class="number">1</span>] + <span class="keyword">this</span>.y[i + <span class="number">1</span>]) / <span class="number">2</span> - <span class="keyword">this</span>.y[i];
-            <span class="keyword">this</span>.velocity[i] += force * <span class="keyword">this</span>.tension;
+    update() {
+        // Calculate forces based on neighbors
+        for (let i = 1; i < this.points - 1; i++) {
+            // Force from left and right neighbors
+            const force = (this.y[i - 1] + this.y[i + 1]) / 2 - this.y[i];
+            this.velocity[i] += force * this.tension;
         }
 
-        <span class="comment">// Apply velocities and damping</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.points; i++) {
-            <span class="keyword">this</span>.y[i] += <span class="keyword">this</span>.velocity[i];
-            <span class="keyword">this</span>.velocity[i] *= <span class="keyword">this</span>.damping;
+        // Apply velocities and damping
+        for (let i = 0; i < this.points; i++) {
+            this.y[i] += this.velocity[i];
+            this.velocity[i] *= this.damping;
         }
     }
 
-    <span class="function">disturb</span>(index, force) {
-        <span class="comment">// Create a disturbance (like dropping a stone in water)</span>
-        <span class="keyword">if</span> (index >= <span class="number">0</span> && index < <span class="keyword">this</span>.points) {
-            <span class="keyword">this</span>.velocity[index] += force;
+    disturb(index, force) {
+        // Create a disturbance (like dropping a stone in water)
+        if (index >= 0 && index < this.points) {
+            this.velocity[index] += force;
         }
     }
 }</code></pre>
@@ -914,80 +1707,80 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
 
                 <div class="example-box">
                     <h4>🎵 Standing Wave Generator:</h4>
-                    <pre><code><span class="comment">// Great for visualizing sound, vibrations, energy fields</span>
-<span class="keyword">class</span> <span class="function">StandingWave</span> {
-    <span class="keyword">constructor</span>(amplitude, frequency, points) {
-        <span class="keyword">this</span>.amplitude = amplitude;
-        <span class="keyword">this</span>.frequency = frequency;
-        <span class="keyword">this</span>.points = points;
-        <span class="keyword">this</span>.time = <span class="number">0</span>;
+                    <pre><code class="language-javascript">// Great for visualizing sound, vibrations, energy fields
+class StandingWave {
+    constructor(amplitude, frequency, points) {
+        this.amplitude = amplitude;
+        this.frequency = frequency;
+        this.points = points;
+        this.time = 0;
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="keyword">this</span>.time += dt;
+    update(dt) {
+        this.time += dt;
     }
 
-    <span class="function">getY</span>(x) {
-        <span class="comment">// Standing wave: oscillates in place</span>
-        <span class="keyword">return</span> <span class="keyword">this</span>.amplitude * Math.<span class="function">sin</span>(x * <span class="keyword">this</span>.frequency) * Math.<span class="function">cos</span>(<span class="keyword">this</span>.time * <span class="number">3</span>);
+    getY(x) {
+        // Standing wave: oscillates in place
+        return this.amplitude * Math.sin(x * this.frequency) * Math.cos(this.time * 3);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🌊 Traveling Wave System:</h4>
-                    <pre><code><span class="comment">// Perfect for water, energy blasts, shockwaves</span>
-<span class="keyword">class</span> <span class="function">TravelingWave</span> {
-    <span class="keyword">constructor</span>(amplitude, wavelength, speed) {
-        <span class="keyword">this</span>.amplitude = amplitude;
-        <span class="keyword">this</span>.wavelength = wavelength;
-        <span class="keyword">this</span>.speed = speed;
-        <span class="keyword">this</span>.time = <span class="number">0</span>;
+                    <pre><code class="language-javascript">// Perfect for water, energy blasts, shockwaves
+class TravelingWave {
+    constructor(amplitude, wavelength, speed) {
+        this.amplitude = amplitude;
+        this.wavelength = wavelength;
+        this.speed = speed;
+        this.time = 0;
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="keyword">this</span>.time += dt;
+    update(dt) {
+        this.time += dt;
     }
 
-    <span class="function">getY</span>(x) {
-        <span class="comment">// Traveling wave: moves through space</span>
-        <span class="keyword">const</span> frequency = (<span class="number">2</span> * Math.PI) / <span class="keyword">this</span>.wavelength;
-        <span class="keyword">return</span> <span class="keyword">this</span>.amplitude * Math.<span class="function">sin</span>(x * frequency - <span class="keyword">this</span>.time * <span class="keyword">this</span>.speed);
+    getY(x) {
+        // Traveling wave: moves through space
+        const frequency = (2 * Math.PI) / this.wavelength;
+        return this.amplitude * Math.sin(x * frequency - this.time * this.speed);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>💫 Wave Interference (Multiple Waves):</h4>
-                    <pre><code><span class="comment">// Combine multiple waves for complex effects</span>
-<span class="keyword">class</span> <span class="function">WaveField</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.sources = []; <span class="comment">// Array of {x, y, amplitude, frequency, phase}</span>
+                    <pre><code class="language-javascript">// Combine multiple waves for complex effects
+class WaveField {
+    constructor() {
+        this.sources = []; // Array of {x, y, amplitude, frequency, phase}
     }
 
-    <span class="function">addSource</span>(x, y, amplitude = <span class="number">20</span>, frequency = <span class="number">0.1</span>) {
-        <span class="keyword">this</span>.sources.<span class="function">push</span>({ x, y, amplitude, frequency, phase: <span class="number">0</span> });
+    addSource(x, y, amplitude = 20, frequency = 0.1) {
+        this.sources.push({ x, y, amplitude, frequency, phase: 0 });
     }
 
-    <span class="function">update</span>(dt) {
-        <span class="comment">// Advance phase of all sources</span>
-        <span class="keyword">this</span>.sources.<span class="function">forEach</span>(source => {
-            source.phase += dt * <span class="number">2</span>;
+    update(dt) {
+        // Advance phase of all sources
+        this.sources.forEach(source => {
+            source.phase += dt * 2;
         });
     }
 
-    <span class="function">getHeight</span>(x, y) {
-        <span class="comment">// Sum contributions from all wave sources</span>
-        <span class="keyword">let</span> height = <span class="number">0</span>;
-        <span class="keyword">this</span>.sources.<span class="function">forEach</span>(source => {
-            <span class="keyword">const</span> dx = x - source.x;
-            <span class="keyword">const</span> dy = y - source.y;
-            <span class="keyword">const</span> distance = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+    getHeight(x, y) {
+        // Sum contributions from all wave sources
+        let height = 0;
+        this.sources.forEach(source => {
+            const dx = x - source.x;
+            const dy = y - source.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-            <span class="comment">// Circular wave spreading from source</span>
-            height += source.amplitude * Math.<span class="function">sin</span>(distance * source.frequency - source.phase);
+            // Circular wave spreading from source
+            height += source.amplitude * Math.sin(distance * source.frequency - source.phase);
         });
-        <span class="keyword">return</span> height;
+        return height;
     }
 }</code></pre>
                 </div>
@@ -1030,52 +1823,52 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="friction" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Friction Implementations</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Simple Linear Friction</span>
-<span class="keyword">class</span> <span class="function">LinearFriction</span> {
-    <span class="keyword">constructor</span>(coefficient = <span class="number">0.98</span>) {
-        <span class="keyword">this</span>.coefficient = coefficient;  <span class="comment">// 0.98 = 2% speed loss per frame</span>
+                    <pre><code class="language-javascript">// Simple Linear Friction
+class LinearFriction {
+    constructor(coefficient = 0.98) {
+        this.coefficient = coefficient;  // 0.98 = 2% speed loss per frame
     }
 
-    <span class="function">apply</span>(entity) {
-        entity.velocity.<span class="function">multiply</span>(<span class="keyword">this</span>.coefficient);
+    apply(entity) {
+        entity.velocity.multiply(this.coefficient);
 
-        <span class="comment">// Stop if moving very slowly (prevent infinite drift)</span>
-        <span class="keyword">if</span> (entity.velocity.<span class="function">length</span>() < <span class="number">0.01</span>) {
-            entity.velocity.<span class="function">multiply</span>(<span class="number">0</span>);
+        // Stop if moving very slowly (prevent infinite drift)
+        if (entity.velocity.length() < 0.01) {
+            entity.velocity.multiply(0);
         }
     }
 }
 
-<span class="comment">// Air/Fluid Drag (more realistic)</span>
-<span class="keyword">class</span> <span class="function">DragForce</span> {
-    <span class="keyword">constructor</span>(coefficient = <span class="number">0.01</span>) {
-        <span class="keyword">this</span>.coefficient = coefficient;
+// Air/Fluid Drag (more realistic)
+class DragForce {
+    constructor(coefficient = 0.01) {
+        this.coefficient = coefficient;
     }
 
-    <span class="function">apply</span>(entity) {
-        <span class="comment">// Drag = -coefficient × velocity²</span>
-        <span class="keyword">const</span> speed = entity.velocity.<span class="function">length</span>();
-        <span class="keyword">const</span> dragMagnitude = <span class="keyword">this</span>.coefficient * speed * speed;
+    apply(entity) {
+        // Drag = -coefficient × velocity²
+        const speed = entity.velocity.length();
+        const dragMagnitude = this.coefficient * speed * speed;
 
-        <span class="comment">// Apply drag in opposite direction of movement</span>
-        <span class="keyword">const</span> dragForce = entity.velocity.<span class="function">copy</span>()
-            .<span class="function">normalize</span>()
-            .<span class="function">multiply</span>(-dragMagnitude);
+        // Apply drag in opposite direction of movement
+        const dragForce = entity.velocity.copy()
+            .normalize()
+            .multiply(-dragMagnitude);
 
-        entity.<span class="function">applyForce</span>(dragForce);
+        entity.applyForce(dragForce);
     }
 }
 
-<span class="comment">// Ground Friction (only when touching ground)</span>
-<span class="keyword">class</span> <span class="function">GroundFriction</span> {
-    <span class="keyword">constructor</span>(coefficient = <span class="number">0.15</span>) {
-        <span class="keyword">this</span>.coefficient = coefficient;
+// Ground Friction (only when touching ground)
+class GroundFriction {
+    constructor(coefficient = 0.15) {
+        this.coefficient = coefficient;
     }
 
-    <span class="function">apply</span>(entity) {
-        <span class="keyword">if</span> (entity.onGround) {
-            <span class="comment">// Friction opposes horizontal movement</span>
-            <span class="keyword">const</span> friction = -entity.velocity.x * <span class="keyword">this</span>.coefficient;
+    apply(entity) {
+        if (entity.onGround) {
+            // Friction opposes horizontal movement
+            const friction = -entity.velocity.x * this.coefficient;
             entity.velocity.x += friction;
         }
     }
@@ -1084,18 +1877,18 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
 
                 <div class="example-box">
                     <h4>🎮 Example: Ice vs Grass vs Mud</h4>
-                    <pre><code><span class="comment">// Different surfaces have different friction</span>
-<span class="keyword">const</span> surfaces = {
-    ice: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.99</span>),    <span class="comment">// Very slippery</span>
-    grass: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.92</span>),  <span class="comment">// Normal friction</span>
-    mud: <span class="keyword">new</span> <span class="function">LinearFriction</span>(<span class="number">0.80</span>)    <span class="comment">// High friction</span>
+                    <pre><code class="language-javascript">// Different surfaces have different friction
+const surfaces = {
+    ice: new LinearFriction(0.99),    // Very slippery
+    grass: new LinearFriction(0.92),  // Normal friction
+    mud: new LinearFriction(0.80)    // High friction
 };
 
-<span class="keyword">function</span> <span class="function">update</span>(player, currentSurface) {
-    <span class="comment">// Apply appropriate friction</span>
-    surfaces[currentSurface].<span class="function">apply</span>(player);
+function update(player, currentSurface) {
+    // Apply appropriate friction
+    surfaces[currentSurface].apply(player);
 
-    player.position.<span class="function">add</span>(player.velocity);
+    player.position.add(player.velocity);
 }</code></pre>
                 </div>
             </details>
@@ -1130,30 +1923,30 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="collision" data-deps="vector2d,clearCanvas,randomFloat,clamp">
                 <summary>📝 Click to see: Collision Detection Functions</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Circle vs Circle</span>
-<span class="keyword">function</span> <span class="function">circleVsCircle</span>(c1, r1, c2, r2) {
-    <span class="keyword">const</span> distance = c1.<span class="function">distance</span>(c2);
-    <span class="keyword">return</span> distance < r1 + r2;
+                    <pre><code class="language-javascript">// Circle vs Circle
+function circleVsCircle(c1, r1, c2, r2) {
+    const distance = c1.distance(c2);
+    return distance < r1 + r2;
 }
 
-<span class="comment">// AABB (Axis-Aligned Bounding Box) - Rectangle vs Rectangle</span>
-<span class="keyword">function</span> <span class="function">aabbVsAabb</span>(pos1, w1, h1, pos2, w2, h2) {
-    <span class="keyword">return</span> pos1.x < pos2.x + w2 &&
+// AABB (Axis-Aligned Bounding Box) - Rectangle vs Rectangle
+function aabbVsAabb(pos1, w1, h1, pos2, w2, h2) {
+    return pos1.x < pos2.x + w2 &&
            pos1.x + w1 > pos2.x &&
            pos1.y < pos2.y + h2 &&
            pos1.y + h1 > pos2.y;
 }
 
-<span class="comment">// Circle vs Rectangle</span>
-<span class="keyword">function</span> <span class="function">circleVsRect</span>(circlePos, radius, rectPos, width, height) {
-    <span class="comment">// Find closest point on rectangle to circle</span>
-    <span class="keyword">const</span> closestX = <span class="function">clamp</span>(circlePos.x, rectPos.x, rectPos.x + width);
-    <span class="keyword">const</span> closestY = <span class="function">clamp</span>(circlePos.y, rectPos.y, rectPos.y + height);
+// Circle vs Rectangle
+function circleVsRect(circlePos, radius, rectPos, width, height) {
+    // Find closest point on rectangle to circle
+    const closestX = clamp(circlePos.x, rectPos.x, rectPos.x + width);
+    const closestY = clamp(circlePos.y, rectPos.y, rectPos.y + height);
 
-    <span class="keyword">const</span> distX = circlePos.x - closestX;
-    <span class="keyword">const</span> distY = circlePos.y - closestY;
+    const distX = circlePos.x - closestX;
+    const distY = circlePos.y - closestY;
 
-    <span class="keyword">return</span> (distX * distX + distY * distY) < (radius * radius);
+    return (distX * distX + distY * distY) < (radius * radius);
 }</code></pre>
                 </div>
             </details>
@@ -1199,102 +1992,102 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="reflection" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Reflection Implementations</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Simple Axis-Aligned Reflection (walls parallel to axes)</span>
-<span class="keyword">function</span> <span class="function">bounceOffWalls</span>(object, bounds, bounciness = <span class="number">0.8</span>) {
-    <span class="comment">// Right wall</span>
-    <span class="keyword">if</span> (object.position.x + object.radius > bounds.right) {
+                    <pre><code class="language-javascript">// Simple Axis-Aligned Reflection (walls parallel to axes)
+function bounceOffWalls(object, bounds, bounciness = 0.8) {
+    // Right wall
+    if (object.position.x + object.radius > bounds.right) {
         object.position.x = bounds.right - object.radius;
-        object.velocity.x *= -bounciness;  <span class="comment">// Reverse and reduce</span>
+        object.velocity.x *= -bounciness;  // Reverse and reduce
     }
 
-    <span class="comment">// Left wall</span>
-    <span class="keyword">if</span> (object.position.x - object.radius < bounds.left) {
+    // Left wall
+    if (object.position.x - object.radius < bounds.left) {
         object.position.x = bounds.left + object.radius;
         object.velocity.x *= -bounciness;
     }
 
-    <span class="comment">// Bottom wall</span>
-    <span class="keyword">if</span> (object.position.y + object.radius > bounds.bottom) {
+    // Bottom wall
+    if (object.position.y + object.radius > bounds.bottom) {
         object.position.y = bounds.bottom - object.radius;
         object.velocity.y *= -bounciness;
     }
 
-    <span class="comment">// Top wall</span>
-    <span class="keyword">if</span> (object.position.y - object.radius < bounds.top) {
+    // Top wall
+    if (object.position.y - object.radius < bounds.top) {
         object.position.y = bounds.top + object.radius;
         object.velocity.y *= -bounciness;
     }
 }
 
-<span class="comment">// Reflection Off Any Surface (using surface normal)</span>
-<span class="keyword">function</span> <span class="function">reflect</span>(velocity, surfaceNormal) {
-    <span class="comment">// Formula: v' = v - 2(v · n)n</span>
-    <span class="comment">// Where n is the surface normal (unit vector)</span>
-    <span class="keyword">const</span> dotProduct = velocity.<span class="function">dot</span>(surfaceNormal);
-    <span class="keyword">const</span> reflection = surfaceNormal
-        .<span class="function">copy</span>()
-        .<span class="function">multiply</span>(<span class="number">2</span> * dotProduct);
+// Reflection Off Any Surface (using surface normal)
+function reflect(velocity, surfaceNormal) {
+    // Formula: v' = v - 2(v · n)n
+    // Where n is the surface normal (unit vector)
+    const dotProduct = velocity.dot(surfaceNormal);
+    const reflection = surfaceNormal
+        .copy()
+        .multiply(2 * dotProduct);
 
-    <span class="keyword">return</span> velocity.<span class="function">subtract</span>(reflection);
+    return velocity.subtract(reflection);
 }
 
-<span class="comment">// Circle Bouncing Off Circle</span>
-<span class="keyword">function</span> <span class="function">bounceCircles</span>(a, b, elasticity = <span class="number">0.9</span>) {
-    <span class="comment">// Get collision normal (from b to a)</span>
-    <span class="keyword">const</span> normal = a.position.<span class="function">subtract</span>(b.position).<span class="function">normalize</span>();
+// Circle Bouncing Off Circle
+function bounceCircles(a, b, elasticity = 0.9) {
+    // Get collision normal (from b to a)
+    const normal = a.position.subtract(b.position).normalize();
 
-    <span class="comment">// Relative velocity</span>
-    <span class="keyword">const</span> relativeVel = a.velocity.<span class="function">subtract</span>(b.velocity);
+    // Relative velocity
+    const relativeVel = a.velocity.subtract(b.velocity);
 
-    <span class="comment">// Velocity along collision normal</span>
-    <span class="keyword">const</span> speed = relativeVel.<span class="function">dot</span>(normal);
+    // Velocity along collision normal
+    const speed = relativeVel.dot(normal);
 
-    <span class="comment">// Don't bounce if moving apart</span>
-    <span class="keyword">if</span> (speed > <span class="number">0</span>) <span class="keyword">return</span>;
+    // Don't bounce if moving apart
+    if (speed > 0) return;
 
-    <span class="comment">// Calculate impulse (considering mass)</span>
-    <span class="keyword">const</span> impulse = (<span class="number">2</span> * speed) / (a.mass + b.mass);
+    // Calculate impulse (considering mass)
+    const impulse = (2 * speed) / (a.mass + b.mass);
 
-    <span class="comment">// Apply impulse to both objects</span>
-    a.velocity.<span class="function">subtract</span>(normal.<span class="function">copy</span>().<span class="function">multiply</span>(impulse * b.mass * elasticity));
-    b.velocity.<span class="function">add</span>(normal.<span class="function">copy</span>().<span class="function">multiply</span>(impulse * a.mass * elasticity));
+    // Apply impulse to both objects
+    a.velocity.subtract(normal.copy().multiply(impulse * b.mass * elasticity));
+    b.velocity.add(normal.copy().multiply(impulse * a.mass * elasticity));
 
-    <span class="comment">// Separate objects to prevent overlap</span>
-    <span class="keyword">const</span> overlap = (a.radius + b.radius) - a.position.<span class="function">distance</span>(b.position);
-    <span class="keyword">if</span> (overlap > <span class="number">0</span>) {
-        <span class="keyword">const</span> separation = normal.<span class="function">copy</span>().<span class="function">multiply</span>(overlap / <span class="number">2</span>);
-        a.position.<span class="function">add</span>(separation);
-        b.position.<span class="function">subtract</span>(separation);
+    // Separate objects to prevent overlap
+    const overlap = (a.radius + b.radius) - a.position.distance(b.position);
+    if (overlap > 0) {
+        const separation = normal.copy().multiply(overlap / 2);
+        a.position.add(separation);
+        b.position.subtract(separation);
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Breakout/Pong Ball</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">Ball</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, <span class="number">5</span>);
-        <span class="keyword">this</span>.radius = <span class="number">10</span>;
-        <span class="keyword">this</span>.bounciness = <span class="number">1.0</span>;  <span class="comment">// Perfect bounce</span>
+                    <pre><code class="language-javascript">class Ball {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(5, 5);
+        this.radius = 10;
+        this.bounciness = 1.0;  // Perfect bounce
     }
 
-    <span class="function">update</span>(bounds) {
-        <span class="comment">// Move ball</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+    update(bounds) {
+        // Move ball
+        this.position.add(this.velocity);
 
-        <span class="comment">// Bounce off walls</span>
-        <span class="function">bounceOffWalls</span>(<span class="keyword">this</span>, bounds, <span class="keyword">this</span>.bounciness);
+        // Bounce off walls
+        bounceOffWalls(this, bounds, this.bounciness);
     }
 
-    <span class="function">hitPaddle</span>(paddle) {
-        <span class="comment">// Reflect based on where it hit the paddle</span>
-        <span class="keyword">const</span> relativeHit = (<span class="keyword">this</span>.position.x - paddle.x) / (paddle.width / <span class="number">2</span>);
-        <span class="keyword">const</span> angle = relativeHit * (Math.PI / <span class="number">4</span>);  <span class="comment">// Max 45 degrees</span>
+    hitPaddle(paddle) {
+        // Reflect based on where it hit the paddle
+        const relativeHit = (this.position.x - paddle.x) / (paddle.width / 2);
+        const angle = relativeHit * (Math.PI / 4);  // Max 45 degrees
 
-        <span class="keyword">const</span> speed = <span class="keyword">this</span>.velocity.<span class="function">length</span>();
-        <span class="keyword">this</span>.velocity.x = Math.<span class="function">sin</span>(angle) * speed;
-        <span class="keyword">this</span>.velocity.y = -Math.<span class="function">abs</span>(Math.<span class="function">cos</span>(angle) * speed);
+        const speed = this.velocity.length();
+        this.velocity.x = Math.sin(angle) * speed;
+        this.velocity.y = -Math.abs(Math.cos(angle) * speed);
     }
 }</code></pre>
                 </div>
@@ -1336,28 +2129,28 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="raycasting" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Ray Class</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Ray</span> {
-    <span class="keyword">constructor</span>(origin, direction) {
-        <span class="keyword">this</span>.origin = origin.<span class="function">copy</span>();
-        <span class="keyword">this</span>.direction = direction.<span class="function">copy</span>().<span class="function">normalize</span>();
+                    <pre><code class="language-javascript">class Ray {
+    constructor(origin, direction) {
+        this.origin = origin.copy();
+        this.direction = direction.copy().normalize();
     }
 
-    <span class="comment">// Check if ray intersects with a circle</span>
-    <span class="function">intersectsCircle</span>(center, radius) {
-        <span class="keyword">const</span> oc = <span class="keyword">this</span>.origin.<span class="function">subtract</span>(center);
-        <span class="keyword">const</span> a = <span class="keyword">this</span>.direction.<span class="function">dot</span>(<span class="keyword">this</span>.direction);
-        <span class="keyword">const</span> b = <span class="number">2</span> * oc.<span class="function">dot</span>(<span class="keyword">this</span>.direction);
-        <span class="keyword">const</span> c = oc.<span class="function">dot</span>(oc) - radius * radius;
+    // Check if ray intersects with a circle
+    intersectsCircle(center, radius) {
+        const oc = this.origin.subtract(center);
+        const a = this.direction.dot(this.direction);
+        const b = 2 * oc.dot(this.direction);
+        const c = oc.dot(oc) - radius * radius;
 
-        <span class="keyword">const</span> discriminant = b * b - <span class="number">4</span> * a * c;
-        <span class="keyword">return</span> discriminant >= <span class="number">0</span>;
+        const discriminant = b * b - 4 * a * c;
+        return discriminant >= 0;
     }
 
-    <span class="comment">// Get point along ray at distance t</span>
-    <span class="function">pointAt</span>(t) {
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.origin.x + <span class="keyword">this</span>.direction.x * t,
-            <span class="keyword">this</span>.origin.y + <span class="keyword">this</span>.direction.y * t
+    // Get point along ray at distance t
+    pointAt(t) {
+        return new Vector2D(
+            this.origin.x + this.direction.x * t,
+            this.origin.y + this.direction.y * t
         );
     }
 }</code></pre>
@@ -1394,49 +2187,49 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="particles" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Particle System</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Particle</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = Vector2D.<span class="function">random</span>(<span class="function">randomFloat</span>(<span class="number">1</span>, <span class="number">5</span>));
-        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
-        <span class="keyword">this</span>.decay = <span class="function">randomFloat</span>(<span class="number">0.01</span>, <span class="number">0.03</span>);
-        <span class="keyword">this</span>.size = <span class="function">randomFloat</span>(<span class="number">2</span>, <span class="number">8</span>);
+                    <pre><code class="language-javascript">class Particle {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = Vector2D.random(randomFloat(1, 5));
+        this.life = 1.0;
+        this.decay = randomFloat(0.01, 0.03);
+        this.size = randomFloat(2, 8);
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="number">0.98</span>);  <span class="comment">// Friction</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
-        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
-        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+    update() {
+        this.velocity.multiply(0.98);  // Friction
+        this.position.add(this.velocity);
+        this.life -= this.decay;
+        return this.life > 0;
     }
 
-    <span class="function">draw</span>(ctx) {
-        ctx.globalAlpha = <span class="keyword">this</span>.life;
-        ctx.fillStyle = <span class="string">'#ffa726'</span>;
+    draw(ctx) {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = '#ffa726';
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y, <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
-        ctx.globalAlpha = <span class="number">1</span>;
+        ctx.arc(this.position.x, this.position.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
     }
 }
 
-<span class="keyword">class</span> <span class="function">ParticleSystem</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.particles = [];
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
     }
 
-    <span class="function">emit</span>(x, y, count = <span class="number">20</span>) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < count; i++) {
-            <span class="keyword">this</span>.particles.<span class="function">push</span>(<span class="keyword">new</span> <span class="function">Particle</span>(x, y));
+    emit(x, y, count = 20) {
+        for (let i = 0; i < count; i++) {
+            this.particles.push(new Particle(x, y));
         }
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.particles = <span class="keyword">this</span>.particles.<span class="function">filter</span>(p => p.<span class="function">update</span>());
+    update() {
+        this.particles = this.particles.filter(p => p.update());
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="keyword">this</span>.particles.<span class="function">forEach</span>(p => p.<span class="function">draw</span>(ctx));
+    draw(ctx) {
+        this.particles.forEach(p => p.draw(ctx));
     }
 }</code></pre>
                 </div>
@@ -1475,52 +2268,52 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details data-demo-id="advancedParticles" data-deps="vector2d,clearCanvas">
                 <summary>📝 Effect 1: Fire & Flames</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">FireParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">super</span>(x, y);
+                    <pre><code class="language-javascript">class FireParticle extends Particle {
+    constructor(x, y) {
+        super(x, y);
 
-        <span class="comment">// Fire rises and spreads</span>
-        <span class="keyword">this</span>.velocity.y = -<span class="function">random</span>(<span class="number">1</span>, <span class="number">3</span>);  <span class="comment">// Upward</span>
-        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">0.5</span>, <span class="number">0.5</span>);  <span class="comment">// Slight spread</span>
+        // Fire rises and spreads
+        this.velocity.y = -random(1, 3);  // Upward
+        this.velocity.x = random(-0.5, 0.5);  // Slight spread
 
-        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">4</span>, <span class="number">12</span>);
-        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
-        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.02</span>, <span class="number">0.04</span>);
+        this.size = random(4, 12);
+        this.life = 1.0;
+        this.decay = random(0.02, 0.04);
 
-        <span class="comment">// Color transitions: yellow → orange → red → transparent</span>
-        <span class="keyword">this</span>.colors = [
-            { r: <span class="number">255</span>, g: <span class="number">255</span>, b: <span class="number">100</span> },  <span class="comment">// Bright yellow</span>
-            { r: <span class="number">255</span>, g: <span class="number">150</span>, b: <span class="number">50</span> },   <span class="comment">// Orange</span>
-            { r: <span class="number">255</span>, g: <span class="number">50</span>, b: <span class="number">50</span> }     <span class="comment">// Red</span>
+        // Color transitions: yellow → orange → red → transparent
+        this.colors = [
+            { r: 255, g: 255, b: 100 },  // Bright yellow
+            { r: 255, g: 150, b: 50 },   // Orange
+            { r: 255, g: 50, b: 50 }     // Red
         ];
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+    update() {
+        this.life -= this.decay;
 
-        <span class="comment">// Accelerate upward (heat rises!)</span>
-        <span class="keyword">this</span>.velocity.y -= <span class="number">0.05</span>;
+        // Accelerate upward (heat rises!)
+        this.velocity.y -= 0.05;
 
-        <span class="comment">// Shrink as it burns out</span>
-        <span class="keyword">this</span>.size *= <span class="number">0.98</span>;
+        // Shrink as it burns out
+        this.size *= 0.98;
 
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        this.position.add(this.velocity);
 
-        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+        return this.life > 0;
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Interpolate color based on life</span>
-        <span class="keyword">const</span> colorIndex = Math.<span class="function">floor</span>((<span class="number">1</span> - <span class="keyword">this</span>.life) * <span class="number">2</span>);
-        <span class="keyword">const</span> color = <span class="keyword">this</span>.colors[Math.<span class="function">min</span>(colorIndex, <span class="number">2</span>)];
+    draw(ctx) {
+        // Interpolate color based on life
+        const colorIndex = Math.floor((1 - this.life) * 2);
+        const color = this.colors[Math.min(colorIndex, 2)];
 
-        ctx.globalAlpha = <span class="keyword">this</span>.life;
+        ctx.globalAlpha = this.life;
         ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y,
-                 <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
-        ctx.globalAlpha = <span class="number">1</span>;
+        ctx.arc(this.position.x, this.position.y,
+                 this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
     }
 }</code></pre>
                 </div>
@@ -1529,48 +2322,48 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details>
                 <summary>📝 Effect 2: Smoke</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SmokeParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">super</span>(x, y);
+                    <pre><code class="language-javascript">class SmokeParticle extends Particle {
+    constructor(x, y) {
+        super(x, y);
 
-        <span class="comment">// Smoke drifts slowly upward</span>
-        <span class="keyword">this</span>.velocity.y = -<span class="function">random</span>(<span class="number">0.3</span>, <span class="number">0.8</span>);
-        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">0.3</span>, <span class="number">0.3</span>);
+        // Smoke drifts slowly upward
+        this.velocity.y = -random(0.3, 0.8);
+        this.velocity.x = random(-0.3, 0.3);
 
-        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">8</span>, <span class="number">20</span>);
-        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
-        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.005</span>, <span class="number">0.015</span>);  <span class="comment">// Lasts longer</span>
+        this.size = random(8, 20);
+        this.life = 1.0;
+        this.decay = random(0.005, 0.015);  // Lasts longer
 
-        <span class="comment">// Swirl effect</span>
-        <span class="keyword">this</span>.angle = <span class="function">random</span>(<span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        <span class="keyword">this</span>.swirl = <span class="function">random</span>(-<span class="number">0.02</span>, <span class="number">0.02</span>);
+        // Swirl effect
+        this.angle = random(0, Math.PI * 2);
+        this.swirl = random(-0.02, 0.02);
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+    update() {
+        this.life -= this.decay;
 
-        <span class="comment">// Swirl motion</span>
-        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.swirl;
-        <span class="keyword">this</span>.velocity.x += Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="number">0.05</span>;
+        // Swirl motion
+        this.angle += this.swirl;
+        this.velocity.x += Math.cos(this.angle) * 0.05;
 
-        <span class="comment">// Expand as it dissipates</span>
-        <span class="keyword">this</span>.size += <span class="number">0.2</span>;
+        // Expand as it dissipates
+        this.size += 0.2;
 
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        this.position.add(this.velocity);
 
-        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+        return this.life > 0;
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Gray smoke, fades with life</span>
-        <span class="keyword">const</span> gray = Math.<span class="function">floor</span>(<span class="number">100</span> + <span class="keyword">this</span>.life * <span class="number">100</span>);
-        ctx.globalAlpha = <span class="keyword">this</span>.life * <span class="number">0.4</span>;  <span class="comment">// Semi-transparent</span>
+    draw(ctx) {
+        // Gray smoke, fades with life
+        const gray = Math.floor(100 + this.life * 100);
+        ctx.globalAlpha = this.life * 0.4;  // Semi-transparent
         ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y,
-                 <span class="keyword">this</span>.size, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
-        ctx.globalAlpha = <span class="number">1</span>;
+        ctx.arc(this.position.x, this.position.y,
+                 this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
     }
 }</code></pre>
                 </div>
@@ -1579,60 +2372,60 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details>
                 <summary>📝 Effect 3: Sparkles/Magic</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SparkleParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">super</span>(x, y);
+                    <pre><code class="language-javascript">class SparkleParticle extends Particle {
+    constructor(x, y) {
+        super(x, y);
 
-        <span class="comment">// Sparkles burst outward</span>
-        <span class="keyword">const</span> angle = <span class="function">random</span>(<span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        <span class="keyword">const</span> speed = <span class="function">random</span>(<span class="number">2</span>, <span class="number">5</span>);
-        <span class="keyword">this</span>.velocity.x = Math.<span class="function">cos</span>(angle) * speed;
-        <span class="keyword">this</span>.velocity.y = Math.<span class="function">sin</span>(angle) * speed;
+        // Sparkles burst outward
+        const angle = random(0, Math.PI * 2);
+        const speed = random(2, 5);
+        this.velocity.x = Math.cos(angle) * speed;
+        this.velocity.y = Math.sin(angle) * speed;
 
-        <span class="keyword">this</span>.size = <span class="function">random</span>(<span class="number">2</span>, <span class="number">6</span>);
-        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
-        <span class="keyword">this</span>.decay = <span class="function">random</span>(<span class="number">0.03</span>, <span class="number">0.06</span>);
+        this.size = random(2, 6);
+        this.life = 1.0;
+        this.decay = random(0.03, 0.06);
 
-        <span class="comment">// Random bright color</span>
-        <span class="keyword">this</span>.hue = <span class="function">random</span>(<span class="number">0</span>, <span class="number">360</span>);
+        // Random bright color
+        this.hue = random(0, 360);
 
-        <span class="comment">// Twinkle effect</span>
-        <span class="keyword">this</span>.twinkle = <span class="number">0</span>;
+        // Twinkle effect
+        this.twinkle = 0;
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.life -= <span class="keyword">this</span>.decay;
+    update() {
+        this.life -= this.decay;
 
-        <span class="comment">// Slow down over time</span>
-        <span class="keyword">this</span>.velocity.<span class="function">multiply</span>(<span class="number">0.95</span>);
+        // Slow down over time
+        this.velocity.multiply(0.95);
 
-        <span class="comment">// Twinkle animation</span>
-        <span class="keyword">this</span>.twinkle += <span class="number">0.2</span>;
-        <span class="keyword">const</span> scale = Math.<span class="function">abs</span>(Math.<span class="function">sin</span>(<span class="keyword">this</span>.twinkle));
+        // Twinkle animation
+        this.twinkle += 0.2;
+        const scale = Math.abs(Math.sin(this.twinkle));
 
-        <span class="keyword">this</span>.currentSize = <span class="keyword">this</span>.size * scale;
+        this.currentSize = this.size * scale;
 
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        this.position.add(this.velocity);
 
-        <span class="keyword">return</span> <span class="keyword">this</span>.life > <span class="number">0</span>;
+        return this.life > 0;
     }
 
-    <span class="function">draw</span>(ctx) {
-        ctx.globalAlpha = <span class="keyword">this</span>.life;
-        ctx.fillStyle = `hsl(${<span class="keyword">this</span>.hue}, 100%, 70%)`;
+    draw(ctx) {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = `hsl(${this.hue}, 100%, 70%)`;
 
-        <span class="comment">// Draw as a star/cross shape</span>
-        <span class="keyword">const</span> s = <span class="keyword">this</span>.currentSize;
+        // Draw as a star/cross shape
+        const s = this.currentSize;
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x - s, <span class="keyword">this</span>.position.y);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.position.x + s, <span class="keyword">this</span>.position.y);
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y - s);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y + s);
-        ctx.lineWidth = <span class="number">2</span>;
-        ctx.strokeStyle = `hsl(${<span class="keyword">this</span>.hue}, 100%, 90%)`;
-        ctx.<span class="function">stroke</span>();
+        ctx.moveTo(this.position.x - s, this.position.y);
+        ctx.lineTo(this.position.x + s, this.position.y);
+        ctx.moveTo(this.position.x, this.position.y - s);
+        ctx.lineTo(this.position.x, this.position.y + s);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `hsl(${this.hue}, 100%, 90%)`;
+        ctx.stroke();
 
-        ctx.globalAlpha = <span class="number">1</span>;
+        ctx.globalAlpha = 1;
     }
 }</code></pre>
                 </div>
@@ -1641,52 +2434,52 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
             <details>
                 <summary>📝 Effect 4: Rain & Water</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">RainParticle</span> <span class="keyword">extends</span> <span class="function">Particle</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">super</span>(x, y);
+                    <pre><code class="language-javascript">class RainParticle extends Particle {
+    constructor(x, y) {
+        super(x, y);
 
-        <span class="comment">// Rain falls down with slight wind</span>
-        <span class="keyword">this</span>.velocity.y = <span class="function">random</span>(<span class="number">5</span>, <span class="number">10</span>);
-        <span class="keyword">this</span>.velocity.x = <span class="function">random</span>(-<span class="number">1</span>, <span class="number">1</span>);  <span class="comment">// Wind effect</span>
+        // Rain falls down with slight wind
+        this.velocity.y = random(5, 10);
+        this.velocity.x = random(-1, 1);  // Wind effect
 
-        <span class="keyword">this</span>.length = <span class="function">random</span>(<span class="number">10</span>, <span class="number">20</span>);
-        <span class="keyword">this</span>.life = <span class="number">1.0</span>;
-        <span class="keyword">this</span>.decay = <span class="number">0</span>;  <span class="comment">// Doesn't fade until hitting ground</span>
+        this.length = random(10, 20);
+        this.life = 1.0;
+        this.decay = 0;  // Doesn't fade until hitting ground
     }
 
-    <span class="function">update</span>(groundY = <span class="number">600</span>) {
-        <span class="comment">// Accelerate (gravity)</span>
-        <span class="keyword">this</span>.velocity.y += <span class="number">0.2</span>;
+    update(groundY = 600) {
+        // Accelerate (gravity)
+        this.velocity.y += 0.2;
 
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        this.position.add(this.velocity);
 
-        <span class="comment">// Hit ground - create splash!</span>
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.y >= groundY) {
-            <span class="keyword">this</span>.<span class="function">createSplash</span>();
-            <span class="keyword">return</span> <span class="keyword">false</span>;  <span class="comment">// Remove raindrop</span>
+        // Hit ground - create splash!
+        if (this.position.y >= groundY) {
+            this.createSplash();
+            return false;  // Remove raindrop
         }
 
-        <span class="keyword">return</span> <span class="keyword">true</span>;
+        return true;
     }
 
-    <span class="function">draw</span>(ctx) {
-        ctx.strokeStyle = <span class="string">'rgba(150, 150, 255, 0.5)'</span>;
-        ctx.lineWidth = <span class="number">2</span>;
+    draw(ctx) {
+        ctx.strokeStyle = 'rgba(150, 150, 255, 0.5)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
-        ctx.<span class="function">lineTo</span>(
-            <span class="keyword">this</span>.position.x - <span class="keyword">this</span>.velocity.x * <span class="number">0.3</span>,
-            <span class="keyword">this</span>.position.y - <span class="keyword">this</span>.length
+        ctx.moveTo(this.position.x, this.position.y);
+        ctx.lineTo(
+            this.position.x - this.velocity.x * 0.3,
+            this.position.y - this.length
         );
-        ctx.<span class="function">stroke</span>();
+        ctx.stroke();
     }
 
-    <span class="function">createSplash</span>() {
-        <span class="comment">// Create small splash particles (handled by particle system)</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="number">5</span>; i++) {
-            <span class="keyword">const</span> angle = <span class="function">random</span>(-Math.PI, <span class="number">0</span>);  <span class="comment">// Upward hemisphere</span>
-            <span class="keyword">const</span> speed = <span class="function">random</span>(<span class="number">1</span>, <span class="number">3</span>);
-            <span class="comment">// Emit splash particles...</span>
+    createSplash() {
+        // Create small splash particles (handled by particle system)
+        for (let i = 0; i < 5; i++) {
+            const angle = random(-Math.PI, 0);  // Upward hemisphere
+            const speed = random(1, 3);
+            // Emit splash particles...
         }
     }
 }</code></pre>

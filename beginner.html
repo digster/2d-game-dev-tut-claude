@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beginner - Game Dev Math Guide</title>
     <link rel="stylesheet" href="shared/styles.css">
+    <!-- Prism.js Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -99,21 +103,21 @@
             <details>
                 <summary>📝 Click to see: The Simplest Vector (Step 1)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.x = x;  <span class="comment">// Horizontal position</span>
-        <span class="keyword">this</span>.y = y;  <span class="comment">// Vertical position</span>
+                    <pre><code class="language-javascript">class Vector2D {
+    constructor(x, y) {
+        this.x = x;  // Horizontal position
+        this.y = y;  // Vertical position
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Using it in a game:</h4>
-                    <pre><code><span class="comment">// Create a player at position (100, 200)</span>
-<span class="keyword">let</span> playerPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">100</span>, <span class="number">200</span>);
+                    <pre><code class="language-javascript">// Create a player at position (100, 200)
+let playerPosition = new Vector2D(100, 200);
 
-<span class="comment">// Create an enemy at position (300, 150)</span>
-<span class="keyword">let</span> enemyPosition = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">300</span>, <span class="number">150</span>);</code></pre>
+// Create an enemy at position (300, 150)
+let enemyPosition = new Vector2D(300, 150);</code></pre>
                 </div>
             </details>
 
@@ -125,31 +129,31 @@
             <details>
                 <summary>📝 Click to see: Adding Movement (Step 2)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
+                    <pre><code class="language-javascript">class Vector2D {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 
-    <span class="comment">// Add another vector to this one</span>
-    <span class="function">add</span>(other) {
-        <span class="keyword">this</span>.x += other.x;  <span class="comment">// Move horizontally</span>
-        <span class="keyword">this</span>.y += other.y;  <span class="comment">// Move vertically</span>
-        <span class="keyword">return</span> <span class="keyword">this</span>;        <span class="comment">// Allow chaining</span>
+    // Add another vector to this one
+    add(other) {
+        this.x += other.x;  // Move horizontally
+        this.y += other.y;  // Move vertically
+        return this;        // Allow chaining
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Moving the player:</h4>
-                    <pre><code><span class="comment">// Player starts at (100, 100)</span>
-<span class="keyword">let</span> player = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">100</span>, <span class="number">100</span>);
+                    <pre><code class="language-javascript">// Player starts at (100, 100)
+let player = new Vector2D(100, 100);
 
-<span class="comment">// Player presses 'W' key - move up</span>
-<span class="keyword">let</span> movement = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">5</span>);  <span class="comment">// Up is negative Y!</span>
-player.<span class="function">add</span>(movement);
+// Player presses 'W' key - move up
+let movement = new Vector2D(0, -5);  // Up is negative Y!
+player.add(movement);
 
-<span class="comment">// Now player is at (100, 95) - moved up 5 pixels!</span></code></pre>
+// Now player is at (100, 95) - moved up 5 pixels!</code></pre>
                 </div>
             </details>
 
@@ -161,11 +165,11 @@ player.<span class="function">add</span>(movement);
             <details>
                 <summary>📝 Click to see: Measuring Distance (Step 3)</summary>
                 <div class="code-container">
-                    <pre><code><span class="function">distance</span>(other) {
-    <span class="comment">// Use Pythagorean theorem: √(dx² + dy²)</span>
-    <span class="keyword">let</span> dx = other.x - <span class="keyword">this</span>.x;  <span class="comment">// Horizontal distance</span>
-    <span class="keyword">let</span> dy = other.y - <span class="keyword">this</span>.y;  <span class="comment">// Vertical distance</span>
-    <span class="keyword">return</span> Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+                    <pre><code class="language-javascript">distance(other) {
+    // Use Pythagorean theorem: √(dx² + dy²)
+    let dx = other.x - this.x;  // Horizontal distance
+    let dy = other.y - this.y;  // Vertical distance
+    return Math.sqrt(dx * dx + dy * dy);
 }</code></pre>
                 </div>
 
@@ -175,15 +179,141 @@ player.<span class="function">add</span>(movement);
 
                 <div class="example-box">
                     <h4>🎮 Collision detection:</h4>
-                    <pre><code><span class="keyword">let</span> bullet = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">150</span>, <span class="number">150</span>);
-<span class="keyword">let</span> enemy = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">155</span>, <span class="number">148</span>);
+                    <pre><code class="language-javascript">let bullet = new Vector2D(150, 150);
+let enemy = new Vector2D(155, 148);
 
-<span class="keyword">let</span> distance = bullet.<span class="function">distance</span>(enemy);  <span class="comment">// About 5.4 pixels</span>
+let distance = bullet.distance(enemy);  // About 5.4 pixels
 
-<span class="keyword">if</span> (distance < <span class="number">10</span>) {  <span class="comment">// Hit radius = 10 pixels</span>
-    console.<span class="function">log</span>(<span class="string">"💥 Hit!"</span>);
+if (distance < 10) {  // Hit radius = 10 pixels
+    console.log("💥 Hit!");
 }</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Vector Playground</summary>
+                <pre><code class="language-javascript">// ===================================
+// VECTOR PLAYGROUND - Complete Implementation
+// ===================================
+
+// Moving object with position and velocity vectors
+class MovingObject {
+    constructor(x, y, vx, vy) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(vx, vy);
+        this.radius = 10;
+    }
+
+    update() {
+        // Move: position = position + velocity
+        this.position.add(this.velocity);
+
+        // Bounce off walls
+        if (this.position.x < this.radius ||
+            this.position.x > canvas.width - this.radius) {
+            this.velocity.x *= -1;  // Reverse X direction
+            this.position.x = clamp(this.position.x, this.radius,
+                                    canvas.width - this.radius);
+        }
+        if (this.position.y < this.radius ||
+            this.position.y > canvas.height - this.radius) {
+            this.velocity.y *= -1;  // Reverse Y direction
+            this.position.y = clamp(this.position.y, this.radius,
+                                    canvas.height - this.radius);
+        }
+    }
+
+    draw(ctx) {
+        // Draw the object
+        ctx.fillStyle = '#4fc3f7';
+        ctx.beginPath();
+        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw velocity vector
+        const end = new Vector2D(
+            this.position.x + this.velocity.x * 5,
+            this.position.y + this.velocity.y * 5
+        );
+        drawVector(ctx, this.position, end, '#ffa726', 2);
+    }
+}
+
+const objects = [];
+let isDragging = false;
+let dragStart = null;
+
+// Drag to create objects with custom velocity
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    dragStart = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        currentX: e.clientX - rect.left,
+        currentY: e.clientY - rect.top
+    };
+    isDragging = true;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isDragging && dragStart) {
+        const rect = canvas.getBoundingClientRect();
+        dragStart.currentX = e.clientX - rect.left;
+        dragStart.currentY = e.clientY - rect.top;
+    }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (isDragging && dragStart) {
+        const rect = canvas.getBoundingClientRect();
+        const endX = e.clientX - rect.left;
+        const endY = e.clientY - rect.top;
+
+        // Calculate velocity from drag direction
+        const vx = (endX - dragStart.x) * 0.1;
+        const vy = (endY - dragStart.y) * 0.1;
+
+        objects.push(new MovingObject(dragStart.x, dragStart.y, vx, vy));
+    }
+    isDragging = false;
+    dragStart = null;
+});
+
+// Add random object button
+document.getElementById('btnAddObject').addEventListener('click', () => {
+    const x = randomFloat(50, canvas.width - 50);
+    const y = randomFloat(50, canvas.height - 50);
+    const vx = randomFloat(-3, 3);
+    const vy = randomFloat(-3, 3);
+    objects.push(new MovingObject(x, y, vx, vy));
+});
+
+// Animation loop
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+    drawGrid(ctx, canvas.width, canvas.height);
+
+    objects.forEach(obj => {
+        obj.update();
+        obj.draw(ctx);
+    });
+
+    // Draw drag preview line
+    if (isDragging && dragStart) {
+        ctx.strokeStyle = '#66bb6a';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(dragStart.x, dragStart.y);
+        ctx.lineTo(dragStart.currentX, dragStart.currentY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Play with Vectors!</h3>
@@ -211,37 +341,37 @@ player.<span class="function">add</span>(movement);
             <details data-demo-id="normalize" data-deps="vector2d,clearCanvas,drawGrid,clamp">
                 <summary>📝 Click to see: Normalization Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="function">normalize</span>() {
-    <span class="keyword">let</span> length = <span class="keyword">this</span>.<span class="function">length</span>();
-    <span class="keyword">if</span> (length > <span class="number">0</span>) {
-        <span class="keyword">this</span>.x /= length;  <span class="comment">// Divide by length</span>
-        <span class="keyword">this</span>.y /= length;
+                    <pre><code class="language-javascript">normalize() {
+    let length = this.length();
+    if (length > 0) {
+        this.x /= length;  // Divide by length
+        this.y /= length;
     }
-    <span class="keyword">return</span> <span class="keyword">this</span>;
+    return this;
 }
 
-<span class="function">length</span>() {
-    <span class="keyword">return</span> Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y);
+length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Constant Speed Movement:</h4>
-                    <pre><code><span class="comment">// Get input direction (could be diagonal!)</span>
-<span class="keyword">let</span> direction = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-    input.right - input.left,    <span class="comment">// -1, 0, or 1</span>
+                    <pre><code class="language-javascript">// Get input direction (could be diagonal!)
+let direction = new Vector2D(
+    input.right - input.left,    // -1, 0, or 1
     input.down - input.up
 );
 
-<span class="comment">// Normalize so diagonal isn't faster!</span>
-direction.<span class="function">normalize</span>();
+// Normalize so diagonal isn't faster!
+direction.normalize();
 
-<span class="comment">// Apply constant speed</span>
-<span class="keyword">let</span> speed = <span class="number">5</span>;
-direction.<span class="function">multiply</span>(speed);
+// Apply constant speed
+let speed = 5;
+direction.multiply(speed);
 
-<span class="comment">// Add to player position</span>
-player.<span class="function">add</span>(direction);</code></pre>
+// Add to player position
+player.add(direction);</code></pre>
                 </div>
             </details>
 
@@ -271,26 +401,26 @@ player.<span class="function">add</span>(direction);</code></pre>
             <details data-demo-id="dotProduct" data-deps="vector2d,clearCanvas,drawGrid,drawVector">
                 <summary>📝 Click to see: Dot Product Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="function">dot</span>(other) {
-    <span class="keyword">return</span> <span class="keyword">this</span>.x * other.x + <span class="keyword">this</span>.y * other.y;
+                    <pre><code class="language-javascript">dot(other) {
+    return this.x * other.x + this.y * other.y;
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Check if Enemy is in Front:</h4>
-                    <pre><code><span class="comment">// Player is facing direction</span>
-<span class="keyword">let</span> facingDir = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">1</span>, <span class="number">0</span>).<span class="function">normalize</span>();
+                    <pre><code class="language-javascript">// Player is facing direction
+let facingDir = new Vector2D(1, 0).normalize();
 
-<span class="comment">// Direction to enemy</span>
-<span class="keyword">let</span> toEnemy = enemy.<span class="function">subtract</span>(player).<span class="function">normalize</span>();
+// Direction to enemy
+let toEnemy = enemy.subtract(player).normalize();
 
-<span class="comment">// Check if in front</span>
-<span class="keyword">let</span> dotProduct = facingDir.<span class="function">dot</span>(toEnemy);
+// Check if in front
+let dotProduct = facingDir.dot(toEnemy);
 
-<span class="keyword">if</span> (dotProduct > <span class="number">0</span>) {
-    console.<span class="function">log</span>(<span class="string">"Enemy is in front!"</span>);
-} <span class="keyword">else</span> {
-    console.<span class="function">log</span>(<span class="string">"Enemy is behind!"</span>);
+if (dotProduct > 0) {
+    console.log("Enemy is in front!");
+} else {
+    console.log("Enemy is behind!");
 }</code></pre>
                 </div>
             </details>
@@ -310,26 +440,26 @@ player.<span class="function">add</span>(direction);</code></pre>
             <details>
                 <summary>📝 Click to see: Vector Subtraction Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="function">subtract</span>(other) {
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-        <span class="keyword">this</span>.x - other.x,
-        <span class="keyword">this</span>.y - other.y
+                    <pre><code class="language-javascript">subtract(other) {
+    return new Vector2D(
+        this.x - other.x,
+        this.y - other.y
     );
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Enemy Chasing Player</h4>
-                    <pre><code><span class="comment">// Get direction from enemy to player</span>
-<span class="keyword">const</span> direction = player.position.<span class="function">subtract</span>(enemy.position);
+                    <pre><code class="language-javascript">// Get direction from enemy to player
+const direction = player.position.subtract(enemy.position);
 
-<span class="comment">// Normalize and apply enemy speed</span>
-direction.<span class="function">normalize</span>().<span class="function">multiply</span>(enemySpeed);
+// Normalize and apply enemy speed
+direction.normalize().multiply(enemySpeed);
 
-<span class="comment">// Move enemy toward player</span>
-enemy.position.<span class="function">add</span>(direction);
+// Move enemy toward player
+enemy.position.add(direction);
 
-<span class="comment">// Now enemy moves toward player at constant speed!</span></code></pre>
+// Now enemy moves toward player at constant speed!</code></pre>
                 </div>
             </details>
 
@@ -346,29 +476,29 @@ enemy.position.<span class="function">add</span>(direction);
             <details>
                 <summary>📝 Click to see: Cross Product Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// 2D cross product returns a scalar (z-component of 3D cross product)</span>
-<span class="function">cross</span>(other) {
-    <span class="keyword">return</span> <span class="keyword">this</span>.x * other.y - <span class="keyword">this</span>.y * other.x;
+                    <pre><code class="language-javascript">// 2D cross product returns a scalar (z-component of 3D cross product)
+cross(other) {
+    return this.x * other.y - this.y * other.x;
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Determine Turn Direction</h4>
-                    <pre><code><span class="comment">// Player is facing a direction</span>
-<span class="keyword">const</span> forward = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">1</span>, <span class="number">0</span>);
+                    <pre><code class="language-javascript">// Player is facing a direction
+const forward = new Vector2D(1, 0);
 
-<span class="comment">// Direction to target</span>
-<span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(player.position).<span class="function">normalize</span>();
+// Direction to target
+const toTarget = target.subtract(player.position).normalize();
 
-<span class="comment">// Which way to turn?</span>
-<span class="keyword">const</span> crossProduct = forward.<span class="function">cross</span>(toTarget);
+// Which way to turn?
+const crossProduct = forward.cross(toTarget);
 
-<span class="keyword">if</span> (crossProduct > <span class="number">0</span>) {
-    console.<span class="function">log</span>(<span class="string">"Turn left!"</span>);
-} <span class="keyword">else</span> <span class="keyword">if</span> (crossProduct < <span class="number">0</span>) {
-    console.<span class="function">log</span>(<span class="string">"Turn right!"</span>);
-} <span class="keyword">else</span> {
-    console.<span class="function">log</span>(<span class="string">"Go straight!"</span>);
+if (crossProduct > 0) {
+    console.log("Turn left!");
+} else if (crossProduct < 0) {
+    console.log("Turn right!");
+} else {
+    console.log("Go straight!");
 }</code></pre>
                 </div>
 
@@ -386,15 +516,15 @@ enemy.position.<span class="function">add</span>(direction);
             <details>
                 <summary>📝 Click to see: Vector Projection Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Project this vector onto another vector</span>
-<span class="function">project</span>(onto) {
-    <span class="keyword">const</span> dotProduct = <span class="keyword">this</span>.<span class="function">dot</span>(onto);
-    <span class="keyword">const</span> ontoLengthSq = onto.x * onto.x + onto.y * onto.y;
+                    <pre><code class="language-javascript">// Project this vector onto another vector
+project(onto) {
+    const dotProduct = this.dot(onto);
+    const ontoLengthSq = onto.x * onto.x + onto.y * onto.y;
 
-    <span class="keyword">if</span> (ontoLengthSq === <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
+    if (ontoLengthSq === 0) return new Vector2D(0, 0);
 
-    <span class="keyword">const</span> scalar = dotProduct / ontoLengthSq;
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+    const scalar = dotProduct / ontoLengthSq;
+    return new Vector2D(
         onto.x * scalar,
         onto.y * scalar
     );
@@ -403,20 +533,20 @@ enemy.position.<span class="function">add</span>(direction);
 
                 <div class="example-box">
                     <h4>🎮 Example: Sliding Along Walls</h4>
-                    <pre><code><span class="comment">// Player trying to move in a direction</span>
-<span class="keyword">const</span> desiredMovement = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, <span class="number">3</span>);
+                    <pre><code class="language-javascript">// Player trying to move in a direction
+const desiredMovement = new Vector2D(5, 3);
 
-<span class="comment">// Wall is horizontal (normal points up)</span>
-<span class="keyword">const</span> wallNormal = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">1</span>);
+// Wall is horizontal (normal points up)
+const wallNormal = new Vector2D(0, 1);
 
-<span class="comment">// Remove component of movement into wall</span>
-<span class="keyword">const</span> intoWall = desiredMovement.<span class="function">project</span>(wallNormal);
-<span class="keyword">const</span> alongWall = desiredMovement.<span class="function">subtract</span>(intoWall);
+// Remove component of movement into wall
+const intoWall = desiredMovement.project(wallNormal);
+const alongWall = desiredMovement.subtract(intoWall);
 
-<span class="comment">// Move player along wall instead of into it</span>
-player.position.<span class="function">add</span>(alongWall);
+// Move player along wall instead of into it
+player.position.add(alongWall);
 
-<span class="comment">// Player now slides smoothly along walls!</span></code></pre>
+// Player now slides smoothly along walls!</code></pre>
                 </div>
 
                 <div class="key-point">
@@ -433,37 +563,133 @@ player.position.<span class="function">add</span>(alongWall);
             <details>
                 <summary>📝 Click to see: Vector Reflection Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Reflect this vector across a surface (given surface normal)</span>
-<span class="function">reflect</span>(normal) {
-    <span class="comment">// Formula: reflection = vector - 2 * (vector · normal) * normal</span>
-    <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(normal);
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-        <span class="keyword">this</span>.x - <span class="number">2</span> * dot * normal.x,
-        <span class="keyword">this</span>.y - <span class="number">2</span> * dot * normal.y
+                    <pre><code class="language-javascript">// Reflect this vector across a surface (given surface normal)
+reflect(normal) {
+    // Formula: reflection = vector - 2 * (vector · normal) * normal
+    const dot = this.dot(normal);
+    return new Vector2D(
+        this.x - 2 * dot * normal.x,
+        this.y - 2 * dot * normal.y
     );
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Example: Ball Bouncing Off Walls</h4>
-                    <pre><code><span class="comment">// Ball's velocity</span>
-<span class="keyword">let</span> velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">5</span>, -<span class="number">3</span>);
+                    <pre><code class="language-javascript">// Ball's velocity
+let velocity = new Vector2D(5, -3);
 
-<span class="comment">// Hit bottom wall (normal points up)</span>
-<span class="keyword">const</span> wallNormal = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, -<span class="number">1</span>);
+// Hit bottom wall (normal points up)
+const wallNormal = new Vector2D(0, -1);
 
-<span class="comment">// Reflect velocity</span>
-velocity = velocity.<span class="function">reflect</span>(wallNormal);
+// Reflect velocity
+velocity = velocity.reflect(wallNormal);
 
-<span class="comment">// Apply some energy loss (optional)</span>
-velocity.<span class="function">multiply</span>(<span class="number">0.8</span>);  <span class="comment">// 80% of original speed</span>
+// Apply some energy loss (optional)
+velocity.multiply(0.8);  // 80% of original speed
 
-<span class="comment">// Ball now bounces realistically!</span></code></pre>
+// Ball now bounces realistically!</code></pre>
                 </div>
 
                 <div class="key-point">
                     <strong>💡 Use case:</strong> Bouncing balls, bullets ricocheting, pong paddles, breakout bricks!
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Advanced Vector Operations</summary>
+                <pre><code class="language-javascript">// ===================================
+// ADVANCED VECTOR OPERATIONS - Complete Implementation
+// ===================================
+
+let currentDemo = 'chase';
+let player = new Vector2D(400, 250);
+let enemy = new Vector2D(100, 100);
+let ball = new Vector2D(200, 200);
+let ballVelocity = new Vector2D(5, 3);
+
+// Track mouse as player position
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    player = new Vector2D(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+// Switch demo modes
+document.getElementById('btnChaseDemo').addEventListener('click', () => {
+    currentDemo = 'chase';
+    enemy = new Vector2D(100, 100);
+});
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    if (currentDemo === 'chase') {
+        // CHASE: Enemy follows player using vector subtraction
+        const direction = player.subtract(enemy);
+        const distance = direction.length();
+
+        if (distance > 30) {
+            // Move toward player at constant speed
+            const movement = direction.copy().normalize().multiply(2);
+            enemy.add(movement);
+        }
+
+        // Draw enemy and direction vector
+        ctx.fillStyle = '#ef5350';
+        ctx.arc(enemy.x, enemy.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        drawVector(ctx, enemy, player, '#ffa726', 2);
+    }
+    else if (currentDemo === 'cross') {
+        // CROSS PRODUCT: Determine turn direction
+        const forward = new Vector2D(100, 0);
+        const toTarget = mousePos.subtract(center).normalize();
+        const cross = forward.cross(toTarget);
+
+        // cross > 0 = turn left, cross < 0 = turn right
+        const turnText = cross > 0 ? 'TURN LEFT' : 'TURN RIGHT';
+    }
+    else if (currentDemo === 'project') {
+        // PROJECTION: Wall sliding
+        const wallDir = wallEnd.subtract(wallStart).normalize();
+        const wallNormal = new Vector2D(-wallDir.y, wallDir.x);
+
+        const movement = mousePos.subtract(playerPos);
+
+        // Remove the wall-collision component
+        const intoWall = movement.project(wallNormal);
+        const alongWall = movement.subtract(intoWall);
+        // alongWall is the actual movement (slides along wall)
+    }
+    else if (currentDemo === 'reflect') {
+        // REFLECTION: Bouncing ball
+        ball.add(ballVelocity);
+
+        // Check wall collisions and reflect
+        if (ball.x - 15 < 0) {
+            ball.x = 15;
+            const normal = new Vector2D(1, 0);  // Wall normal
+            // Reflect: v' = v - 2(v·n)n
+            ballVelocity = ballVelocity.reflect(normal).multiply(0.95);
+        }
+        if (ball.x + 15 > canvas.width) {
+            ball.x = canvas.width - 15;
+            const normal = new Vector2D(-1, 0);
+            ballVelocity = ballVelocity.reflect(normal).multiply(0.95);
+        }
+        // Similar for top/bottom walls...
+
+        // Draw ball and velocity vector
+        ctx.fillStyle = '#4fc3f7';
+        ctx.arc(ball.x, ball.y, 15, 0, Math.PI * 2);
+        ctx.fill();
+        drawVector(ctx, ball, ball.add(ballVelocity.multiply(10)), '#ffa726');
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Advanced Vector Operations</h3>
@@ -482,116 +708,116 @@ velocity.<span class="function">multiply</span>(<span class="number">0.8</span>)
             <details>
                 <summary>📝 Click to see: Full Vector2D Implementation</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Vector2D</span> {
-    <span class="keyword">constructor</span>(x = <span class="number">0</span>, y = <span class="number">0</span>) {
-        <span class="keyword">this</span>.x = x;
-        <span class="keyword">this</span>.y = y;
+                    <pre><code class="language-javascript">class Vector2D {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
     }
 
-    <span class="comment">// Basic operations</span>
-    <span class="function">add</span>(v) {
-        <span class="keyword">this</span>.x += v.x;
-        <span class="keyword">this</span>.y += v.y;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    // Basic operations
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+        return this;
     }
 
-    <span class="function">subtract</span>(v) {
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="keyword">this</span>.x - v.x, <span class="keyword">this</span>.y - v.y);
+    subtract(v) {
+        return new Vector2D(this.x - v.x, this.y - v.y);
     }
 
-    <span class="function">multiply</span>(scalar) {
-        <span class="keyword">this</span>.x *= scalar;
-        <span class="keyword">this</span>.y *= scalar;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    multiply(scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
+        return this;
     }
 
-    <span class="function">divide</span>(scalar) {
-        <span class="keyword">if</span> (scalar !== <span class="number">0</span>) {
-            <span class="keyword">this</span>.x /= scalar;
-            <span class="keyword">this</span>.y /= scalar;
+    divide(scalar) {
+        if (scalar !== 0) {
+            this.x /= scalar;
+            this.y /= scalar;
         }
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+        return this;
     }
 
-    <span class="comment">// Length and normalization</span>
-    <span class="function">length</span>() {
-        <span class="keyword">return</span> Math.<span class="function">sqrt</span>(<span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y);
+    // Length and normalization
+    length() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
-    <span class="function">lengthSquared</span>() {
-        <span class="keyword">return</span> <span class="keyword">this</span>.x * <span class="keyword">this</span>.x + <span class="keyword">this</span>.y * <span class="keyword">this</span>.y;
+    lengthSquared() {
+        return this.x * this.x + this.y * this.y;
     }
 
-    <span class="function">normalize</span>() {
-        <span class="keyword">const</span> len = <span class="keyword">this</span>.<span class="function">length</span>();
-        <span class="keyword">if</span> (len > <span class="number">0</span>) {
-            <span class="keyword">this</span>.x /= len;
-            <span class="keyword">this</span>.y /= len;
+    normalize() {
+        const len = this.length();
+        if (len > 0) {
+            this.x /= len;
+            this.y /= len;
         }
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+        return this;
     }
 
-    <span class="comment">// Distance</span>
-    <span class="function">distance</span>(v) {
-        <span class="keyword">const</span> dx = v.x - <span class="keyword">this</span>.x;
-        <span class="keyword">const</span> dy = v.y - <span class="keyword">this</span>.y;
-        <span class="keyword">return</span> Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+    // Distance
+    distance(v) {
+        const dx = v.x - this.x;
+        const dy = v.y - this.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
-    <span class="comment">// Dot product</span>
-    <span class="function">dot</span>(v) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.x * v.x + <span class="keyword">this</span>.y * v.y;
+    // Dot product
+    dot(v) {
+        return this.x * v.x + this.y * v.y;
     }
 
-    <span class="comment">// Cross product (2D returns scalar)</span>
-    <span class="function">cross</span>(v) {
-        <span class="keyword">return</span> <span class="keyword">this</span>.x * v.y - <span class="keyword">this</span>.y * v.x;
+    // Cross product (2D returns scalar)
+    cross(v) {
+        return this.x * v.y - this.y * v.x;
     }
 
-    <span class="comment">// Project this vector onto another</span>
-    <span class="function">project</span>(v) {
-        <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(v);
-        <span class="keyword">const</span> lenSq = v.<span class="function">lengthSquared</span>();
-        <span class="keyword">if</span> (lenSq === <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">const</span> scalar = dot / lenSq;
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(v.x * scalar, v.y * scalar);
+    // Project this vector onto another
+    project(v) {
+        const dot = this.dot(v);
+        const lenSq = v.lengthSquared();
+        if (lenSq === 0) return new Vector2D(0, 0);
+        const scalar = dot / lenSq;
+        return new Vector2D(v.x * scalar, v.y * scalar);
     }
 
-    <span class="comment">// Reflect across a normal</span>
-    <span class="function">reflect</span>(normal) {
-        <span class="keyword">const</span> dot = <span class="keyword">this</span>.<span class="function">dot</span>(normal);
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.x - <span class="number">2</span> * dot * normal.x,
-            <span class="keyword">this</span>.y - <span class="number">2</span> * dot * normal.y
+    // Reflect across a normal
+    reflect(normal) {
+        const dot = this.dot(normal);
+        return new Vector2D(
+            this.x - 2 * dot * normal.x,
+            this.y - 2 * dot * normal.y
         );
     }
 
-    <span class="comment">// Angle of this vector</span>
-    <span class="function">angle</span>() {
-        <span class="keyword">return</span> Math.<span class="function">atan2</span>(<span class="keyword">this</span>.y, <span class="keyword">this</span>.x);
+    // Angle of this vector
+    angle() {
+        return Math.atan2(this.y, this.x);
     }
 
-    <span class="comment">// Rotate by an angle</span>
-    <span class="function">rotate</span>(angle) {
-        <span class="keyword">const</span> cos = Math.<span class="function">cos</span>(angle);
-        <span class="keyword">const</span> sin = Math.<span class="function">sin</span>(angle);
-        <span class="keyword">const</span> newX = <span class="keyword">this</span>.x * cos - <span class="keyword">this</span>.y * sin;
-        <span class="keyword">const</span> newY = <span class="keyword">this</span>.x * sin + <span class="keyword">this</span>.y * cos;
-        <span class="keyword">this</span>.x = newX;
-        <span class="keyword">this</span>.y = newY;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    // Rotate by an angle
+    rotate(angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const newX = this.x * cos - this.y * sin;
+        const newY = this.x * sin + this.y * cos;
+        this.x = newX;
+        this.y = newY;
+        return this;
     }
 
-    <span class="comment">// Copy</span>
-    <span class="function">copy</span>() {
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="keyword">this</span>.x, <span class="keyword">this</span>.y);
+    // Copy
+    copy() {
+        return new Vector2D(this.x, this.y);
     }
 
-    <span class="comment">// Static methods</span>
-    <span class="keyword">static</span> <span class="function">fromAngle</span>(angle, length = <span class="number">1</span>) {
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            Math.<span class="function">cos</span>(angle) * length,
-            Math.<span class="function">sin</span>(angle) * length
+    // Static methods
+    static fromAngle(angle, length = 1) {
+        return new Vector2D(
+            Math.cos(angle) * length,
+            Math.sin(angle) * length
         );
     }
 }</code></pre>
@@ -628,33 +854,33 @@ velocity.<span class="function">multiply</span>(<span class="number">0.8</span>)
             <details data-demo-id="trig" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Trigonometry Functions Explained</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Convert angle to direction vector</span>
-<span class="keyword">function</span> <span class="function">angleToVector</span>(angle) {
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-        Math.<span class="function">cos</span>(angle),  <span class="comment">// X component</span>
-        Math.<span class="function">sin</span>(angle)   <span class="comment">// Y component</span>
+                    <pre><code class="language-javascript">// Convert angle to direction vector
+function angleToVector(angle) {
+    return new Vector2D(
+        Math.cos(angle),  // X component
+        Math.sin(angle)   // Y component
     );
 }
 
-<span class="comment">// Convert direction vector to angle</span>
-<span class="keyword">function</span> <span class="function">vectorToAngle</span>(vector) {
-    <span class="keyword">return</span> Math.<span class="function">atan2</span>(vector.y, vector.x);
+// Convert direction vector to angle
+function vectorToAngle(vector) {
+    return Math.atan2(vector.y, vector.x);
 }
 
-<span class="comment">// Rotate a point around another point</span>
-<span class="keyword">function</span> <span class="function">rotateAround</span>(point, center, angle) {
-    <span class="comment">// Translate to origin</span>
-    <span class="keyword">const</span> x = point.x - center.x;
-    <span class="keyword">const</span> y = point.y - center.y;
+// Rotate a point around another point
+function rotateAround(point, center, angle) {
+    // Translate to origin
+    const x = point.x - center.x;
+    const y = point.y - center.y;
 
-    <span class="comment">// Rotate</span>
-    <span class="keyword">const</span> cos = Math.<span class="function">cos</span>(angle);
-    <span class="keyword">const</span> sin = Math.<span class="function">sin</span>(angle);
-    <span class="keyword">const</span> newX = x * cos - y * sin;
-    <span class="keyword">const</span> newY = x * sin + y * cos;
+    // Rotate
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const newX = x * cos - y * sin;
+    const newY = x * sin + y * cos;
 
-    <span class="comment">// Translate back</span>
-    <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
+    // Translate back
+    return new Vector2D(
         newX + center.x,
         newY + center.y
     );
@@ -663,14 +889,14 @@ velocity.<span class="function">multiply</span>(<span class="number">0.8</span>)
 
                 <div class="example-box">
                     <h4>🎮 Example: Make Enemy Face Player</h4>
-                    <pre><code><span class="comment">// Calculate direction from enemy to player</span>
-<span class="keyword">const</span> direction = player.position.<span class="function">subtract</span>(enemy.position);
+                    <pre><code class="language-javascript">// Calculate direction from enemy to player
+const direction = player.position.subtract(enemy.position);
 
-<span class="comment">// Get angle to player</span>
-enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction.x);
+// Get angle to player
+enemy.rotation = Math.atan2(direction.y, direction.x);
 
-<span class="comment">// Now enemy is rotated to face player!</span>
-<span class="comment">// Use this angle when drawing the enemy sprite</span></code></pre>
+// Now enemy is rotated to face player!
+// Use this angle when drawing the enemy sprite</code></pre>
                 </div>
             </details>
 
@@ -679,22 +905,22 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 1: Circular Motion</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">OrbitingObject</span> {
-    <span class="keyword">constructor</span>(centerX, centerY, radius) {
-        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
-        <span class="keyword">this</span>.radius = radius;
-        <span class="keyword">this</span>.angle = <span class="number">0</span>;
-        <span class="keyword">this</span>.speed = <span class="number">0.02</span>;  <span class="comment">// Radians per frame</span>
+                    <pre><code class="language-javascript">class OrbitingObject {
+    constructor(centerX, centerY, radius) {
+        this.center = new Vector2D(centerX, centerY);
+        this.radius = radius;
+        this.angle = 0;
+        this.speed = 0.02;  // Radians per frame
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Increment angle</span>
-        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.speed;
+    update() {
+        // Increment angle
+        this.angle += this.speed;
 
-        <span class="comment">// Calculate position on circle</span>
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.center.x + Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius,
-            <span class="keyword">this</span>.center.y + Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius
+        // Calculate position on circle
+        this.position = new Vector2D(
+            this.center.x + Math.cos(this.angle) * this.radius,
+            this.center.y + Math.sin(this.angle) * this.radius
         );
     }
 }</code></pre>
@@ -707,21 +933,21 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 2: Wave Motion (Bobbing/Floating)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">FloatingItem</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.baseY = y;  <span class="comment">// Starting height</span>
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.time = <span class="number">0</span>;
-        <span class="keyword">this</span>.amplitude = <span class="number">10</span>;  <span class="comment">// How high it bobs</span>
-        <span class="keyword">this</span>.frequency = <span class="number">2</span>;   <span class="comment">// How fast it bobs</span>
+                    <pre><code class="language-javascript">class FloatingItem {
+    constructor(x, y) {
+        this.baseY = y;  // Starting height
+        this.position = new Vector2D(x, y);
+        this.time = 0;
+        this.amplitude = 10;  // How high it bobs
+        this.frequency = 2;   // How fast it bobs
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.time += <span class="number">0.05</span>;
+    update() {
+        this.time += 0.05;
 
-        <span class="comment">// Sine wave for smooth up/down motion</span>
-        <span class="keyword">const</span> offset = Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="keyword">this</span>.frequency) * <span class="keyword">this</span>.amplitude;
-        <span class="keyword">this</span>.position.y = <span class="keyword">this</span>.baseY + offset;
+        // Sine wave for smooth up/down motion
+        const offset = Math.sin(this.time * this.frequency) * this.amplitude;
+        this.position.y = this.baseY + offset;
     }
 }</code></pre>
                 </div>
@@ -733,26 +959,147 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 3: Projectile Arc (Parabolic Motion)</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">function</span> <span class="function">shootProjectile</span>(startPos, targetPos, launchAngle = <span class="number">45</span>) {
-    <span class="keyword">const</span> angle = launchAngle * Math.PI / <span class="number">180</span>;  <span class="comment">// Convert to radians</span>
-    <span class="keyword">const</span> distance = startPos.<span class="function">distance</span>(targetPos);
+                    <pre><code class="language-javascript">function shootProjectile(startPos, targetPos, launchAngle = 45) {
+    const angle = launchAngle * Math.PI / 180;  // Convert to radians
+    const distance = startPos.distance(targetPos);
 
-    <span class="comment">// Calculate initial velocity needed</span>
-    <span class="keyword">const</span> gravity = <span class="number">9.8</span>;
-    <span class="keyword">const</span> velocity = Math.<span class="function">sqrt</span>(
-        (distance * gravity) / Math.<span class="function">sin</span>(<span class="number">2</span> * angle)
+    // Calculate initial velocity needed
+    const gravity = 9.8;
+    const velocity = Math.sqrt(
+        (distance * gravity) / Math.sin(2 * angle)
     );
 
-    <span class="comment">// Velocity components</span>
-    <span class="keyword">const</span> vx = velocity * Math.<span class="function">cos</span>(angle);
-    <span class="keyword">const</span> vy = velocity * Math.<span class="function">sin</span>(angle);
+    // Velocity components
+    const vx = velocity * Math.cos(angle);
+    const vy = velocity * Math.sin(angle);
 
-    <span class="keyword">return</span> { vx, vy };
+    return { vx, vy };
 }</code></pre>
                 </div>
                 <div class="key-point">
                     <strong>💡 Use case:</strong> Throwing grenades, arrow trajectories, or basketball shots!
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Trigonometry Demos</summary>
+                <pre><code class="language-javascript">// ===================================
+// TRIGONOMETRY DEMOS - Complete Implementation
+// ===================================
+
+let mode = 'orbit';
+let time = 0;
+let mousePos = new Vector2D(400, 250);
+
+// Track mouse position
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mousePos.x = e.clientX - rect.left;
+    mousePos.y = e.clientY - rect.top;
+});
+
+// Orbiting objects configuration
+const orbitObjects = [
+    { angle: 0, radius: 80, speed: 0.02, color: '#4fc3f7' },
+    { angle: Math.PI, radius: 80, speed: 0.02, color: '#66bb6a' },
+    { angle: Math.PI / 2, radius: 120, speed: 0.015, color: '#ffa726' }
+];
+
+// Wave objects configuration
+const waveObjects = [];
+for (let i = 0; i < 10; i++) {
+    waveObjects.push({
+        x: 100 + i * 60,
+        baseY: 250,
+        amplitude: 40,
+        frequency: 2,
+        phase: i * 0.5  // Offset creates wave effect
+    });
+}
+
+function animate() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+    time += 0.05;
+    const center = new Vector2D(400, 250);
+
+    if (mode === 'orbit') {
+        // CIRCULAR ORBIT: cos/sin for X/Y
+        orbitObjects.forEach(obj => {
+            obj.angle += obj.speed;
+
+            // Key formula: position on circle
+            const x = center.x + Math.cos(obj.angle) * obj.radius;
+            const y = center.y + Math.sin(obj.angle) * obj.radius;
+
+            // Draw orbit path and object
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.arc(center.x, center.y, obj.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = obj.color;
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+    else if (mode === 'wave') {
+        // WAVE MOTION: sin for oscillation
+        waveObjects.forEach(obj => {
+            // Key formula: oscillating offset
+            const offset = Math.sin((time + obj.phase) * obj.frequency) * obj.amplitude;
+            const y = obj.baseY + offset;
+
+            ctx.fillStyle = '#4fc3f7';
+            ctx.arc(obj.x, y, 12, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+    else if (mode === 'face') {
+        // FACE TARGET: atan2 for angle to target
+        const objPos = new Vector2D(400, 250);
+        const direction = mousePos.subtract(objPos);
+
+        // Key formula: angle from direction vector
+        const angle = Math.atan2(direction.y, direction.x);
+
+        // Draw rotated triangle
+        ctx.save();
+        ctx.translate(objPos.x, objPos.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#66bb6a';
+        ctx.beginPath();
+        ctx.moveTo(20, 0);
+        ctx.lineTo(-10, -10);
+        ctx.lineTo(-10, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+    else if (mode === 'arc') {
+        // PROJECTILE ARC: parametric parabola
+        const startX = 100;
+        const startY = 400;
+        const launchAngle = -Math.PI / 4;  // 45 degrees up
+        const velocity = 8;
+        const gravity = 0.3;
+
+        // Draw trajectory points
+        for (let t = 0; t < 100; t++) {
+            // Key formulas: x moves linearly, y has gravity
+            const x = startX + Math.cos(launchAngle) * velocity * t;
+            const y = startY + Math.sin(launchAngle) * velocity * t + 0.5 * gravity * t * t;
+
+            if (y > canvas.height) break;
+
+            ctx.fillStyle = `rgba(79, 195, 247, ${1 - t/100})`;
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Trigonometry in Action</h3>
@@ -776,24 +1123,24 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 4: Spiral Motion</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">SpiralObject</span> {
-    <span class="keyword">constructor</span>(centerX, centerY) {
-        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
-        <span class="keyword">this</span>.angle = <span class="number">0</span>;
-        <span class="keyword">this</span>.radius = <span class="number">0</span>;
-        <span class="keyword">this</span>.angleSpeed = <span class="number">0.05</span>;
-        <span class="keyword">this</span>.radiusGrowth = <span class="number">0.5</span>;  <span class="comment">// How fast spiral expands</span>
+                    <pre><code class="language-javascript">class SpiralObject {
+    constructor(centerX, centerY) {
+        this.center = new Vector2D(centerX, centerY);
+        this.angle = 0;
+        this.radius = 0;
+        this.angleSpeed = 0.05;
+        this.radiusGrowth = 0.5;  // How fast spiral expands
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Increment angle and radius</span>
-        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.angleSpeed;
-        <span class="keyword">this</span>.radius += <span class="keyword">this</span>.radiusGrowth;
+    update() {
+        // Increment angle and radius
+        this.angle += this.angleSpeed;
+        this.radius += this.radiusGrowth;
 
-        <span class="comment">// Calculate position on expanding spiral</span>
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.center.x + Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius,
-            <span class="keyword">this</span>.center.y + Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.radius
+        // Calculate position on expanding spiral
+        this.position = new Vector2D(
+            this.center.x + Math.cos(this.angle) * this.radius,
+            this.center.y + Math.sin(this.angle) * this.radius
         );
     }
 }</code></pre>
@@ -806,28 +1153,28 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 5: Pendulum/Swing Motion</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Pendulum</span> {
-    <span class="keyword">constructor</span>(pivotX, pivotY, length) {
-        <span class="keyword">this</span>.pivot = <span class="keyword">new</span> <span class="function">Vector2D</span>(pivotX, pivotY);
-        <span class="keyword">this</span>.length = length;
-        <span class="keyword">this</span>.angle = Math.PI / <span class="number">4</span>;  <span class="comment">// Starting angle (45 degrees)</span>
-        <span class="keyword">this</span>.angleVelocity = <span class="number">0</span>;
-        <span class="keyword">this</span>.angleAcceleration = <span class="number">0</span>;
-        <span class="keyword">this</span>.gravity = <span class="number">0.5</span>;
-        <span class="keyword">this</span>.damping = <span class="number">0.995</span>;  <span class="comment">// Energy loss</span>
+                    <pre><code class="language-javascript">class Pendulum {
+    constructor(pivotX, pivotY, length) {
+        this.pivot = new Vector2D(pivotX, pivotY);
+        this.length = length;
+        this.angle = Math.PI / 4;  // Starting angle (45 degrees)
+        this.angleVelocity = 0;
+        this.angleAcceleration = 0;
+        this.gravity = 0.5;
+        this.damping = 0.995;  // Energy loss
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Physics calculation for pendulum</span>
-        <span class="keyword">this</span>.angleAcceleration = (-<span class="keyword">this</span>.gravity / <span class="keyword">this</span>.length) * Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle);
-        <span class="keyword">this</span>.angleVelocity += <span class="keyword">this</span>.angleAcceleration;
-        <span class="keyword">this</span>.angleVelocity *= <span class="keyword">this</span>.damping;  <span class="comment">// Apply damping</span>
-        <span class="keyword">this</span>.angle += <span class="keyword">this</span>.angleVelocity;
+    update() {
+        // Physics calculation for pendulum
+        this.angleAcceleration = (-this.gravity / this.length) * Math.sin(this.angle);
+        this.angleVelocity += this.angleAcceleration;
+        this.angleVelocity *= this.damping;  // Apply damping
+        this.angle += this.angleVelocity;
 
-        <span class="comment">// Calculate bob position</span>
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.pivot.x + Math.<span class="function">sin</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.length,
-            <span class="keyword">this</span>.pivot.y + Math.<span class="function">cos</span>(<span class="keyword">this</span>.angle) * <span class="keyword">this</span>.length
+        // Calculate bob position
+        this.position = new Vector2D(
+            this.pivot.x + Math.sin(this.angle) * this.length,
+            this.pivot.y + Math.cos(this.angle) * this.length
         );
     }
 }</code></pre>
@@ -840,24 +1187,24 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 6: Figure-8 / Lissajous Curves</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Lissajous</span> {
-    <span class="keyword">constructor</span>(centerX, centerY, radiusX, radiusY) {
-        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
-        <span class="keyword">this</span>.radiusX = radiusX;
-        <span class="keyword">this</span>.radiusY = radiusY;
-        <span class="keyword">this</span>.time = <span class="number">0</span>;
-        <span class="keyword">this</span>.freqX = <span class="number">3</span>;  <span class="comment">// Frequency ratio for X</span>
-        <span class="keyword">this</span>.freqY = <span class="number">2</span>;  <span class="comment">// Frequency ratio for Y</span>
-        <span class="keyword">this</span>.phase = Math.PI / <span class="number">2</span>;  <span class="comment">// Phase shift</span>
+                    <pre><code class="language-javascript">class Lissajous {
+    constructor(centerX, centerY, radiusX, radiusY) {
+        this.center = new Vector2D(centerX, centerY);
+        this.radiusX = radiusX;
+        this.radiusY = radiusY;
+        this.time = 0;
+        this.freqX = 3;  // Frequency ratio for X
+        this.freqY = 2;  // Frequency ratio for Y
+        this.phase = Math.PI / 2;  // Phase shift
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.time += <span class="number">0.02</span>;
+    update() {
+        this.time += 0.02;
 
-        <span class="comment">// Create complex patterns using different frequencies</span>
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.center.x + Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="keyword">this</span>.freqX) * <span class="keyword">this</span>.radiusX,
-            <span class="keyword">this</span>.center.y + Math.<span class="function">sin</span>(<span class="keyword">this</span>.time * <span class="keyword">this</span>.freqY + <span class="keyword">this</span>.phase) * <span class="keyword">this</span>.radiusY
+        // Create complex patterns using different frequencies
+        this.position = new Vector2D(
+            this.center.x + Math.sin(this.time * this.freqX) * this.radiusX,
+            this.center.y + Math.sin(this.time * this.freqY + this.phase) * this.radiusY
         );
     }
 }</code></pre>
@@ -870,38 +1217,38 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 7: Angle Interpolation (Smooth Rotation)</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Interpolate between two angles (handles wraparound)</span>
-<span class="keyword">function</span> <span class="function">lerpAngle</span>(start, end, t) {
-    <span class="comment">// Normalize angles to -π to π range</span>
-    <span class="keyword">let</span> diff = end - start;
+                    <pre><code class="language-javascript">// Interpolate between two angles (handles wraparound)
+function lerpAngle(start, end, t) {
+    // Normalize angles to -π to π range
+    let diff = end - start;
 
-    <span class="comment">// Take shortest path around circle</span>
-    <span class="keyword">while</span> (diff > Math.PI) diff -= <span class="number">2</span> * Math.PI;
-    <span class="keyword">while</span> (diff < -Math.PI) diff += <span class="number">2</span> * Math.PI;
+    // Take shortest path around circle
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
 
-    <span class="keyword">return</span> start + diff * t;
+    return start + diff * t;
 }
 
-<span class="keyword">class</span> <span class="function">RotatingEntity</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.currentAngle = <span class="number">0</span>;
-        <span class="keyword">this</span>.targetAngle = <span class="number">0</span>;
-        <span class="keyword">this</span>.rotationSpeed = <span class="number">0.1</span>;  <span class="comment">// 10% per frame</span>
+class RotatingEntity {
+    constructor() {
+        this.currentAngle = 0;
+        this.targetAngle = 0;
+        this.rotationSpeed = 0.1;  // 10% per frame
     }
 
-    <span class="function">faceDirection</span>(target) {
-        <span class="comment">// Calculate angle to target</span>
-        <span class="keyword">const</span> dx = target.x - <span class="keyword">this</span>.position.x;
-        <span class="keyword">const</span> dy = target.y - <span class="keyword">this</span>.position.y;
-        <span class="keyword">this</span>.targetAngle = Math.<span class="function">atan2</span>(dy, dx);
+    faceDirection(target) {
+        // Calculate angle to target
+        const dx = target.x - this.position.x;
+        const dy = target.y - this.position.y;
+        this.targetAngle = Math.atan2(dy, dx);
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Smoothly rotate toward target</span>
-        <span class="keyword">this</span>.currentAngle = <span class="function">lerpAngle</span>(
-            <span class="keyword">this</span>.currentAngle,
-            <span class="keyword">this</span>.targetAngle,
-            <span class="keyword">this</span>.rotationSpeed
+    update() {
+        // Smoothly rotate toward target
+        this.currentAngle = lerpAngle(
+            this.currentAngle,
+            this.targetAngle,
+            this.rotationSpeed
         );
     }
 }</code></pre>
@@ -914,50 +1261,50 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 8: Field of View (FOV) Detection</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Enemy</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.facingAngle = <span class="number">0</span>;
-        <span class="keyword">this</span>.fovAngle = Math.PI / <span class="number">3</span>;  <span class="comment">// 60 degree FOV</span>
-        <span class="keyword">this</span>.viewDistance = <span class="number">200</span>;
+                    <pre><code class="language-javascript">class Enemy {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.facingAngle = 0;
+        this.fovAngle = Math.PI / 3;  // 60 degree FOV
+        this.viewDistance = 200;
     }
 
-    <span class="function">canSee</span>(target) {
-        <span class="comment">// Calculate direction to target</span>
-        <span class="keyword">const</span> toTarget = target.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
-        <span class="keyword">const</span> distance = toTarget.<span class="function">length</span>();
+    canSee(target) {
+        // Calculate direction to target
+        const toTarget = target.subtract(this.position);
+        const distance = toTarget.length();
 
-        <span class="comment">// Check if within view distance</span>
-        <span class="keyword">if</span> (distance > <span class="keyword">this</span>.viewDistance) <span class="keyword">return</span> <span class="keyword">false</span>;
+        // Check if within view distance
+        if (distance > this.viewDistance) return false;
 
-        <span class="comment">// Calculate angle to target</span>
-        <span class="keyword">const</span> angleToTarget = Math.<span class="function">atan2</span>(toTarget.y, toTarget.x);
+        // Calculate angle to target
+        const angleToTarget = Math.atan2(toTarget.y, toTarget.x);
 
-        <span class="comment">// Calculate angle difference</span>
-        <span class="keyword">let</span> angleDiff = angleToTarget - <span class="keyword">this</span>.facingAngle;
+        // Calculate angle difference
+        let angleDiff = angleToTarget - this.facingAngle;
 
-        <span class="comment">// Normalize to -π to π</span>
-        <span class="keyword">while</span> (angleDiff > Math.PI) angleDiff -= <span class="number">2</span> * Math.PI;
-        <span class="keyword">while</span> (angleDiff < -Math.PI) angleDiff += <span class="number">2</span> * Math.PI;
+        // Normalize to -π to π
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-        <span class="comment">// Check if within FOV cone</span>
-        <span class="keyword">return</span> Math.<span class="function">abs</span>(angleDiff) < <span class="keyword">this</span>.fovAngle / <span class="number">2</span>;
+        // Check if within FOV cone
+        return Math.abs(angleDiff) < this.fovAngle / 2;
     }
 
-    <span class="function">drawFOV</span>(ctx) {
+    drawFOV(ctx) {
         ctx.save();
-        ctx.translate(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
-        ctx.rotate(<span class="keyword">this</span>.facingAngle);
+        ctx.translate(this.position.x, this.position.y);
+        ctx.rotate(this.facingAngle);
 
-        <span class="comment">// Draw FOV cone</span>
-        ctx.fillStyle = <span class="string">'rgba(255, 255, 0, 0.2)'</span>;
+        // Draw FOV cone
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="number">0</span>, <span class="number">0</span>);
-        ctx.<span class="function">arc</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="keyword">this</span>.viewDistance,
-            -<span class="keyword">this</span>.fovAngle / <span class="number">2</span>, <span class="keyword">this</span>.fovAngle / <span class="number">2</span>);
-        ctx.<span class="function">closePath</span>();
-        ctx.<span class="function">fill</span>();
-        ctx.<span class="function">restore</span>();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, this.viewDistance,
+            -this.fovAngle / 2, this.fovAngle / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
     }
 }</code></pre>
                 </div>
@@ -969,47 +1316,47 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Pattern 9: 8-Directional Sprite Selection</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Convert angle to one of 8 directions for sprite selection</span>
-<span class="keyword">function</span> <span class="function">angleToDirection8</span>(angle) {
-    <span class="comment">// Normalize angle to 0-2π</span>
-    <span class="keyword">let</span> normalized = angle % (<span class="number">2</span> * Math.PI);
-    <span class="keyword">if</span> (normalized < <span class="number">0</span>) normalized += <span class="number">2</span> * Math.PI;
+                    <pre><code class="language-javascript">// Convert angle to one of 8 directions for sprite selection
+function angleToDirection8(angle) {
+    // Normalize angle to 0-2π
+    let normalized = angle % (2 * Math.PI);
+    if (normalized < 0) normalized += 2 * Math.PI;
 
-    <span class="comment">// Divide circle into 8 sections (45 degrees each)</span>
-    <span class="keyword">const</span> section = Math.<span class="function">round</span>(normalized / (Math.PI / <span class="number">4</span>)) % <span class="number">8</span>;
+    // Divide circle into 8 sections (45 degrees each)
+    const section = Math.round(normalized / (Math.PI / 4)) % 8;
 
-    <span class="keyword">const</span> directions = [
-        <span class="string">'right'</span>,      <span class="comment">// 0°</span>
-        <span class="string">'down-right'</span>, <span class="comment">// 45°</span>
-        <span class="string">'down'</span>,       <span class="comment">// 90°</span>
-        <span class="string">'down-left'</span>,  <span class="comment">// 135°</span>
-        <span class="string">'left'</span>,       <span class="comment">// 180°</span>
-        <span class="string">'up-left'</span>,    <span class="comment">// 225°</span>
-        <span class="string">'up'</span>,         <span class="comment">// 270°</span>
-        <span class="string">'up-right'</span>    <span class="comment">// 315°</span>
+    const directions = [
+        'right',      // 0°
+        'down-right', // 45°
+        'down',       // 90°
+        'down-left',  // 135°
+        'left',       // 180°
+        'up-left',    // 225°
+        'up',         // 270°
+        'up-right'    // 315°
     ];
 
-    <span class="keyword">return</span> directions[section];
+    return directions[section];
 }
 
-<span class="keyword">class</span> <span class="function">Character</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.currentSprite = <span class="string">'idle-down'</span>;
+class Character {
+    constructor() {
+        this.velocity = new Vector2D(0, 0);
+        this.currentSprite = 'idle-down';
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">if</span> (<span class="keyword">this</span>.velocity.<span class="function">length</span>() > <span class="number">0.1</span>) {
-            <span class="comment">// Get movement angle</span>
-            <span class="keyword">const</span> angle = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+    update() {
+        if (this.velocity.length() > 0.1) {
+            // Get movement angle
+            const angle = Math.atan2(this.velocity.y, this.velocity.x);
 
-            <span class="comment">// Get direction</span>
-            <span class="keyword">const</span> direction = <span class="function">angleToDirection8</span>(angle);
+            // Get direction
+            const direction = angleToDirection8(angle);
 
-            <span class="comment">// Set appropriate sprite</span>
-            <span class="keyword">this</span>.currentSprite = <span class="string">`walk-<span class="keyword">${direction}</span>`</span>;
-        } <span class="keyword">else</span> {
-            <span class="keyword">this</span>.currentSprite = <span class="string">'idle-down'</span>;
+            // Set appropriate sprite
+            this.currentSprite = `walk-${direction}`;
+        } else {
+            this.currentSprite = 'idle-down';
         }
     }
 }</code></pre>
@@ -1036,58 +1383,58 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Click to see: Complete Radar System</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Radar</span> {
-    <span class="keyword">constructor</span>(centerX, centerY, radius) {
-        <span class="keyword">this</span>.center = <span class="keyword">new</span> <span class="function">Vector2D</span>(centerX, centerY);
-        <span class="keyword">this</span>.radius = radius;
-        <span class="keyword">this</span>.scale = <span class="number">0.1</span>;  <span class="comment">// World scale to radar scale</span>
+                    <pre><code class="language-javascript">class Radar {
+    constructor(centerX, centerY, radius) {
+        this.center = new Vector2D(centerX, centerY);
+        this.radius = radius;
+        this.scale = 0.1;  // World scale to radar scale
     }
 
-    <span class="function">worldToRadar</span>(worldPos, playerPos) {
-        <span class="comment">// Get position relative to player</span>
-        <span class="keyword">const</span> relative = worldPos.<span class="function">subtract</span>(playerPos);
+    worldToRadar(worldPos, playerPos) {
+        // Get position relative to player
+        const relative = worldPos.subtract(playerPos);
 
-        <span class="comment">// Scale down to radar size</span>
-        <span class="keyword">const</span> scaled = relative.<span class="function">copy</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.scale);
+        // Scale down to radar size
+        const scaled = relative.copy().multiply(this.scale);
 
-        <span class="comment">// Translate to radar center</span>
-        <span class="keyword">return</span> <span class="keyword">new</span> <span class="function">Vector2D</span>(
-            <span class="keyword">this</span>.center.x + scaled.x,
-            <span class="keyword">this</span>.center.y + scaled.y
+        // Translate to radar center
+        return new Vector2D(
+            this.center.x + scaled.x,
+            this.center.y + scaled.y
         );
     }
 
-    <span class="function">draw</span>(ctx, entities, player) {
-        <span class="comment">// Draw radar background</span>
-        ctx.fillStyle = <span class="string">'rgba(0, 0, 0, 0.7)'</span>;
+    draw(ctx, entities, player) {
+        // Draw radar background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y, <span class="keyword">this</span>.radius, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
+        ctx.arc(this.center.x, this.center.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
 
-        <span class="comment">// Draw border</span>
-        ctx.strokeStyle = <span class="string">'#0f0'</span>;
-        ctx.lineWidth = <span class="number">2</span>;
-        ctx.<span class="function">stroke</span>();
+        // Draw border
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-        <span class="comment">// Draw crosshairs</span>
+        // Draw crosshairs
         ctx.beginPath();
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.center.x - <span class="number">5</span>, <span class="keyword">this</span>.center.y);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.center.x + <span class="number">5</span>, <span class="keyword">this</span>.center.y);
-        ctx.<span class="function">moveTo</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y - <span class="number">5</span>);
-        ctx.<span class="function">lineTo</span>(<span class="keyword">this</span>.center.x, <span class="keyword">this</span>.center.y + <span class="number">5</span>);
-        ctx.<span class="function">stroke</span>();
+        ctx.moveTo(this.center.x - 5, this.center.y);
+        ctx.lineTo(this.center.x + 5, this.center.y);
+        ctx.moveTo(this.center.x, this.center.y - 5);
+        ctx.lineTo(this.center.x, this.center.y + 5);
+        ctx.stroke();
 
-        <span class="comment">// Draw entities</span>
-        entities.<span class="function">forEach</span>(entity => {
-            <span class="keyword">const</span> radarPos = <span class="keyword">this</span>.<span class="function">worldToRadar</span>(entity.position, player.position);
+        // Draw entities
+        entities.forEach(entity => {
+            const radarPos = this.worldToRadar(entity.position, player.position);
 
-            <span class="comment">// Only draw if within radar range</span>
-            <span class="keyword">const</span> dist = radarPos.<span class="function">distance</span>(<span class="keyword">this</span>.center);
-            <span class="keyword">if</span> (dist < <span class="keyword">this</span>.radius) {
-                ctx.fillStyle = entity.isEnemy ? <span class="string">'#f00'</span> : <span class="string">'#0f0'</span>;
+            // Only draw if within radar range
+            const dist = radarPos.distance(this.center);
+            if (dist < this.radius) {
+                ctx.fillStyle = entity.isEnemy ? '#f00' : '#0f0';
                 ctx.beginPath();
-                ctx.<span class="function">arc</span>(radarPos.x, radarPos.y, <span class="number">3</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-                ctx.<span class="function">fill</span>();
+                ctx.arc(radarPos.x, radarPos.y, 3, 0, Math.PI * 2);
+                ctx.fill();
             }
         });
     }
@@ -1122,84 +1469,84 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details data-demo-id="easing" data-deps="vector2d,clearCanvas">
                 <summary>📝 Click to see: Common Easing Functions</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// t is time (0 to 1), where 0 = start and 1 = end</span>
+                    <pre><code class="language-javascript">// t is time (0 to 1), where 0 = start and 1 = end
 
-<span class="comment">// Linear (no easing - constant speed)</span>
-<span class="keyword">function</span> <span class="function">easeLinear</span>(t) {
-    <span class="keyword">return</span> t;
+// Linear (no easing - constant speed)
+function easeLinear(t) {
+    return t;
 }
 
-<span class="comment">// Quadratic Ease In (gentle acceleration)</span>
-<span class="keyword">function</span> <span class="function">easeInQuad</span>(t) {
-    <span class="keyword">return</span> t * t;
+// Quadratic Ease In (gentle acceleration)
+function easeInQuad(t) {
+    return t * t;
 }
 
-<span class="comment">// Quadratic Ease Out (gentle deceleration)</span>
-<span class="keyword">function</span> <span class="function">easeOutQuad</span>(t) {
-    <span class="keyword">return</span> t * (<span class="number">2</span> - t);
+// Quadratic Ease Out (gentle deceleration)
+function easeOutQuad(t) {
+    return t * (2 - t);
 }
 
-<span class="comment">// Quadratic Ease In-Out</span>
-<span class="keyword">function</span> <span class="function">easeInOutQuad</span>(t) {
-    <span class="keyword">return</span> t < <span class="number">0.5</span> ?
-        <span class="number">2</span> * t * t :
-        -<span class="number">1</span> + (<span class="number">4</span> - <span class="number">2</span> * t) * t;
+// Quadratic Ease In-Out
+function easeInOutQuad(t) {
+    return t < 0.5 ?
+        2 * t * t :
+        -1 + (4 - 2 * t) * t;
 }
 
-<span class="comment">// Cubic (more dramatic)</span>
-<span class="keyword">function</span> <span class="function">easeInCubic</span>(t) {
-    <span class="keyword">return</span> t * t * t;
+// Cubic (more dramatic)
+function easeInCubic(t) {
+    return t * t * t;
 }
 
-<span class="keyword">function</span> <span class="function">easeOutCubic</span>(t) {
-    <span class="keyword">const</span> t1 = t - <span class="number">1</span>;
-    <span class="keyword">return</span> t1 * t1 * t1 + <span class="number">1</span>;
+function easeOutCubic(t) {
+    const t1 = t - 1;
+    return t1 * t1 * t1 + 1;
 }
 
-<span class="comment">// Elastic (bouncy, like a spring)</span>
-<span class="keyword">function</span> <span class="function">easeOutElastic</span>(t) {
-    <span class="keyword">const</span> p = <span class="number">0.3</span>;
-    <span class="keyword">return</span> Math.<span class="function">pow</span>(<span class="number">2</span>, -<span class="number">10</span> * t) * Math.<span class="function">sin</span>((t - p / <span class="number">4</span>) * (<span class="number">2</span> * Math.PI) / p) + <span class="number">1</span>;
+// Elastic (bouncy, like a spring)
+function easeOutElastic(t) {
+    const p = 0.3;
+    return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
 }
 
-<span class="comment">// Bounce (like a ball bouncing)</span>
-<span class="keyword">function</span> <span class="function">easeOutBounce</span>(t) {
-    <span class="keyword">if</span> (t < <span class="number">1</span> / <span class="number">2.75</span>) {
-        <span class="keyword">return</span> <span class="number">7.5625</span> * t * t;
-    } <span class="keyword">else</span> <span class="keyword">if</span> (t < <span class="number">2</span> / <span class="number">2.75</span>) {
-        <span class="keyword">return</span> <span class="number">7.5625</span> * (t -= <span class="number">1.5</span> / <span class="number">2.75</span>) * t + <span class="number">0.75</span>;
-    } <span class="keyword">else</span> <span class="keyword">if</span> (t < <span class="number">2.5</span> / <span class="number">2.75</span>) {
-        <span class="keyword">return</span> <span class="number">7.5625</span> * (t -= <span class="number">2.25</span> / <span class="number">2.75</span>) * t + <span class="number">0.9375</span>;
-    } <span class="keyword">else</span> {
-        <span class="keyword">return</span> <span class="number">7.5625</span> * (t -= <span class="number">2.625</span> / <span class="number">2.75</span>) * t + <span class="number">0.984375</span>;
+// Bounce (like a ball bouncing)
+function easeOutBounce(t) {
+    if (t < 1 / 2.75) {
+        return 7.5625 * t * t;
+    } else if (t < 2 / 2.75) {
+        return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
+    } else if (t < 2.5 / 2.75) {
+        return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+    } else {
+        return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
     }
 }</code></pre>
                 </div>
 
                 <div class="example-box">
                     <h4>🎮 Using Easing in Your Game:</h4>
-                    <pre><code><span class="keyword">class</span> <span class="function">AnimatedObject</span> {
-    <span class="keyword">constructor</span>(startPos, endPos, duration) {
-        <span class="keyword">this</span>.startPos = startPos;
-        <span class="keyword">this</span>.endPos = endPos;
-        <span class="keyword">this</span>.duration = duration;
-        <span class="keyword">this</span>.elapsed = <span class="number">0</span>;
-        <span class="keyword">this</span>.position = startPos.<span class="function">copy</span>();
+                    <pre><code class="language-javascript">class AnimatedObject {
+    constructor(startPos, endPos, duration) {
+        this.startPos = startPos;
+        this.endPos = endPos;
+        this.duration = duration;
+        this.elapsed = 0;
+        this.position = startPos.copy();
     }
 
-    <span class="function">update</span>(deltaTime) {
-        <span class="keyword">this</span>.elapsed += deltaTime;
+    update(deltaTime) {
+        this.elapsed += deltaTime;
 
-        <span class="comment">// Calculate progress (0 to 1)</span>
-        <span class="keyword">let</span> t = <span class="keyword">this</span>.elapsed / <span class="keyword">this</span>.duration;
-        t = Math.<span class="function">min</span>(t, <span class="number">1</span>);  <span class="comment">// Cap at 1</span>
+        // Calculate progress (0 to 1)
+        let t = this.elapsed / this.duration;
+        t = Math.min(t, 1);  // Cap at 1
 
-        <span class="comment">// Apply easing</span>
-        <span class="keyword">const</span> easedT = <span class="function">easeOutQuad</span>(t);
+        // Apply easing
+        const easedT = easeOutQuad(t);
 
-        <span class="comment">// Interpolate position</span>
-        <span class="keyword">this</span>.position.x = <span class="function">lerp</span>(<span class="keyword">this</span>.startPos.x, <span class="keyword">this</span>.endPos.x, easedT);
-        <span class="keyword">this</span>.position.y = <span class="function">lerp</span>(<span class="keyword">this</span>.startPos.y, <span class="keyword">this</span>.endPos.y, easedT);
+        // Interpolate position
+        this.position.x = lerp(this.startPos.x, this.endPos.x, easedT);
+        this.position.y = lerp(this.startPos.y, this.endPos.y, easedT);
     }
 }</code></pre>
                 </div>
@@ -1236,34 +1583,34 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details data-demo-id="game" data-deps="vector2d,clearCanvas,clamp,randomFloat">
                 <summary>📝 Click to see: Complete Game Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Player</span> {
-    <span class="keyword">constructor</span>(x, y) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.speed = <span class="number">5</span>;
+                    <pre><code class="language-javascript">class Player {
+    constructor(x, y) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.speed = 5;
     }
 
-    <span class="function">update</span>(input) {
-        <span class="comment">// Get input direction</span>
-        <span class="keyword">let</span> dir = <span class="keyword">new</span> <span class="function">Vector2D</span>(
+    update(input) {
+        // Get input direction
+        let dir = new Vector2D(
             input.right - input.left,
             input.down - input.up
         );
 
-        <span class="comment">// Normalize and apply speed</span>
-        <span class="keyword">if</span> (dir.<span class="function">length</span>() > <span class="number">0</span>) {
-            dir.<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
+        // Normalize and apply speed
+        if (dir.length() > 0) {
+            dir.normalize().multiply(this.speed);
         }
 
-        <span class="comment">// Update position</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(dir);
+        // Update position
+        this.position.add(dir);
     }
 
-    <span class="function">draw</span>(ctx) {
-        ctx.fillStyle = <span class="string">'#4fc3f7'</span>;
+    draw(ctx) {
+        ctx.fillStyle = '#4fc3f7';
         ctx.beginPath();
-        ctx.<span class="function">arc</span>(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y, <span class="number">20</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-        ctx.<span class="function">fill</span>();
+        ctx.arc(this.position.x, this.position.y, 20, 0, Math.PI * 2);
+        ctx.fill();
     }
 }</code></pre>
                 </div>
@@ -1307,76 +1654,76 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details data-demo-id="homingMissile" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Homing Missile Class</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">HomingMissile</span> {
-    <span class="keyword">constructor</span>(x, y, target) {
-        <span class="keyword">this</span>.position = <span class="keyword">new</span> <span class="function">Vector2D</span>(x, y);
-        <span class="keyword">this</span>.velocity = <span class="keyword">new</span> <span class="function">Vector2D</span>(<span class="number">0</span>, <span class="number">0</span>);
-        <span class="keyword">this</span>.target = target;
-        <span class="keyword">this</span>.speed = <span class="number">3</span>;
-        <span class="keyword">this</span>.turnRate = <span class="number">0.05</span>;  <span class="comment">// How quickly it can turn</span>
-        <span class="keyword">this</span>.rotation = <span class="number">0</span>;
-        <span class="keyword">this</span>.alive = <span class="keyword">true</span>;
-        <span class="keyword">this</span>.trail = [];  <span class="comment">// For visual effect</span>
+                    <pre><code class="language-javascript">class HomingMissile {
+    constructor(x, y, target) {
+        this.position = new Vector2D(x, y);
+        this.velocity = new Vector2D(0, 0);
+        this.target = target;
+        this.speed = 3;
+        this.turnRate = 0.05;  // How quickly it can turn
+        this.rotation = 0;
+        this.alive = true;
+        this.trail = [];  // For visual effect
     }
 
-    <span class="function">update</span>() {
-        <span class="comment">// Calculate direction to target</span>
-        <span class="keyword">const</span> toTarget = <span class="keyword">this</span>.target.position.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
+    update() {
+        // Calculate direction to target
+        const toTarget = this.target.position.subtract(this.position);
 
-        <span class="comment">// Normalize and apply speed (seeking behavior)</span>
-        <span class="keyword">const</span> desired = toTarget.<span class="function">copy</span>().<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
+        // Normalize and apply speed (seeking behavior)
+        const desired = toTarget.copy().normalize().multiply(this.speed);
 
-        <span class="comment">// Smooth steering (lerp toward desired velocity)</span>
-        <span class="keyword">this</span>.velocity.<span class="function">lerp</span>(desired, <span class="keyword">this</span>.turnRate);
+        // Smooth steering (lerp toward desired velocity)
+        this.velocity.lerp(desired, this.turnRate);
 
-        <span class="comment">// Update position</span>
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
+        // Update position
+        this.position.add(this.velocity);
 
-        <span class="comment">// Update rotation to face movement direction</span>
-        <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+        // Update rotation to face movement direction
+        this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
 
-        <span class="comment">// Add to trail for visual effect</span>
-        <span class="keyword">this</span>.trail.<span class="function">push</span>(<span class="keyword">this</span>.position.<span class="function">copy</span>());
-        <span class="keyword">if</span> (<span class="keyword">this</span>.trail.length > <span class="number">20</span>) <span class="keyword">this</span>.trail.<span class="function">shift</span>();
+        // Add to trail for visual effect
+        this.trail.push(this.position.copy());
+        if (this.trail.length > 20) this.trail.shift();
 
-        <span class="comment">// Check if hit target</span>
-        <span class="keyword">if</span> (<span class="keyword">this</span>.position.<span class="function">distance</span>(<span class="keyword">this</span>.target.position) < <span class="number">20</span>) {
-            <span class="keyword">this</span>.alive = <span class="keyword">false</span>;
-            <span class="comment">// Explosion effect here!</span>
+        // Check if hit target
+        if (this.position.distance(this.target.position) < 20) {
+            this.alive = false;
+            // Explosion effect here!
         }
     }
 
-    <span class="function">draw</span>(ctx) {
-        <span class="comment">// Draw trail</span>
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i < <span class="keyword">this</span>.trail.length; i++) {
-            <span class="keyword">const</span> alpha = i / <span class="keyword">this</span>.trail.length;
-            ctx.fillStyle = <span class="string">`rgba(255, 165, 0, <span class="keyword">${alpha * 0.5}</span>)`</span>;
+    draw(ctx) {
+        // Draw trail
+        for (let i = 0; i < this.trail.length; i++) {
+            const alpha = i / this.trail.length;
+            ctx.fillStyle = `rgba(255, 165, 0, ${alpha * 0.5})`;
             ctx.beginPath();
-            ctx.<span class="function">arc</span>(<span class="keyword">this</span>.trail[i].x, <span class="keyword">this</span>.trail[i].y, <span class="number">3</span>, <span class="number">0</span>, Math.PI * <span class="number">2</span>);
-            ctx.<span class="function">fill</span>();
+            ctx.arc(this.trail[i].x, this.trail[i].y, 3, 0, Math.PI * 2);
+            ctx.fill();
         }
 
-        <span class="comment">// Draw missile body (rotated)</span>
+        // Draw missile body (rotated)
         ctx.save();
-        ctx.translate(<span class="keyword">this</span>.position.x, <span class="keyword">this</span>.position.y);
-        ctx.rotate(<span class="keyword">this</span>.rotation);
+        ctx.translate(this.position.x, this.position.y);
+        ctx.rotate(this.rotation);
 
-        <span class="comment">// Missile body</span>
-        ctx.fillStyle = <span class="string">'#ef5350'</span>;
-        ctx.fillRect(-<span class="number">10</span>, -<span class="number">4</span>, <span class="number">20</span>, <span class="number">8</span>);
+        // Missile body
+        ctx.fillStyle = '#ef5350';
+        ctx.fillRect(-10, -4, 20, 8);
 
-        <span class="comment">// Missile nose (pointy end)</span>
+        // Missile nose (pointy end)
         ctx.beginPath();
-        ctx.moveTo(<span class="number">10</span>, <span class="number">0</span>);
-        ctx.lineTo(<span class="number">15</span>, -<span class="number">4</span>);
-        ctx.lineTo(<span class="number">15</span>, <span class="number">4</span>);
+        ctx.moveTo(10, 0);
+        ctx.lineTo(15, -4);
+        ctx.lineTo(15, 4);
         ctx.closePath();
-        ctx.<span class="function">fill</span>();
+        ctx.fill();
 
-        <span class="comment">// Fins</span>
-        ctx.fillStyle = <span class="string">'#c62828'</span>;
-        ctx.fillRect(-<span class="number">8</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">4</span>);
-        ctx.fillRect(-<span class="number">8</span>, -<span class="number">8</span>, <span class="number">6</span>, <span class="number">4</span>);
+        // Fins
+        ctx.fillStyle = '#c62828';
+        ctx.fillRect(-8, 4, 6, 4);
+        ctx.fillRect(-8, -8, 6, 4);
 
         ctx.restore();
     }
@@ -1387,62 +1734,62 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Click to see: Variations & Advanced Techniques</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// VARIATION 1: Predictive Targeting (leads the target)</span>
-<span class="keyword">class</span> <span class="function">PredictiveMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
-    <span class="function">update</span>() {
-        <span class="comment">// Predict where target will be</span>
-        <span class="keyword">const</span> prediction = <span class="keyword">this</span>.target.position.<span class="function">copy</span>()
-            .<span class="function">add</span>(<span class="keyword">this</span>.target.velocity.<span class="function">copy</span>().<span class="function">multiply</span>(<span class="number">10</span>));
+                    <pre><code class="language-javascript">// VARIATION 1: Predictive Targeting (leads the target)
+class PredictiveMissile extends HomingMissile {
+    update() {
+        // Predict where target will be
+        const prediction = this.target.position.copy()
+            .add(this.target.velocity.copy().multiply(10));
 
-        <span class="comment">// Aim for predicted position instead</span>
-        <span class="keyword">const</span> toTarget = prediction.<span class="function">subtract</span>(<span class="keyword">this</span>.position);
-        <span class="keyword">const</span> desired = toTarget.<span class="function">copy</span>().<span class="function">normalize</span>().<span class="function">multiply</span>(<span class="keyword">this</span>.speed);
-        <span class="keyword">this</span>.velocity.<span class="function">lerp</span>(desired, <span class="keyword">this</span>.turnRate);
-        <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
-        <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+        // Aim for predicted position instead
+        const toTarget = prediction.subtract(this.position);
+        const desired = toTarget.copy().normalize().multiply(this.speed);
+        this.velocity.lerp(desired, this.turnRate);
+        this.position.add(this.velocity);
+        this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
     }
 }
 
-<span class="comment">// VARIATION 2: Limited Fuel Missile</span>
-<span class="keyword">class</span> <span class="function">FuelMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
-    <span class="keyword">constructor</span>(x, y, target) {
-        <span class="keyword">super</span>(x, y, target);
-        <span class="keyword">this</span>.fuel = <span class="number">100</span>;
+// VARIATION 2: Limited Fuel Missile
+class FuelMissile extends HomingMissile {
+    constructor(x, y, target) {
+        super(x, y, target);
+        this.fuel = 100;
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">this</span>.fuel -= <span class="number">1</span>;
+    update() {
+        this.fuel -= 1;
 
-        <span class="keyword">if</span> (<span class="keyword">this</span>.fuel > <span class="number">0</span>) {
-            <span class="comment">// Normal homing behavior</span>
-            <span class="keyword">super</span>.<span class="function">update</span>();
-        } <span class="keyword">else</span> {
-            <span class="comment">// Out of fuel - ballistic trajectory (gravity)</span>
-            <span class="keyword">this</span>.velocity.y += <span class="number">0.2</span>;  <span class="comment">// Gravity</span>
-            <span class="keyword">this</span>.position.<span class="function">add</span>(<span class="keyword">this</span>.velocity);
-            <span class="keyword">this</span>.rotation = Math.<span class="function">atan2</span>(<span class="keyword">this</span>.velocity.y, <span class="keyword">this</span>.velocity.x);
+        if (this.fuel > 0) {
+            // Normal homing behavior
+            super.update();
+        } else {
+            // Out of fuel - ballistic trajectory (gravity)
+            this.velocity.y += 0.2;  // Gravity
+            this.position.add(this.velocity);
+            this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
         }
     }
 }
 
-<span class="comment">// VARIATION 3: Spiral/Corkscrew Missile</span>
-<span class="keyword">class</span> <span class="function">SpiralMissile</span> <span class="keyword">extends</span> <span class="function">HomingMissile</span> {
-    <span class="keyword">constructor</span>(x, y, target) {
-        <span class="keyword">super</span>(x, y, target);
-        <span class="keyword">this</span>.spiralAngle = <span class="number">0</span>;
-        <span class="keyword">this</span>.spiralRadius = <span class="number">20</span>;
+// VARIATION 3: Spiral/Corkscrew Missile
+class SpiralMissile extends HomingMissile {
+    constructor(x, y, target) {
+        super(x, y, target);
+        this.spiralAngle = 0;
+        this.spiralRadius = 20;
     }
 
-    <span class="function">update</span>() {
-        <span class="keyword">super</span>.<span class="function">update</span>();
+    update() {
+        super.update();
 
-        <span class="comment">// Add spiral offset perpendicular to velocity</span>
-        <span class="keyword">this</span>.spiralAngle += <span class="number">0.2</span>;
-        <span class="keyword">const</span> perpendicular = <span class="keyword">this</span>.velocity.<span class="function">copy</span>().<span class="function">perpendicular</span>().<span class="function">normalize</span>();
-        <span class="keyword">const</span> offset = perpendicular.<span class="function">multiply</span>(
-            Math.<span class="function">sin</span>(<span class="keyword">this</span>.spiralAngle) * <span class="keyword">this</span>.spiralRadius
+        // Add spiral offset perpendicular to velocity
+        this.spiralAngle += 0.2;
+        const perpendicular = this.velocity.copy().perpendicular().normalize();
+        const offset = perpendicular.multiply(
+            Math.sin(this.spiralAngle) * this.spiralRadius
         );
-        <span class="keyword">this</span>.position.<span class="function">add</span>(offset);
+        this.position.add(offset);
     }
 }</code></pre>
                 </div>
@@ -1499,33 +1846,33 @@ enemy.rotation = Math.<span class="function">atan2</span>(direction.y, direction
             <details>
                 <summary>📝 Click to see: Matrix2D Class</summary>
                 <div class="code-container">
-                    <pre><code><span class="keyword">class</span> <span class="function">Matrix2D</span> {
-    <span class="keyword">constructor</span>() {
-        <span class="comment">// Identity matrix (does nothing)</span>
-        <span class="keyword">this</span>.a = <span class="number">1</span>; <span class="keyword">this</span>.b = <span class="number">0</span>; <span class="keyword">this</span>.tx = <span class="number">0</span>;
-        <span class="keyword">this</span>.c = <span class="number">0</span>; <span class="keyword">this</span>.d = <span class="number">1</span>; <span class="keyword">this</span>.ty = <span class="number">0</span>;
+                    <pre><code class="language-javascript">class Matrix2D {
+    constructor() {
+        // Identity matrix (does nothing)
+        this.a = 1; this.b = 0; this.tx = 0;
+        this.c = 0; this.d = 1; this.ty = 0;
     }
 
-    <span class="function">rotate</span>(angle) {
-        <span class="keyword">const</span> cos = Math.<span class="function">cos</span>(angle);
-        <span class="keyword">const</span> sin = Math.<span class="function">sin</span>(angle);
-        <span class="comment">// Apply rotation transformation</span>
-        <span class="comment">// ... matrix math here ...</span>
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    rotate(angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        // Apply rotation transformation
+        // ... matrix math here ...
+        return this;
     }
 
-    <span class="function">scale</span>(sx, sy) {
-        <span class="keyword">this</span>.a *= sx;
-        <span class="keyword">this</span>.b *= sx;
-        <span class="keyword">this</span>.c *= sy;
-        <span class="keyword">this</span>.d *= sy;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    scale(sx, sy) {
+        this.a *= sx;
+        this.b *= sx;
+        this.c *= sy;
+        this.d *= sy;
+        return this;
     }
 
-    <span class="function">translate</span>(tx, ty) {
-        <span class="keyword">this</span>.tx += tx;
-        <span class="keyword">this</span>.ty += ty;
-        <span class="keyword">return</span> <span class="keyword">this</span>;
+    translate(tx, ty) {
+        this.tx += tx;
+        this.ty += ty;
+        return this;
     }
 }</code></pre>
                 </div>

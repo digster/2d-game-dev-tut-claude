@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulation - Game Dev Math Guide</title>
     <link rel="stylesheet" href="shared/styles.css">
+    <!-- Prism.js Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -66,32 +70,32 @@
             <details>
                 <summary>📝 Click to see: Fluid Grid Setup</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Fluid simulation grid</span>
-<span class="keyword">class</span> <span class="function">FluidGrid</span> {
-    <span class="keyword">constructor</span>(width, height, scale) {
-        <span class="keyword">this</span>.cols = Math.<span class="function">floor</span>(width / scale);
-        <span class="keyword">this</span>.rows = Math.<span class="function">floor</span>(height / scale);
-        <span class="keyword">this</span>.scale = scale;
+                    <pre><code class="language-javascript">// Fluid simulation grid
+class FluidGrid {
+    constructor(width, height, scale) {
+        this.cols = Math.floor(width / scale);
+        this.rows = Math.floor(height / scale);
+        this.scale = scale;
 
-        <span class="comment">// Create grids for velocity (in X and Y directions)</span>
-        <span class="keyword">this</span>.vx = <span class="keyword">this</span>.<span class="function">createGrid</span>();
-        <span class="keyword">this</span>.vy = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        // Create grids for velocity (in X and Y directions)
+        this.vx = this.createGrid();
+        this.vy = this.createGrid();
 
-        <span class="comment">// Previous velocity (for stability)</span>
-        <span class="keyword">this</span>.vx0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
-        <span class="keyword">this</span>.vy0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        // Previous velocity (for stability)
+        this.vx0 = this.createGrid();
+        this.vy0 = this.createGrid();
 
-        <span class="comment">// Density (for visualization - like dye in water)</span>
-        <span class="keyword">this</span>.density = <span class="keyword">this</span>.<span class="function">createGrid</span>();
-        <span class="keyword">this</span>.density0 = <span class="keyword">this</span>.<span class="function">createGrid</span>();
+        // Density (for visualization - like dye in water)
+        this.density = this.createGrid();
+        this.density0 = this.createGrid();
     }
 
-    <span class="function">createGrid</span>() {
-        <span class="keyword">const</span> grid = [];
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.rows; i++) {
-            grid[i] = <span class="keyword">new</span> <span class="function">Array</span>(<span class="keyword">this</span>.cols).<span class="function">fill</span>(<span class="number">0</span>);
+    createGrid() {
+        const grid = [];
+        for (let i = 0; i &lt; this.rows; i++) {
+            grid[i] = new Array(this.cols).fill(0);
         }
-        <span class="keyword">return</span> grid;
+        return grid;
     }
 }</code></pre>
                 </div>
@@ -100,20 +104,20 @@
             <details>
                 <summary>📝 Click to see: Diffusion (Spreading)</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Diffusion spreads values to neighbors
-// Like heat spreading through metal or ink dispersing in water</span>
-<span class="function">diffuse</span>(x, x0, diffusion, dt) {
-    <span class="keyword">const</span> a = dt * diffusion * <span class="keyword">this</span>.cols * <span class="keyword">this</span>.rows;
+                    <pre><code class="language-javascript">// Diffusion spreads values to neighbors
+// Like heat spreading through metal or ink dispersing in water
+diffuse(x, x0, diffusion, dt) {
+    const a = dt * diffusion * this.cols * this.rows;
 
-    <span class="comment">// Gauss-Seidel iteration for stability</span>
-    <span class="keyword">for</span> (<span class="keyword">let</span> iter = <span class="number">0</span>; iter &lt; <span class="number">20</span>; iter++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
-                <span class="comment">// Average with neighbors, weighted by diffusion rate</span>
+    // Gauss-Seidel iteration for stability
+    for (let iter = 0; iter &lt; 20; iter++) {
+        for (let i = 1; i &lt; this.rows - 1; i++) {
+            for (let j = 1; j &lt; this.cols - 1; j++) {
+                // Average with neighbors, weighted by diffusion rate
                 x[i][j] = (x0[i][j] + a * (
-                    x[i - <span class="number">1</span>][j] + x[i + <span class="number">1</span>][j] +
-                    x[i][j - <span class="number">1</span>] + x[i][j + <span class="number">1</span>]
-                )) / (<span class="number">1</span> + <span class="number">4</span> * a);
+                    x[i - 1][j] + x[i + 1][j] +
+                    x[i][j - 1] + x[i][j + 1]
+                )) / (1 + 4 * a);
             }
         }
     }
@@ -129,33 +133,33 @@
             <details>
                 <summary>📝 Click to see: Advection (Flow)</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Advection moves values along the velocity field
-// Like a river carrying leaves downstream</span>
-<span class="function">advect</span>(d, d0, vx, vy, dt) {
-    <span class="keyword">const</span> dt0 = dt * <span class="keyword">this</span>.cols;
+                    <pre><code class="language-javascript">// Advection moves values along the velocity field
+// Like a river carrying leaves downstream
+advect(d, d0, vx, vy, dt) {
+    const dt0 = dt * this.cols;
 
-    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
-            <span class="comment">// Trace backwards along velocity</span>
-            <span class="keyword">let</span> x = j - dt0 * vx[i][j];
-            <span class="keyword">let</span> y = i - dt0 * vy[i][j];
+    for (let i = 1; i &lt; this.rows - 1; i++) {
+        for (let j = 1; j &lt; this.cols - 1; j++) {
+            // Trace backwards along velocity
+            let x = j - dt0 * vx[i][j];
+            let y = i - dt0 * vy[i][j];
 
-            <span class="comment">// Clamp to grid boundaries</span>
-            x = Math.<span class="function">max</span>(<span class="number">0.5</span>, Math.<span class="function">min</span>(<span class="keyword">this</span>.cols - <span class="number">1.5</span>, x));
-            y = Math.<span class="function">max</span>(<span class="number">0.5</span>, Math.<span class="function">min</span>(<span class="keyword">this</span>.rows - <span class="number">1.5</span>, y));
+            // Clamp to grid boundaries
+            x = Math.max(0.5, Math.min(this.cols - 1.5, x));
+            y = Math.max(0.5, Math.min(this.rows - 1.5, y));
 
-            <span class="comment">// Interpolate between grid cells</span>
-            <span class="keyword">const</span> i0 = Math.<span class="function">floor</span>(y);
-            <span class="keyword">const</span> i1 = i0 + <span class="number">1</span>;
-            <span class="keyword">const</span> j0 = Math.<span class="function">floor</span>(x);
-            <span class="keyword">const</span> j1 = j0 + <span class="number">1</span>;
+            // Interpolate between grid cells
+            const i0 = Math.floor(y);
+            const i1 = i0 + 1;
+            const j0 = Math.floor(x);
+            const j1 = j0 + 1;
 
-            <span class="keyword">const</span> s1 = x - j0;
-            <span class="keyword">const</span> s0 = <span class="number">1</span> - s1;
-            <span class="keyword">const</span> t1 = y - i0;
-            <span class="keyword">const</span> t0 = <span class="number">1</span> - t1;
+            const s1 = x - j0;
+            const s0 = 1 - s1;
+            const t1 = y - i0;
+            const t0 = 1 - t1;
 
-            <span class="comment">// Bilinear interpolation</span>
+            // Bilinear interpolation
             d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i1][j0]) +
                       s1 * (t0 * d0[i0][j1] + t1 * d0[i1][j1]);
         }
@@ -172,37 +176,37 @@
             <details>
                 <summary>📝 Click to see: Pressure & Incompressibility</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Project removes divergence (ensures fluid is incompressible)
-// This is what makes fluid behave like liquid, not gas</span>
-<span class="function">project</span>(vx, vy, p, div) {
-    <span class="comment">// Calculate divergence (how much fluid is leaving each cell)</span>
-    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
-            div[i][j] = -<span class="number">0.5</span> * (
-                vx[i][j + <span class="number">1</span>] - vx[i][j - <span class="number">1</span>] +
-                vy[i + <span class="number">1</span>][j] - vy[i - <span class="number">1</span>][j]
-            ) / <span class="keyword">this</span>.cols;
-            p[i][j] = <span class="number">0</span>;
+                    <pre><code class="language-javascript">// Project removes divergence (ensures fluid is incompressible)
+// This is what makes fluid behave like liquid, not gas
+project(vx, vy, p, div) {
+    // Calculate divergence (how much fluid is leaving each cell)
+    for (let i = 1; i &lt; this.rows - 1; i++) {
+        for (let j = 1; j &lt; this.cols - 1; j++) {
+            div[i][j] = -0.5 * (
+                vx[i][j + 1] - vx[i][j - 1] +
+                vy[i + 1][j] - vy[i - 1][j]
+            ) / this.cols;
+            p[i][j] = 0;
         }
     }
 
-    <span class="comment">// Solve for pressure using iterative method</span>
-    <span class="keyword">for</span> (<span class="keyword">let</span> iter = <span class="number">0</span>; iter &lt; <span class="number">20</span>; iter++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
-            <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
+    // Solve for pressure using iterative method
+    for (let iter = 0; iter &lt; 20; iter++) {
+        for (let i = 1; i &lt; this.rows - 1; i++) {
+            for (let j = 1; j &lt; this.cols - 1; j++) {
                 p[i][j] = (div[i][j] +
-                    p[i - <span class="number">1</span>][j] + p[i + <span class="number">1</span>][j] +
-                    p[i][j - <span class="number">1</span>] + p[i][j + <span class="number">1</span>]
-                ) / <span class="number">4</span>;
+                    p[i - 1][j] + p[i + 1][j] +
+                    p[i][j - 1] + p[i][j + 1]
+                ) / 4;
             }
         }
     }
 
-    <span class="comment">// Subtract pressure gradient from velocity</span>
-    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="keyword">this</span>.rows - <span class="number">1</span>; i++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">1</span>; j &lt; <span class="keyword">this</span>.cols - <span class="number">1</span>; j++) {
-            vx[i][j] -= <span class="number">0.5</span> * <span class="keyword">this</span>.cols * (p[i][j + <span class="number">1</span>] - p[i][j - <span class="number">1</span>]);
-            vy[i][j] -= <span class="number">0.5</span> * <span class="keyword">this</span>.cols * (p[i + <span class="number">1</span>][j] - p[i - <span class="number">1</span>][j]);
+    // Subtract pressure gradient from velocity
+    for (let i = 1; i &lt; this.rows - 1; i++) {
+        for (let j = 1; j &lt; this.cols - 1; j++) {
+            vx[i][j] -= 0.5 * this.cols * (p[i][j + 1] - p[i][j - 1]);
+            vy[i][j] -= 0.5 * this.cols * (p[i + 1][j] - p[i - 1][j]);
         }
     }
 }</code></pre>
@@ -217,43 +221,254 @@
             <details data-demo-id="fluid" data-deps="clearCanvas">
                 <summary>📝 Click to see: Complete Simulation Step</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Main simulation step - call this every frame</span>
-<span class="function">step</span>(dt = <span class="number">0.016</span>) {
-    <span class="keyword">const</span> visc = <span class="number">0.0001</span>;  <span class="comment">// Viscosity (thickness of fluid)</span>
-    <span class="keyword">const</span> diff = <span class="number">0.0001</span>;  <span class="comment">// Diffusion rate</span>
+                    <pre><code class="language-javascript">// Main simulation step - call this every frame
+step(dt = 0.016) {
+    const visc = 0.0001;  // Viscosity (thickness of fluid)
+    const diff = 0.0001;  // Diffusion rate
 
-    <span class="comment">// 1. Diffuse velocity (friction between fluid layers)</span>
-    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vx0, visc, dt);
-    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.vy, <span class="keyword">this</span>.vy0, visc, dt);
+    // 1. Diffuse velocity (friction between fluid layers)
+    this.diffuse(this.vx, this.vx0, visc, dt);
+    this.diffuse(this.vy, this.vy0, visc, dt);
 
-    <span class="comment">// 2. Project (fix velocity to be incompressible)</span>
-    <span class="keyword">this</span>.<span class="function">project</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0);
+    // 2. Project (fix velocity to be incompressible)
+    this.project(this.vx, this.vy, this.vx0, this.vy0);
 
-    <span class="comment">// 3. Advect velocity (velocity moves itself)</span>
-    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0, dt);
-    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.vy, <span class="keyword">this</span>.vy0, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0, dt);
+    // 3. Advect velocity (velocity moves itself)
+    this.advect(this.vx, this.vx0, this.vx0, this.vy0, dt);
+    this.advect(this.vy, this.vy0, this.vx0, this.vy0, dt);
 
-    <span class="comment">// 4. Project again (ensure still incompressible)</span>
-    <span class="keyword">this</span>.<span class="function">project</span>(<span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, <span class="keyword">this</span>.vx0, <span class="keyword">this</span>.vy0);
+    // 4. Project again (ensure still incompressible)
+    this.project(this.vx, this.vy, this.vx0, this.vy0);
 
-    <span class="comment">// 5. Diffuse density (dye spreads out)</span>
-    <span class="keyword">this</span>.<span class="function">diffuse</span>(<span class="keyword">this</span>.density, <span class="keyword">this</span>.density0, diff, dt);
+    // 5. Diffuse density (dye spreads out)
+    this.diffuse(this.density, this.density0, diff, dt);
 
-    <span class="comment">// 6. Advect density (velocity carries dye along)</span>
-    <span class="keyword">this</span>.<span class="function">advect</span>(<span class="keyword">this</span>.density, <span class="keyword">this</span>.density0, <span class="keyword">this</span>.vx, <span class="keyword">this</span>.vy, dt);
+    // 6. Advect density (velocity carries dye along)
+    this.advect(this.density, this.density0, this.vx, this.vy, dt);
 
-    <span class="comment">// 7. Fade density over time (optional, for visual effect)</span>
-    <span class="keyword">this</span>.<span class="function">fadeDensity</span>(<span class="number">0.99</span>);
+    // 7. Fade density over time (optional, for visual effect)
+    this.fadeDensity(0.99);
 }
 
-<span class="function">fadeDensity</span>(fadeRate) {
-    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.rows; i++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; <span class="keyword">this</span>.cols; j++) {
-            <span class="keyword">this</span>.density[i][j] *= fadeRate;
+fadeDensity(fadeRate) {
+    for (let i = 0; i &lt; this.rows; i++) {
+        for (let j = 0; j &lt; this.cols; j++) {
+            this.density[i][j] *= fadeRate;
         }
     }
 }</code></pre>
                 </div>
+            </details>
+
+            <details class="code-block">
+                <summary>📖 Complete Code: Fluid Dynamics Simulation</summary>
+                <pre><code class="language-javascript">// ===================================
+// FLUID DYNAMICS - Complete Implementation (Navier-Stokes Based)
+// ===================================
+
+class FluidGrid {
+    constructor(width, height, scale) {
+        this.cols = Math.floor(width / scale);
+        this.rows = Math.floor(height / scale);
+        this.scale = scale;
+
+        // Velocity fields (current and previous)
+        this.vx = this.createGrid();
+        this.vy = this.createGrid();
+        this.vx0 = this.createGrid();
+        this.vy0 = this.createGrid();
+
+        // Density field (for visualization)
+        this.density = this.createGrid();
+        this.density0 = this.createGrid();
+
+        // Pressure and divergence (for projection)
+        this.p = this.createGrid();
+        this.div = this.createGrid();
+
+        // Settings
+        this.visc = 0.0001;     // Viscosity
+        this.diff = 0.0001;     // Diffusion rate
+        this.fadeRate = 0.99;   // How fast density fades
+    }
+
+    createGrid() {
+        const grid = [];
+        for (let i = 0; i < this.rows; i++) {
+            grid[i] = new Array(this.cols).fill(0);
+        }
+        return grid;
+    }
+
+    // Diffuse: Spreads values to neighboring cells (heat/viscosity)
+    diffuse(x, x0, diffusion, dt) {
+        const a = dt * diffusion * this.cols * this.rows;
+
+        for (let iter = 0; iter < 20; iter++) {  // Gauss-Seidel iterations
+            for (let i = 1; i < this.rows - 1; i++) {
+                for (let j = 1; j < this.cols - 1; j++) {
+                    x[i][j] = (x0[i][j] + a * (
+                        x[i - 1][j] + x[i + 1][j] +
+                        x[i][j - 1] + x[i][j + 1]
+                    )) / (1 + 4 * a);
+                }
+            }
+            this.setBoundary(0, x);
+        }
+    }
+
+    // Advect: Moves values along velocity field
+    advect(d, d0, vx, vy, dt) {
+        const dt0 = dt * this.cols;
+
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                // Trace particle backwards in time
+                let x = j - dt0 * vx[i][j];
+                let y = i - dt0 * vy[i][j];
+
+                // Clamp to grid bounds
+                x = Math.max(0.5, Math.min(this.cols - 1.5, x));
+                y = Math.max(0.5, Math.min(this.rows - 1.5, y));
+
+                // Bilinear interpolation
+                const i0 = Math.floor(y), i1 = i0 + 1;
+                const j0 = Math.floor(x), j1 = j0 + 1;
+                const s1 = x - j0, s0 = 1 - s1;
+                const t1 = y - i0, t0 = 1 - t1;
+
+                d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i1][j0]) +
+                          s1 * (t0 * d0[i0][j1] + t1 * d0[i1][j1]);
+            }
+        }
+        this.setBoundary(0, d);
+    }
+
+    // Project: Makes velocity field divergence-free (incompressible)
+    project(vx, vy, p, div) {
+        // Compute divergence
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                div[i][j] = -0.5 * (
+                    vx[i][j + 1] - vx[i][j - 1] +
+                    vy[i + 1][j] - vy[i - 1][j]
+                ) / this.cols;
+                p[i][j] = 0;
+            }
+        }
+        this.setBoundary(0, div);
+        this.setBoundary(0, p);
+
+        // Solve for pressure (Poisson equation)
+        for (let iter = 0; iter < 20; iter++) {
+            for (let i = 1; i < this.rows - 1; i++) {
+                for (let j = 1; j < this.cols - 1; j++) {
+                    p[i][j] = (div[i][j] +
+                        p[i - 1][j] + p[i + 1][j] +
+                        p[i][j - 1] + p[i][j + 1]) / 4;
+                }
+            }
+            this.setBoundary(0, p);
+        }
+
+        // Subtract pressure gradient from velocity
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                vx[i][j] -= 0.5 * this.cols * (p[i][j + 1] - p[i][j - 1]);
+                vy[i][j] -= 0.5 * this.cols * (p[i + 1][j] - p[i - 1][j]);
+            }
+        }
+        this.setBoundary(1, vx);
+        this.setBoundary(2, vy);
+    }
+
+    // Handle boundary conditions
+    setBoundary(b, x) {
+        for (let i = 1; i < this.rows - 1; i++) {
+            x[i][0] = b === 1 ? -x[i][1] : x[i][1];
+            x[i][this.cols - 1] = b === 1 ? -x[i][this.cols - 2] : x[i][this.cols - 2];
+        }
+        for (let j = 1; j < this.cols - 1; j++) {
+            x[0][j] = b === 2 ? -x[1][j] : x[1][j];
+            x[this.rows - 1][j] = b === 2 ? -x[this.rows - 2][j] : x[this.rows - 2][j];
+        }
+    }
+
+    // Main simulation step
+    step(dt = 0.016) {
+        // Swap and diffuse velocity
+        [this.vx0, this.vx] = [this.vx, this.vx0];
+        [this.vy0, this.vy] = [this.vy, this.vy0];
+        this.diffuse(this.vx, this.vx0, this.visc, dt);
+        this.diffuse(this.vy, this.vy0, this.visc, dt);
+
+        // Project velocity (make incompressible)
+        this.project(this.vx, this.vy, this.vx0, this.vy0);
+
+        // Swap and advect velocity
+        [this.vx0, this.vx] = [this.vx, this.vx0];
+        [this.vy0, this.vy] = [this.vy, this.vy0];
+        this.advect(this.vx, this.vx0, this.vx0, this.vy0, dt);
+        this.advect(this.vy, this.vy0, this.vx0, this.vy0, dt);
+
+        // Project again
+        this.project(this.vx, this.vy, this.vx0, this.vy0);
+
+        // Diffuse and advect density
+        [this.density0, this.density] = [this.density, this.density0];
+        this.diffuse(this.density, this.density0, this.diff, dt);
+        [this.density0, this.density] = [this.density, this.density0];
+        this.advect(this.density, this.density0, this.vx, this.vy, dt);
+
+        // Fade density over time
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                this.density[i][j] *= this.fadeRate;
+            }
+        }
+    }
+
+    // Add density and velocity at position
+    addDensity(x, y, amount) {
+        const i = Math.floor(y / this.scale);
+        const j = Math.floor(x / this.scale);
+        if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) {
+            this.density[i][j] += amount;
+        }
+    }
+
+    addVelocity(x, y, vx, vy) {
+        const i = Math.floor(y / this.scale);
+        const j = Math.floor(x / this.scale);
+        if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) {
+            this.vx[i][j] += vx;
+            this.vy[i][j] += vy;
+        }
+    }
+}
+
+// Initialize and run
+const fluid = new FluidGrid(canvas.width, canvas.height, 8);
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const dx = e.movementX;
+    const dy = e.movementY;
+
+    fluid.addDensity(x, y, 100);
+    fluid.addVelocity(x, y, dx * 5, dy * 5);
+});
+
+function animate() {
+    fluid.step(0.016);
+    renderFluid(ctx, fluid);
+    requestAnimationFrame(animate);
+}
+
+animate();</code></pre>
             </details>
 
             <h3>Interactive Demo: Fluid Simulation</h3>
@@ -405,31 +620,31 @@
                 <details data-demo-id="buoyancy" data-deps="vector2d,clearCanvas,randomFloat">
                     <summary>📝 Click to see: Buoyancy Force Calculation</summary>
                     <div class="code-container">
-                        <pre><code><span class="comment">// Apply buoyancy force to objects in water</span>
-<span class="keyword">function</span> <span class="function">applyBuoyancy</span>(object, waterLevel) {
-    <span class="comment">// Calculate how much of object is submerged</span>
-    <span class="keyword">const</span> objectBottom = object.y + object.height / <span class="number">2</span>;
-    <span class="keyword">const</span> objectTop = object.y - object.height / <span class="number">2</span>;
+                        <pre><code class="language-javascript">// Apply buoyancy force to objects in water
+function applyBuoyancy(object, waterLevel) {
+    // Calculate how much of object is submerged
+    const objectBottom = object.y + object.height / 2;
+    const objectTop = object.y - object.height / 2;
 
-    <span class="keyword">if</span> (objectBottom &gt; waterLevel) {
-        <span class="comment">// Calculate submerged percentage (0 to 1)</span>
-        <span class="keyword">let</span> submergedHeight = objectBottom - waterLevel;
-        <span class="keyword">if</span> (objectTop &lt; waterLevel) {
+    if (objectBottom &gt; waterLevel) {
+        // Calculate submerged percentage (0 to 1)
+        let submergedHeight = objectBottom - waterLevel;
+        if (objectTop &lt; waterLevel) {
             submergedHeight = object.height;
         }
-        <span class="keyword">const</span> submergedPercent = submergedHeight / object.height;
+        const submergedPercent = submergedHeight / object.height;
 
-        <span class="comment">// Buoyancy force = (water density - object density) * submerged volume * gravity</span>
-        <span class="comment">// Simplified: use density ratio for force calculation</span>
-        <span class="keyword">const</span> waterDensity = <span class="number">1.0</span>;
-        <span class="keyword">const</span> buoyancyForce = (waterDensity - object.density) * submergedPercent * <span class="number">0.5</span>;
+        // Buoyancy force = (water density - object density) * submerged volume * gravity
+        // Simplified: use density ratio for force calculation
+        const waterDensity = 1.0;
+        const buoyancyForce = (waterDensity - object.density) * submergedPercent * 0.5;
 
-        <span class="comment">// Apply upward buoyancy force</span>
+        // Apply upward buoyancy force
         object.vy += buoyancyForce;
 
-        <span class="comment">// Water drag (resistance)</span>
-        object.vx *= <span class="number">0.95</span>;
-        object.vy *= <span class="number">0.98</span>;
+        // Water drag (resistance)
+        object.vx *= 0.95;
+        object.vy *= 0.98;
     }
 }</code></pre>
                     </div>
@@ -464,40 +679,40 @@
                 <details data-demo-id="risingWater" data-deps="vector2d,clearCanvas">
                     <summary>📝 Click to see: Rising Water & Player Movement Code</summary>
                     <div class="code-container">
-                        <pre><code><span class="comment">// Rising water challenge mechanics</span>
-<span class="keyword">let</span> waterLevel = canvas.height;
-<span class="keyword">let</span> waterRising = <span class="keyword">false</span>;
-<span class="keyword">const</span> waterRiseSpeed = <span class="number">0.5</span>;
+                        <pre><code class="language-javascript">// Rising water challenge mechanics
+let waterLevel = canvas.height;
+let waterRising = false;
+const waterRiseSpeed = 0.5;
 
-<span class="comment">// Update water level</span>
-<span class="keyword">function</span> <span class="function">updateWater</span>() {
-    <span class="keyword">if</span> (waterRising &amp;&amp; waterLevel &gt; <span class="number">0</span>) {
-        waterLevel -= waterRiseSpeed; <span class="comment">// Water rises (Y decreases upward)</span>
+// Update water level
+function updateWater() {
+    if (waterRising &amp;&amp; waterLevel &gt; 0) {
+        waterLevel -= waterRiseSpeed; // Water rises (Y decreases upward)
     }
 
-    <span class="comment">// Check if player is caught by water</span>
-    <span class="keyword">if</span> (player.y &gt;= waterLevel) {
-        <span class="comment">// Game over - player drowns!</span>
-        gameOver = <span class="keyword">true</span>;
+    // Check if player is caught by water
+    if (player.y &gt;= waterLevel) {
+        // Game over - player drowns!
+        gameOver = true;
     }
 }
 
-<span class="comment">// Player movement in water</span>
-<span class="keyword">function</span> <span class="function">updatePlayer</span>() {
-    <span class="comment">// Apply gravity</span>
+// Player movement in water
+function updatePlayer() {
+    // Apply gravity
     player.vy += gravity;
 
-    <span class="comment">// Check if player is in water</span>
-    <span class="keyword">if</span> (player.y + player.height / <span class="number">2</span> &gt; waterLevel) {
-        <span class="comment">// Reduce speed in water (water resistance)</span>
-        player.vx *= <span class="number">0.8</span>;
-        player.vy *= <span class="number">0.8</span>;
+    // Check if player is in water
+    if (player.y + player.height / 2 &gt; waterLevel) {
+        // Reduce speed in water (water resistance)
+        player.vx *= 0.8;
+        player.vy *= 0.8;
 
-        <span class="comment">// Apply buoyancy (slight upward force)</span>
-        player.vy -= <span class="number">0.3</span>;
+        // Apply buoyancy (slight upward force)
+        player.vy -= 0.3;
     }
 
-    <span class="comment">// Apply velocity</span>
+    // Apply velocity
     player.x += player.vx;
     player.y += player.vy;
 }</code></pre>
@@ -531,50 +746,50 @@
                 <details data-demo-id="sph" data-deps="vector2d,clearCanvas,randomFloat">
                     <summary>📝 Click to see: SPH Particle Interaction Code</summary>
                     <div class="code-container">
-                        <pre><code><span class="comment">// SPH - Smoothed Particle Hydrodynamics</span>
-<span class="keyword">const</span> smoothingRadius = <span class="number">30</span>; <span class="comment">// How far particles interact</span>
-<span class="keyword">const</span> restDensity = <span class="number">1.0</span>;    <span class="comment">// Target density (how tightly packed)</span>
-<span class="keyword">const</span> stiffness = <span class="number">0.1</span>;      <span class="comment">// How strongly particles push apart</span>
+                        <pre><code class="language-javascript">// SPH - Smoothed Particle Hydrodynamics
+const smoothingRadius = 30; // How far particles interact
+const restDensity = 1.0;    // Target density (how tightly packed)
+const stiffness = 0.1;      // How strongly particles push apart
 
-<span class="comment">// Update each particle</span>
-<span class="keyword">function</span> <span class="function">updateSPHParticles</span>() {
-    particles.<span class="function">forEach</span>(p =&gt; {
-        <span class="comment">// Find nearby particles</span>
-        <span class="keyword">let</span> density = <span class="number">0</span>;
-        <span class="keyword">let</span> pressureForceX = <span class="number">0</span>;
-        <span class="keyword">let</span> pressureForceY = <span class="number">0</span>;
+// Update each particle
+function updateSPHParticles() {
+    particles.forEach(p =&gt; {
+        // Find nearby particles
+        let density = 0;
+        let pressureForceX = 0;
+        let pressureForceY = 0;
 
-        particles.<span class="function">forEach</span>(neighbor =&gt; {
-            <span class="keyword">if</span> (p === neighbor) <span class="keyword">return</span>;
+        particles.forEach(neighbor =&gt; {
+            if (p === neighbor) return;
 
-            <span class="keyword">const</span> dx = neighbor.x - p.x;
-            <span class="keyword">const</span> dy = neighbor.y - p.y;
-            <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
+            const dx = neighbor.x - p.x;
+            const dy = neighbor.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-            <span class="keyword">if</span> (dist &lt; smoothingRadius) {
-                <span class="comment">// Smoothing kernel - particles closer = stronger influence</span>
-                <span class="keyword">const</span> influence = <span class="number">1</span> - dist / smoothingRadius;
+            if (dist &lt; smoothingRadius) {
+                // Smoothing kernel - particles closer = stronger influence
+                const influence = 1 - dist / smoothingRadius;
                 density += influence;
 
-                <span class="comment">// Pressure force pushes particles apart</span>
-                <span class="keyword">const</span> pressure = (density - restDensity) * stiffness;
+                // Pressure force pushes particles apart
+                const pressure = (density - restDensity) * stiffness;
                 pressureForceX -= (dx / dist) * pressure * influence;
                 pressureForceY -= (dy / dist) * pressure * influence;
             }
         });
 
-        <span class="comment">// Apply forces</span>
+        // Apply forces
         p.vx += pressureForceX;
         p.vy += pressureForceY;
 
-        <span class="comment">// Viscosity (water sticks together)</span>
-        p.vx *= <span class="number">0.98</span>;
-        p.vy *= <span class="number">0.98</span>;
+        // Viscosity (water sticks together)
+        p.vx *= 0.98;
+        p.vy *= 0.98;
 
-        <span class="comment">// Gravity</span>
-        p.vy += <span class="number">0.5</span>;
+        // Gravity
+        p.vy += 0.5;
 
-        <span class="comment">// Update position</span>
+        // Update position
         p.x += p.vx;
         p.y += p.vy;
     });
@@ -613,43 +828,43 @@
                 <details data-demo-id="flowPuzzle" data-deps="vector2d,clearCanvas,randomFloat">
                     <summary>📝 Click to see: Particle Flow & Obstacle Detection</summary>
                     <div class="code-container">
-                        <pre><code><span class="comment">// Simple particle-based water flow</span>
-<span class="keyword">let</span> waterParticles = [];
-<span class="keyword">let</span> obstacles = [];
-<span class="keyword">let</span> bucket = { x: <span class="number">600</span>, y: <span class="number">400</span>, width: <span class="number">100</span>, height: <span class="number">60</span> };
-<span class="keyword">let</span> collected = <span class="number">0</span>;
+                        <pre><code class="language-javascript">// Simple particle-based water flow
+let waterParticles = [];
+let obstacles = [];
+let bucket = { x: 600, y: 400, width: 100, height: 60 };
+let collected = 0;
 
-<span class="comment">// Update water particles</span>
-<span class="keyword">function</span> <span class="function">updateFlowParticles</span>() {
-    waterParticles.<span class="function">forEach</span>((p, index) =&gt; {
-        <span class="comment">// Gravity pulls water down</span>
-        p.vy += <span class="number">0.3</span>;
+// Update water particles
+function updateFlowParticles() {
+    waterParticles.forEach((p, index) =&gt; {
+        // Gravity pulls water down
+        p.vy += 0.3;
 
-        <span class="comment">// Apply velocity</span>
+        // Apply velocity
         p.x += p.vx;
         p.y += p.vy;
 
-        <span class="comment">// Check collision with obstacles</span>
-        obstacles.<span class="function">forEach</span>(obs =&gt; {
-            <span class="keyword">if</span> (p.x &gt; obs.x &amp;&amp; p.x &lt; obs.x + obs.width &amp;&amp;
+        // Check collision with obstacles
+        obstacles.forEach(obs =&gt; {
+            if (p.x &gt; obs.x &amp;&amp; p.x &lt; obs.x + obs.width &amp;&amp;
                 p.y &gt; obs.y &amp;&amp; p.y &lt; obs.y + obs.height) {
-                <span class="comment">// Bounce off obstacle</span>
-                p.vy *= -<span class="number">0.5</span>;
-                p.vx += (Math.<span class="function">random</span>() - <span class="number">0.5</span>) * <span class="number">2</span>; <span class="comment">// Scatter sideways</span>
-                p.y = obs.y - <span class="number">1</span>; <span class="comment">// Push out of obstacle</span>
+                // Bounce off obstacle
+                p.vy *= -0.5;
+                p.vx += (Math.random() - 0.5) * 2; // Scatter sideways
+                p.y = obs.y - 1; // Push out of obstacle
             }
         });
 
-        <span class="comment">// Check if particle reaches bucket</span>
-        <span class="keyword">if</span> (p.x &gt; bucket.x &amp;&amp; p.x &lt; bucket.x + bucket.width &amp;&amp;
+        // Check if particle reaches bucket
+        if (p.x &gt; bucket.x &amp;&amp; p.x &lt; bucket.x + bucket.width &amp;&amp;
             p.y &gt; bucket.y &amp;&amp; p.y &lt; bucket.y + bucket.height) {
             collected++;
-            waterParticles.<span class="function">splice</span>(index, <span class="number">1</span>); <span class="comment">// Remove collected particle</span>
+            waterParticles.splice(index, 1); // Remove collected particle
         }
 
-        <span class="comment">// Remove particles that fall off screen</span>
-        <span class="keyword">if</span> (p.y &gt; canvas.height) {
-            waterParticles.<span class="function">splice</span>(index, <span class="number">1</span>);
+        // Remove particles that fall off screen
+        if (p.y &gt; canvas.height) {
+            waterParticles.splice(index, 1);
         }
     });
 }</code></pre>
@@ -723,31 +938,31 @@
             <details data-demo-id="wind" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Wind Field Setup</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Wind field - grid-based vector field with turbulence</span>
-<span class="keyword">const</span> windGridSize = <span class="number">20</span>;
-<span class="keyword">const</span> windCols = Math.<span class="function">ceil</span>(canvas.width / windGridSize);
-<span class="keyword">const</span> windRows = Math.<span class="function">ceil</span>(canvas.height / windGridSize);
+                    <pre><code class="language-javascript">// Wind field - grid-based vector field with turbulence
+const windGridSize = 20;
+const windCols = Math.ceil(canvas.width / windGridSize);
+const windRows = Math.ceil(canvas.height / windGridSize);
 
-<span class="keyword">let</span> windVectors = [];
-<span class="keyword">let</span> windParticles = [];
-<span class="keyword">let</span> windGusts = [];
-<span class="keyword">let</span> windTime = <span class="number">0</span>;
+let windVectors = [];
+let windParticles = [];
+let windGusts = [];
+let windTime = 0;
 
-<span class="comment">// Initialize wind field grid</span>
-<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; windRows; i++) {
+// Initialize wind field grid
+for (let i = 0; i &lt; windRows; i++) {
     windVectors[i] = [];
-    <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; windCols; j++) {
-        windVectors[i][j] = { x: <span class="number">0</span>, y: <span class="number">0</span> };
+    for (let j = 0; j &lt; windCols; j++) {
+        windVectors[i][j] = { x: 0, y: 0 };
     }
 }
 
-<span class="comment">// Create particles to visualize wind</span>
-<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">200</span>; i++) {
-    windParticles.<span class="function">push</span>({
-        x: Math.<span class="function">random</span>() * canvas.width,
-        y: Math.<span class="function">random</span>() * canvas.height,
-        vx: <span class="number">0</span>,
-        vy: <span class="number">0</span>,
+// Create particles to visualize wind
+for (let i = 0; i &lt; 200; i++) {
+    windParticles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: 0,
+        vy: 0,
         trail: []
     });
 }</code></pre>
@@ -762,40 +977,40 @@
             <details>
                 <summary>📝 Click to see: Wind Field Update with Turbulence</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Simple noise function for natural turbulence</span>
-<span class="keyword">function</span> <span class="function">windNoise</span>(x, y, t) {
-    <span class="keyword">const</span> n = Math.<span class="function">sin</span>(x * <span class="number">0.1</span> + t) * Math.<span class="function">cos</span>(y * <span class="number">0.1</span> + t * <span class="number">0.7</span>);
-    <span class="keyword">return</span> n * <span class="number">0.5</span> + <span class="number">0.5</span>; <span class="comment">// Normalize to 0-1</span>
+                    <pre><code class="language-javascript">// Simple noise function for natural turbulence
+function windNoise(x, y, t) {
+    const n = Math.sin(x * 0.1 + t) * Math.cos(y * 0.1 + t * 0.7);
+    return n * 0.5 + 0.5; // Normalize to 0-1
 }
 
-<span class="comment">// Update wind field each frame</span>
-<span class="keyword">function</span> <span class="function">updateWindField</span>(dt) {
-    windTime += dt * <span class="number">0.001</span>;
+// Update wind field each frame
+function updateWindField(dt) {
+    windTime += dt * 0.001;
 
-    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; windRows; i++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; windCols; j++) {
-            <span class="comment">// Base wind direction (left to right)</span>
-            <span class="keyword">let</span> wx = <span class="number">1</span> * windStrength;
-            <span class="keyword">let</span> wy = <span class="number">0</span>;
+    for (let i = 0; i &lt; windRows; i++) {
+        for (let j = 0; j &lt; windCols; j++) {
+            // Base wind direction (left to right)
+            let wx = 1 * windStrength;
+            let wy = 0;
 
-            <span class="comment">// Add turbulence using noise</span>
-            <span class="keyword">const</span> noiseX = <span class="function">windNoise</span>(j, i, windTime);
-            <span class="keyword">const</span> noiseY = <span class="function">windNoise</span>(j + <span class="number">100</span>, i + <span class="number">100</span>, windTime);
-            wx += (noiseX - <span class="number">0.5</span>) * turbulence * <span class="number">2</span>;
-            wy += (noiseY - <span class="number">0.5</span>) * turbulence * <span class="number">2</span>;
+            // Add turbulence using noise
+            const noiseX = windNoise(j, i, windTime);
+            const noiseY = windNoise(j + 100, i + 100, windTime);
+            wx += (noiseX - 0.5) * turbulence * 2;
+            wy += (noiseY - 0.5) * turbulence * 2;
 
-            <span class="comment">// Add gust effects (temporary wind bursts)</span>
-            <span class="keyword">const</span> x = j * windGridSize;
-            <span class="keyword">const</span> y = i * windGridSize;
-            <span class="keyword">for</span> (<span class="keyword">let</span> gust <span class="keyword">of</span> windGusts) {
-                <span class="keyword">const</span> dx = x - gust.x;
-                <span class="keyword">const</span> dy = y - gust.y;
-                <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
-                <span class="keyword">if</span> (dist &lt; gust.radius) {
-                    <span class="keyword">const</span> influence = (<span class="number">1</span> - dist / gust.radius) * gust.strength;
-                    <span class="keyword">const</span> angle = Math.<span class="function">atan2</span>(dy, dx);
-                    wx += Math.<span class="function">cos</span>(angle) * influence;
-                    wy += Math.<span class="function">sin</span>(angle) * influence;
+            // Add gust effects (temporary wind bursts)
+            const x = j * windGridSize;
+            const y = i * windGridSize;
+            for (let gust of windGusts) {
+                const dx = x - gust.x;
+                const dy = y - gust.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist &lt; gust.radius) {
+                    const influence = (1 - dist / gust.radius) * gust.strength;
+                    const angle = Math.atan2(dy, dx);
+                    wx += Math.cos(angle) * influence;
+                    wy += Math.sin(angle) * influence;
                 }
             }
 
@@ -803,10 +1018,10 @@
         }
     }
 
-    <span class="comment">// Decay gusts over time</span>
-    windGusts = windGusts.<span class="function">filter</span>(g =&gt; {
-        g.strength *= <span class="number">0.95</span>;
-        <span class="keyword">return</span> g.strength &gt; <span class="number">0.1</span>;
+    // Decay gusts over time
+    windGusts = windGusts.filter(g =&gt; {
+        g.strength *= 0.95;
+        return g.strength &gt; 0.1;
     });
 }</code></pre>
                 </div>
@@ -820,55 +1035,55 @@
             <details>
                 <summary>📝 Click to see: Particle Movement & Interpolation</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Get interpolated wind at any position (smooth between grid cells)</span>
-<span class="keyword">function</span> <span class="function">getWindAt</span>(x, y) {
-    <span class="keyword">const</span> gridX = x / windGridSize;
-    <span class="keyword">const</span> gridY = y / windGridSize;
-    <span class="keyword">const</span> i = Math.<span class="function">floor</span>(gridY);
-    <span class="keyword">const</span> j = Math.<span class="function">floor</span>(gridX);
+                    <pre><code class="language-javascript">// Get interpolated wind at any position (smooth between grid cells)
+function getWindAt(x, y) {
+    const gridX = x / windGridSize;
+    const gridY = y / windGridSize;
+    const i = Math.floor(gridY);
+    const j = Math.floor(gridX);
 
-    <span class="keyword">if</span> (i &lt; <span class="number">0</span> || i &gt;= windRows - <span class="number">1</span> || j &lt; <span class="number">0</span> || j &gt;= windCols - <span class="number">1</span>) {
-        <span class="keyword">return</span> { x: <span class="number">0</span>, y: <span class="number">0</span> };
+    if (i &lt; 0 || i &gt;= windRows - 1 || j &lt; 0 || j &gt;= windCols - 1) {
+        return { x: 0, y: 0 };
     }
 
-    <span class="comment">// Bilinear interpolation between 4 grid points</span>
-    <span class="keyword">const</span> fx = gridX - j;
-    <span class="keyword">const</span> fy = gridY - i;
-    <span class="keyword">const</span> v00 = windVectors[i][j];
-    <span class="keyword">const</span> v10 = windVectors[i][j + <span class="number">1</span>];
-    <span class="keyword">const</span> v01 = windVectors[i + <span class="number">1</span>][j];
-    <span class="keyword">const</span> v11 = windVectors[i + <span class="number">1</span>][j + <span class="number">1</span>];
+    // Bilinear interpolation between 4 grid points
+    const fx = gridX - j;
+    const fy = gridY - i;
+    const v00 = windVectors[i][j];
+    const v10 = windVectors[i][j + 1];
+    const v01 = windVectors[i + 1][j];
+    const v11 = windVectors[i + 1][j + 1];
 
-    <span class="keyword">const</span> wx = v00.x * (<span class="number">1</span> - fx) * (<span class="number">1</span> - fy) + v10.x * fx * (<span class="number">1</span> - fy) +
-               v01.x * (<span class="number">1</span> - fx) * fy + v11.x * fx * fy;
-    <span class="keyword">const</span> wy = v00.y * (<span class="number">1</span> - fx) * (<span class="number">1</span> - fy) + v10.y * fx * (<span class="number">1</span> - fy) +
-               v01.y * (<span class="number">1</span> - fx) * fy + v11.y * fx * fy;
+    const wx = v00.x * (1 - fx) * (1 - fy) + v10.x * fx * (1 - fy) +
+               v01.x * (1 - fx) * fy + v11.x * fx * fy;
+    const wy = v00.y * (1 - fx) * (1 - fy) + v10.y * fx * (1 - fy) +
+               v01.y * (1 - fx) * fy + v11.y * fx * fy;
 
-    <span class="keyword">return</span> { x: wx, y: wy };
+    return { x: wx, y: wy };
 }
 
-<span class="comment">// Update particles based on wind</span>
-<span class="keyword">function</span> <span class="function">updateWindParticles</span>() {
-    windParticles.<span class="function">forEach</span>(p =&gt; {
-        <span class="keyword">const</span> wind = <span class="function">getWindAt</span>(p.x, p.y);
+// Update particles based on wind
+function updateWindParticles() {
+    windParticles.forEach(p =&gt; {
+        const wind = getWindAt(p.x, p.y);
 
-        <span class="comment">// Apply wind force</span>
-        p.vx += wind.x * <span class="number">0.5</span>;
-        p.vy += wind.y * <span class="number">0.5</span>;
+        // Apply wind force
+        p.vx += wind.x * 0.5;
+        p.vy += wind.y * 0.5;
 
-        <span class="comment">// Damping to prevent infinite acceleration</span>
-        p.vx *= <span class="number">0.98</span>;
-        p.vy *= <span class="number">0.98</span>;
+        // Damping to prevent infinite acceleration
+        p.vx *= 0.98;
+        p.vy *= 0.98;
 
-        <span class="comment">// Move particle</span>
+        // Move particle
         p.x += p.vx;
         p.y += p.vy;
 
-        <span class="comment">// Wrap around screen edges</span>
-        <span class="keyword">if</span> (p.x &lt; <span class="number">0</span>) p.x = canvas.width;
-        <span class="keyword">if</span> (p.x &gt; canvas.width) p.x = <span class="number">0</span>;
-        <span class="keyword">if</span> (p.y &lt; <span class="number">0</span>) p.y = canvas.height;
-        <span class="keyword">if</span> (p.y &gt; canvas.height) p.y = <span class="number">0</span>;
+        // Wrap around screen edges
+        if (p.x &lt; 0) p.x = canvas.width;
+        if (p.x &gt; canvas.width) p.x = 0;
+        if (p.y &lt; 0) p.y = canvas.height;
+        if (p.y &gt; canvas.height) p.y = 0;
     });
 }</code></pre>
                 </div>
@@ -968,35 +1183,35 @@
             <details>
                 <summary>📝 Click to see: Terrain Initialization (Pixel-Based)</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Use ImageData to store terrain at pixel level</span>
-<span class="keyword">let</span> terrainImageData = ctx.<span class="function">createImageData</span>(canvas.width, canvas.height);
-<span class="keyword">let</span> balls = [];
+                    <pre><code class="language-javascript">// Use ImageData to store terrain at pixel level
+let terrainImageData = ctx.createImageData(canvas.width, canvas.height);
+let balls = [];
 
-<span class="comment">// Initialize terrain with layered generation</span>
-<span class="keyword">function</span> <span class="function">initTerrain</span>() {
+// Initialize terrain with layered generation
+function initTerrain() {
     balls = [];
-    terrainImageData = ctx.<span class="function">createImageData</span>(canvas.width, canvas.height);
-    <span class="keyword">const</span> data = terrainImageData.data;
+    terrainImageData = ctx.createImageData(canvas.width, canvas.height);
+    const data = terrainImageData.data;
 
-    <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y &lt; canvas.height; y++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x &lt; canvas.width; x++) {
-            <span class="keyword">const</span> idx = (y * canvas.width + x) * <span class="number">4</span>; <span class="comment">// RGBA = 4 bytes per pixel</span>
+    for (let y = 0; y &lt; canvas.height; y++) {
+        for (let x = 0; x &lt; canvas.width; x++) {
+            const idx = (y * canvas.width + x) * 4; // RGBA = 4 bytes per pixel
 
-            <span class="comment">// Create layered terrain with noise</span>
-            <span class="keyword">if</span> (y &gt; <span class="number">150</span> &amp;&amp; y &lt; <span class="number">450</span>) {
-                <span class="keyword">const</span> noise = Math.<span class="function">sin</span>(x * <span class="number">0.05</span>) * <span class="number">10</span> + Math.<span class="function">cos</span>(y * <span class="number">0.03</span>) * <span class="number">5</span>;
-                <span class="keyword">if</span> (y + noise &gt; <span class="number">200</span>) {
-                    <span class="comment">// Dirt layer (brown)</span>
-                    data[idx] = <span class="number">139</span>;     <span class="comment">// R</span>
-                    data[idx + <span class="number">1</span>] = <span class="number">90</span>;  <span class="comment">// G</span>
-                    data[idx + <span class="number">2</span>] = <span class="number">43</span>;  <span class="comment">// B</span>
-                    data[idx + <span class="number">3</span>] = <span class="number">255</span>; <span class="comment">// A (fully opaque = solid terrain)</span>
+            // Create layered terrain with noise
+            if (y &gt; 150 &amp;&amp; y &lt; 450) {
+                const noise = Math.sin(x * 0.05) * 10 + Math.cos(y * 0.03) * 5;
+                if (y + noise &gt; 200) {
+                    // Dirt layer (brown)
+                    data[idx] = 139;     // R
+                    data[idx + 1] = 90;  // G
+                    data[idx + 2] = 43;  // B
+                    data[idx + 3] = 255; // A (fully opaque = solid terrain)
                 }
             }
         }
     }
 
-    ctx.<span class="function">putImageData</span>(terrainImageData, <span class="number">0</span>, <span class="number">0</span>);
+    ctx.putImageData(terrainImageData, 0, 0);
 }</code></pre>
                 </div>
 
@@ -1009,35 +1224,35 @@
             <details data-demo-id="terrain" data-deps="clearCanvas,randomFloat">
                 <summary>📝 Click to see: Terrain Destruction</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Check if terrain exists at a position</span>
-<span class="keyword">function</span> <span class="function">isTerrainAt</span>(x, y) {
-    <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt;= canvas.width || y &lt; <span class="number">0</span> || y &gt;= canvas.height) <span class="keyword">return</span> <span class="keyword">false</span>;
-    <span class="keyword">const</span> idx = (Math.<span class="function">floor</span>(y) * canvas.width + Math.<span class="function">floor</span>(x)) * <span class="number">4</span>;
-    <span class="keyword">return</span> terrainImageData.data[idx + <span class="number">3</span>] &gt; <span class="number">0</span>; <span class="comment">// Check alpha channel</span>
+                    <pre><code class="language-javascript">// Check if terrain exists at a position
+function isTerrainAt(x, y) {
+    if (x &lt; 0 || x &gt;= canvas.width || y &lt; 0 || y &gt;= canvas.height) return false;
+    const idx = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
+    return terrainImageData.data[idx + 3] &gt; 0; // Check alpha channel
 }
 
-<span class="comment">// Destroy terrain in circular area</span>
-<span class="keyword">function</span> <span class="function">destroyTerrain</span>(x, y, radius) {
-    <span class="keyword">const</span> data = terrainImageData.data;
+// Destroy terrain in circular area
+function destroyTerrain(x, y, radius) {
+    const data = terrainImageData.data;
 
-    <span class="comment">// Loop through square bounding box, check distance for circle</span>
-    <span class="keyword">for</span> (<span class="keyword">let</span> dy = -radius; dy &lt;= radius; dy++) {
-        <span class="keyword">for</span> (<span class="keyword">let</span> dx = -radius; dx &lt;= radius; dx++) {
-            <span class="keyword">const</span> dist = Math.<span class="function">sqrt</span>(dx * dx + dy * dy);
-            <span class="keyword">if</span> (dist &lt;= radius) {
-                <span class="keyword">const</span> px = Math.<span class="function">floor</span>(x + dx);
-                <span class="keyword">const</span> py = Math.<span class="function">floor</span>(y + dy);
+    // Loop through square bounding box, check distance for circle
+    for (let dy = -radius; dy &lt;= radius; dy++) {
+        for (let dx = -radius; dx &lt;= radius; dx++) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist &lt;= radius) {
+                const px = Math.floor(x + dx);
+                const py = Math.floor(y + dy);
 
-                <span class="keyword">if</span> (px &gt;= <span class="number">0</span> &amp;&amp; px &lt; canvas.width &amp;&amp; py &gt;= <span class="number">0</span> &amp;&amp; py &lt; canvas.height) {
-                    <span class="keyword">const</span> idx = (py * canvas.width + px) * <span class="number">4</span>;
-                    data[idx + <span class="number">3</span>] = <span class="number">0</span>; <span class="comment">// Set alpha to 0 = transparent = destroyed</span>
+                if (px &gt;= 0 &amp;&amp; px &lt; canvas.width &amp;&amp; py &gt;= 0 &amp;&amp; py &lt; canvas.height) {
+                    const idx = (py * canvas.width + px) * 4;
+                    data[idx + 3] = 0; // Set alpha to 0 = transparent = destroyed
                 }
             }
         }
     }
 
-    <span class="comment">// Update canvas with destroyed terrain</span>
-    ctx.<span class="function">putImageData</span>(terrainImageData, <span class="number">0</span>, <span class="number">0</span>);
+    // Update canvas with destroyed terrain
+    ctx.putImageData(terrainImageData, 0, 0);
 }</code></pre>
                 </div>
 
@@ -1050,36 +1265,36 @@
             <details>
                 <summary>📝 Click to see: Physics Collision with Terrain</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Update physics balls</span>
-<span class="keyword">function</span> <span class="function">updateBalls</span>() {
-    balls.<span class="function">forEach</span>((ball, index) =&gt; {
-        <span class="comment">// Apply gravity</span>
-        ball.vy += <span class="number">0.5</span>;
+                    <pre><code class="language-javascript">// Update physics balls
+function updateBalls() {
+    balls.forEach((ball, index) =&gt; {
+        // Apply gravity
+        ball.vy += 0.5;
 
-        <span class="comment">// Move ball</span>
+        // Move ball
         ball.x += ball.vx;
         ball.y += ball.vy;
 
-        <span class="comment">// Check collision with terrain at multiple points around ball</span>
-        <span class="keyword">let</span> collided = <span class="keyword">false</span>;
-        <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; <span class="number">360</span>; i += <span class="number">30</span>) {
-            <span class="keyword">const</span> angle = i * Math.PI / <span class="number">180</span>;
-            <span class="keyword">const</span> checkX = ball.x + Math.<span class="function">cos</span>(angle) * ball.radius;
-            <span class="keyword">const</span> checkY = ball.y + Math.<span class="function">sin</span>(angle) * ball.radius;
+        // Check collision with terrain at multiple points around ball
+        let collided = false;
+        for (let i = 0; i &lt; 360; i += 30) {
+            const angle = i * Math.PI / 180;
+            const checkX = ball.x + Math.cos(angle) * ball.radius;
+            const checkY = ball.y + Math.sin(angle) * ball.radius;
 
-            <span class="keyword">if</span> (<span class="function">isTerrainAt</span>(checkX, checkY)) {
-                collided = <span class="keyword">true</span>;
-                <span class="comment">// Bounce with energy loss</span>
-                ball.vy *= -<span class="number">0.5</span>;
-                ball.vx *= <span class="number">0.9</span>;
-                ball.y -= <span class="number">2</span>; <span class="comment">// Push out of terrain</span>
-                <span class="keyword">break</span>;
+            if (isTerrainAt(checkX, checkY)) {
+                collided = true;
+                // Bounce with energy loss
+                ball.vy *= -0.5;
+                ball.vx *= 0.9;
+                ball.y -= 2; // Push out of terrain
+                break;
             }
         }
 
-        <span class="comment">// Remove balls that fall off screen</span>
-        <span class="keyword">if</span> (ball.y &gt; canvas.height + <span class="number">50</span>) {
-            balls.<span class="function">splice</span>(index, <span class="number">1</span>);
+        // Remove balls that fall off screen
+        if (ball.y &gt; canvas.height + 50) {
+            balls.splice(index, 1);
         }
     });
 }</code></pre>
@@ -1185,35 +1400,35 @@
             <details>
                 <summary>📝 Click to see: Material Properties Code</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Define material types with burning properties</span>
-<span class="keyword">const</span> <span class="function">MATERIALS</span> = {
-    EMPTY: { id: <span class="number">0</span>, flammable: <span class="keyword">false</span>, color: <span class="string">'#1a1a1a'</span> },
+                    <pre><code class="language-javascript">// Define material types with burning properties
+const MATERIALS = {
+    EMPTY: { id: 0, flammable: false, color: '#1a1a1a' },
     WOOD: {
-        id: <span class="number">1</span>,
-        flammable: <span class="keyword">true</span>,
-        ignitionTemp: <span class="number">200</span>,
-        burnDuration: <span class="number">150</span>,  <span class="comment">// frames to burn</span>
-        spreadChance: <span class="number">0.3</span>,
-        color: <span class="string">'#8B4513'</span>
+        id: 1,
+        flammable: true,
+        ignitionTemp: 200,
+        burnDuration: 150,  // frames to burn
+        spreadChance: 0.3,
+        color: '#8B4513'
     },
     GRASS: {
-        id: <span class="number">2</span>,
-        flammable: <span class="keyword">true</span>,
-        ignitionTemp: <span class="number">150</span>,
-        burnDuration: <span class="number">60</span>,
-        spreadChance: <span class="number">0.6</span>,  <span class="comment">// spreads faster</span>
-        color: <span class="string">'#228B22'</span>
+        id: 2,
+        flammable: true,
+        ignitionTemp: 150,
+        burnDuration: 60,
+        spreadChance: 0.6,  // spreads faster
+        color: '#228B22'
     },
     STONE: {
-        id: <span class="number">3</span>,
-        flammable: <span class="keyword">false</span>,
-        color: <span class="string">'#808080'</span>
+        id: 3,
+        flammable: false,
+        color: '#808080'
     },
     WATER: {
-        id: <span class="number">4</span>,
-        flammable: <span class="keyword">false</span>,
-        extinguishes: <span class="keyword">true</span>,  <span class="comment">// stops fire</span>
-        color: <span class="string">'#1E90FF'</span>
+        id: 4,
+        flammable: false,
+        extinguishes: true,  // stops fire
+        color: '#1E90FF'
     }
 };</code></pre>
                 </div>
@@ -1222,37 +1437,37 @@
             <details data-demo-id="thermal" data-deps="clearCanvas,randomFloat">
                 <summary>📝 Click to see: Fire Spread Algorithm</summary>
                 <div class="code-container">
-                    <pre><code><span class="comment">// Check if fire should spread to neighboring cells</span>
-<span class="function">spreadFire</span>(i, j) {
-    <span class="keyword">const</span> neighbors = [
-        [i-<span class="number">1</span>, j], [i+<span class="number">1</span>, j], [i, j-<span class="number">1</span>], [i, j+<span class="number">1</span>],
-        [i-<span class="number">1</span>, j-<span class="number">1</span>], [i-<span class="number">1</span>, j+<span class="number">1</span>], [i+<span class="number">1</span>, j-<span class="number">1</span>], [i+<span class="number">1</span>, j+<span class="number">1</span>]
+                    <pre><code class="language-javascript">// Check if fire should spread to neighboring cells
+spreadFire(i, j) {
+    const neighbors = [
+        [i-1, j], [i+1, j], [i, j-1], [i, j+1],
+        [i-1, j-1], [i-1, j+1], [i+1, j-1], [i+1, j+1]
     ];
 
-    <span class="keyword">for</span> (<span class="keyword">const</span> [ni, nj] <span class="keyword">of</span> neighbors) {
-        <span class="keyword">if</span> (ni &lt; <span class="number">0</span> || ni &gt;= rows || nj &lt; <span class="number">0</span> || nj &gt;= cols) <span class="keyword">continue</span>;
+    for (const [ni, nj] of neighbors) {
+        if (ni &lt; 0 || ni &gt;= rows || nj &lt; 0 || nj &gt;= cols) continue;
 
-        <span class="keyword">const</span> cell = grid[ni][nj];
-        <span class="keyword">const</span> material = MATERIALS[cell.type];
+        const cell = grid[ni][nj];
+        const material = MATERIALS[cell.type];
 
-        <span class="comment">// Only spread to flammable materials not already burning</span>
-        <span class="keyword">if</span> (material.flammable && !cell.burning) {
-            <span class="comment">// Heat the neighbor</span>
-            cell.temperature += <span class="number">50</span>;
+        // Only spread to flammable materials not already burning
+        if (material.flammable &amp;&amp; !cell.burning) {
+            // Heat the neighbor
+            cell.temperature += 50;
 
-            <span class="comment">// Try to ignite based on temperature and spread chance</span>
-            <span class="keyword">if</span> (cell.temperature &gt; material.ignitionTemp) {
-                <span class="keyword">if</span> (Math.<span class="function">random</span>() &lt; material.spreadChance) {
-                    cell.burning = <span class="keyword">true</span>;
-                    cell.burnTime = <span class="number">0</span>;
+            // Try to ignite based on temperature and spread chance
+            if (cell.temperature &gt; material.ignitionTemp) {
+                if (Math.random() &lt; material.spreadChance) {
+                    cell.burning = true;
+                    cell.burnTime = 0;
                 }
             }
         }
 
-        <span class="comment">// Water extinguishes nearby fire</span>
-        <span class="keyword">if</span> (material.extinguishes && cell.burning) {
-            cell.burning = <span class="keyword">false</span>;
-            cell.temperature = <span class="number">20</span>;
+        // Water extinguishes nearby fire
+        if (material.extinguishes &amp;&amp; cell.burning) {
+            cell.burning = false;
+            cell.temperature = 20;
         }
     }
 }</code></pre>
