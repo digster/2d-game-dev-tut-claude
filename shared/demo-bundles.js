@@ -4454,104 +4454,177 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const info = document.getElementById('info');
 
-const SCALE = 8;
-const cols = Math.floor(canvas.width / SCALE);
-const rows = Math.floor(canvas.height / SCALE);
+class FluidGrid {
+    constructor(width, height, scale) {
+        this.cols = Math.floor(width / scale);
+        this.rows = Math.floor(height / scale);
+        this.scale = scale;
+        this.vx = this.createGrid();
+        this.vy = this.createGrid();
+        this.vx0 = this.createGrid();
+        this.vy0 = this.createGrid();
+        this.density = this.createGrid();
+        this.density0 = this.createGrid();
+        this.p = this.createGrid();
+        this.div = this.createGrid();
+        this.visc = 0.0001;
+        this.diff = 0.0001;
+        this.fadeRate = 0.99;
+        this.material = 'water';
+        this.windY = 0;
+    }
 
-// Fluid grids
-let density = [], velocity = [];
-for (let i = 0; i < rows; i++) {
-    density[i] = new Array(cols).fill(0);
-    velocity[i] = [];
-    for (let j = 0; j < cols; j++) velocity[i][j] = { x: 0, y: 0 };
-}
+    createGrid() {
+        const grid = [];
+        for (let i = 0; i < this.rows; i++) grid[i] = new Array(this.cols).fill(0);
+        return grid;
+    }
 
-let colorMode = 'water';
-let mouseDown = false;
-let lastX = 0, lastY = 0;
-
-const colorModes = {
-    water: (d) => 'rgba(100, 180, 255, ' + Math.min(d, 1) + ')',
-    smoke: (d) => 'rgba(150, 150, 150, ' + Math.min(d * 0.8, 0.9) + ')',
-    ink: (d) => 'hsl(' + (240 + d * 60) + ', 80%, ' + (30 + d * 20) + '%)'
-};
-
-function diffuse() {
-    const newDensity = density.map(row => [...row]);
-    for (let i = 1; i < rows - 1; i++) {
-        for (let j = 1; j < cols - 1; j++) {
-            newDensity[i][j] = density[i][j] * 0.8 + 0.05 * (
-                density[i-1][j] + density[i+1][j] + density[i][j-1] + density[i][j+1]
-            );
+    diffuse(x, x0, diffusion, dt) {
+        const a = dt * diffusion * this.cols * this.rows;
+        for (let iter = 0; iter < 20; iter++) {
+            for (let i = 1; i < this.rows - 1; i++) {
+                for (let j = 1; j < this.cols - 1; j++) {
+                    x[i][j] = (x0[i][j] + a * (x[i-1][j] + x[i+1][j] + x[i][j-1] + x[i][j+1])) / (1 + 4 * a);
+                }
+            }
         }
     }
-    density = newDensity;
-}
 
-function advect() {
-    const newDensity = density.map(row => [...row]);
-    for (let i = 1; i < rows - 1; i++) {
-        for (let j = 1; j < cols - 1; j++) {
-            const vx = velocity[i][j].x;
-            const vy = velocity[i][j].y;
-            const srcI = Math.max(1, Math.min(rows - 2, i - vy));
-            const srcJ = Math.max(1, Math.min(cols - 2, j - vx));
-            newDensity[i][j] = density[Math.floor(srcI)][Math.floor(srcJ)] * 0.99;
+    advect(d, d0, vx, vy, dt) {
+        const dt0 = dt * this.cols;
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                let x = j - dt0 * vx[i][j];
+                let y = i - dt0 * vy[i][j];
+                x = Math.max(0.5, Math.min(this.cols - 1.5, x));
+                y = Math.max(0.5, Math.min(this.rows - 1.5, y));
+                const i0 = Math.floor(y), j0 = Math.floor(x);
+                const s1 = x - j0, s0 = 1 - s1, t1 = y - i0, t0 = 1 - t1;
+                d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i0+1][j0]) + s1 * (t0 * d0[i0][j0+1] + t1 * d0[i0+1][j0+1]);
+            }
         }
     }
-    density = newDensity;
+
+    project(vx, vy, p, div) {
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                div[i][j] = -0.5 * (vx[i][j+1] - vx[i][j-1] + vy[i+1][j] - vy[i-1][j]) / this.cols;
+                p[i][j] = 0;
+            }
+        }
+        for (let iter = 0; iter < 20; iter++) {
+            for (let i = 1; i < this.rows - 1; i++) {
+                for (let j = 1; j < this.cols - 1; j++) {
+                    p[i][j] = (div[i][j] + p[i-1][j] + p[i+1][j] + p[i][j-1] + p[i][j+1]) / 4;
+                }
+            }
+        }
+        for (let i = 1; i < this.rows - 1; i++) {
+            for (let j = 1; j < this.cols - 1; j++) {
+                vx[i][j] -= 0.5 * this.cols * (p[i][j+1] - p[i][j-1]);
+                vy[i][j] -= 0.5 * this.cols * (p[i+1][j] - p[i-1][j]);
+            }
+        }
+    }
+
+    step(dt = 0.016) {
+        if (this.windY !== 0) {
+            for (let i = 0; i < this.rows; i++) {
+                for (let j = 0; j < this.cols; j++) this.vy[i][j] += this.windY * dt * 10;
+            }
+        }
+        [this.vx0, this.vx] = [this.vx, this.vx0];
+        [this.vy0, this.vy] = [this.vy, this.vy0];
+        this.diffuse(this.vx, this.vx0, this.visc, dt);
+        this.diffuse(this.vy, this.vy0, this.visc, dt);
+        this.project(this.vx, this.vy, this.vx0, this.vy0);
+        [this.vx0, this.vx] = [this.vx, this.vx0];
+        [this.vy0, this.vy] = [this.vy, this.vy0];
+        this.advect(this.vx, this.vx0, this.vx0, this.vy0, dt);
+        this.advect(this.vy, this.vy0, this.vx0, this.vy0, dt);
+        this.project(this.vx, this.vy, this.vx0, this.vy0);
+        [this.density0, this.density] = [this.density, this.density0];
+        this.diffuse(this.density, this.density0, this.diff, dt);
+        [this.density0, this.density] = [this.density, this.density0];
+        this.advect(this.density, this.density0, this.vx, this.vy, dt);
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) this.density[i][j] *= this.fadeRate;
+        }
+    }
+
+    addDensity(x, y, amount) {
+        const i = Math.floor(y / this.scale), j = Math.floor(x / this.scale);
+        if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) this.density[i][j] += amount;
+    }
+
+    addVelocity(x, y, vx, vy) {
+        const i = Math.floor(y / this.scale), j = Math.floor(x / this.scale);
+        if (i >= 0 && i < this.rows && j >= 0 && j < this.cols) {
+            this.vx[i][j] += vx;
+            this.vy[i][j] += vy;
+        }
+    }
+
+    getColor(density) {
+        const d = Math.min(255, Math.floor(density));
+        const alpha = Math.min(1, d / 255);
+        switch(this.material) {
+            case 'water': return 'rgba(30, ' + (100 + d * 0.4) + ', ' + (150 + d * 0.4) + ', ' + (alpha * 0.7) + ')';
+            case 'smoke': return 'rgba(' + (100 + d * 0.6) + ', ' + (100 + d * 0.6) + ', ' + (120 + d * 0.5) + ', ' + (alpha * 0.5) + ')';
+            case 'ink': return 'hsla(' + (d / 255 * 360) + ', 100%, 60%, ' + (alpha * 0.9) + ')';
+            case 'honey': return 'rgba(' + (200 + d * 0.2) + ', ' + (140 + d * 0.2) + ', 30, ' + (alpha * 0.85) + ')';
+            case 'gas': return 'rgba(' + (150 + d * 0.3) + ', ' + (200 + d * 0.2) + ', 120, ' + (alpha * 0.4) + ')';
+            default: return 'rgba(' + d + ', ' + (d * 0.5) + ', ' + (255 - d) + ', ' + (d / 255) + ')';
+        }
+    }
+
+    render(ctx) {
+        const bgColors = {water: '#001020', smoke: '#0a0a0a', ink: '#000', honey: '#1a0f00', gas: '#0a1008'};
+        ctx.fillStyle = bgColors[this.material] || '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                if (this.density[i][j] > 0) {
+                    ctx.fillStyle = this.getColor(this.density[i][j]);
+                    ctx.fillRect(j * this.scale, i * this.scale, this.scale, this.scale);
+                }
+            }
+        }
+    }
 }
+
+const fluid = new FluidGrid(canvas.width, canvas.height, 8);
+let mouseDown = false, lastX = 0, lastY = 0;
 
 canvas.addEventListener('mousedown', (e) => {
     mouseDown = true;
     const rect = canvas.getBoundingClientRect();
-    lastX = (e.clientX - rect.left) / SCALE;
-    lastY = (e.clientY - rect.top) / SCALE;
+    lastX = e.clientX - rect.left;
+    lastY = e.clientY - rect.top;
 });
 
 canvas.addEventListener('mousemove', (e) => {
     if (!mouseDown) return;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / SCALE;
-    const y = (e.clientY - rect.top) / SCALE;
-    const i = Math.floor(y), j = Math.floor(x);
-    if (i > 0 && i < rows - 1 && j > 0 && j < cols - 1) {
-        density[i][j] = Math.min(density[i][j] + 2, 5);
-        velocity[i][j].x += (x - lastX) * 0.5;
-        velocity[i][j].y += (y - lastY) * 0.5;
-    }
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    fluid.addDensity(x, y, 200);
+    fluid.addVelocity(x, y, (x - lastX) * 10, (y - lastY) * 10);
     lastX = x; lastY = y;
 });
 
 canvas.addEventListener('mouseup', () => mouseDown = false);
 canvas.addEventListener('mouseleave', () => mouseDown = false);
 
-document.getElementById('btnWater').addEventListener('click', () => colorMode = 'water');
-document.getElementById('btnSmoke').addEventListener('click', () => colorMode = 'smoke');
-document.getElementById('btnInk').addEventListener('click', () => colorMode = 'ink');
-document.getElementById('btnClearFluid').addEventListener('click', () => {
-    for (let i = 0; i < rows; i++) {
-        density[i].fill(0);
-        for (let j = 0; j < cols; j++) velocity[i][j] = { x: 0, y: 0 };
-    }
-});
+document.getElementById('btnWater').addEventListener('click', () => { fluid.material = 'water'; fluid.visc = 0.0001; fluid.diff = 0.0001; fluid.fadeRate = 0.99; fluid.windY = 0; });
+document.getElementById('btnSmoke').addEventListener('click', () => { fluid.material = 'smoke'; fluid.visc = 0.00001; fluid.diff = 0.0005; fluid.fadeRate = 0.97; fluid.windY = -0.8; });
+document.getElementById('btnInk').addEventListener('click', () => { fluid.material = 'ink'; fluid.visc = 0.0002; fluid.diff = 0.0003; fluid.fadeRate = 0.995; fluid.windY = 0; });
+document.getElementById('btnClearFluid').addEventListener('click', () => { fluid.density = fluid.createGrid(); fluid.vx = fluid.createGrid(); fluid.vy = fluid.createGrid(); fluid.windY = 0; });
 
 function animate() {
-    diffuse();
-    advect();
-
-    clearCanvas(ctx, canvas.width, canvas.height);
-
-    for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
-            if (density[i][j] > 0.01) {
-                ctx.fillStyle = colorModes[colorMode](density[i][j]);
-                ctx.fillRect(j * SCALE, i * SCALE, SCALE, SCALE);
-            }
-        }
-    }
-
-    info.textContent = 'Mode: ' + colorMode + ' | Drag to add fluid';
+    fluid.step();
+    fluid.render(ctx);
+    info.textContent = 'Material: ' + fluid.material + ' | Drag to add fluid';
     requestAnimationFrame(animate);
 }
 
@@ -4562,91 +4635,119 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const info = document.getElementById('info');
 
-let waterLevel = canvas.height * 0.6;
+let waterLevel = 350;
 const objects = [];
-const GRAVITY = 0.3;
-const WATER_DENSITY = 1.0;
 
-class FloatingObject {
-    constructor(x, y, width, height, density, color) {
+class PhysicsObject {
+    constructor(x, y, width, height, density, color, type) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.density = density;
         this.color = color;
+        this.type = type;
+        this.vx = 0;
         this.vy = 0;
+        this.mass = width * height * density / 1000;
     }
 
-    update() {
-        const bottom = this.y + this.height;
-        const submerged = Math.max(0, Math.min(this.height, bottom - waterLevel));
-        const submergedRatio = submerged / this.height;
+    update(dt) {
+        const gravity = 800;
+        const waterDensity = 1.0;
+        const airResistance = 0.02;
+        const waterResistance = 0.1;
 
-        // Gravity
-        this.vy += GRAVITY;
-
-        // Buoyancy force (opposes gravity when submerged)
-        const buoyancy = submergedRatio * WATER_DENSITY * GRAVITY * (1 / this.density) * 2;
-        this.vy -= buoyancy;
-
-        // Water drag
-        if (submergedRatio > 0) this.vy *= 0.95;
-
-        this.y += this.vy;
-
-        // Floor collision
-        if (this.y + this.height > canvas.height) {
-            this.y = canvas.height - this.height;
-            this.vy = 0;
+        const bottomY = this.y + this.height;
+        const topY = this.y;
+        let submergedHeight = 0;
+        if (bottomY > waterLevel && topY < waterLevel) {
+            submergedHeight = bottomY - waterLevel;
+        } else if (topY >= waterLevel) {
+            submergedHeight = this.height;
         }
+
+        const submergedFraction = submergedHeight / this.height;
+        const buoyancyForce = submergedFraction * this.width * this.height * waterDensity * gravity / 1000;
+        const gravityForce = this.mass * gravity;
+        let netForce = gravityForce - buoyancyForce;
+
+        this.vy += (netForce / this.mass) * dt;
+
+        if (submergedFraction > 0) {
+            this.vx *= (1 - waterResistance);
+            this.vy *= (1 - waterResistance);
+        } else {
+            this.vx *= (1 - airResistance);
+            this.vy *= (1 - airResistance);
+        }
+
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+
+        if (this.x < 0) { this.x = 0; this.vx = -this.vx * 0.5; }
+        if (this.x + this.width > canvas.width) { this.x = canvas.width - this.width; this.vx = -this.vx * 0.5; }
+        if (this.y + this.height > canvas.height) { this.y = canvas.height - this.height; this.vy = -this.vy * 0.3; }
     }
 
-    draw() {
+    draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = '#333';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.type, this.x + this.width / 2, this.y + this.height / 2 + 4);
     }
 }
 
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const types = ['BOX', 'STONE', 'BALL'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    if (type === 'BOX') objects.push(new PhysicsObject(x - 20, y - 20, 40, 40, 0.5, '#8B4513', 'BOX'));
+    else if (type === 'STONE') objects.push(new PhysicsObject(x - 15, y - 15, 30, 30, 2.5, '#555', 'STONE'));
+    else objects.push(new PhysicsObject(x - 15, y - 15, 30, 30, 0.3, '#FF6B6B', 'BALL'));
+});
+
 document.getElementById('btnAddBox').addEventListener('click', () => {
-    objects.push(new FloatingObject(
-        randomFloat(50, canvas.width - 100), 50, 60, 40, 0.5, '#8B4513'
-    ));
+    objects.push(new PhysicsObject(randomFloat(50, canvas.width - 100), 50, 40, 40, 0.5, '#8B4513', 'BOX'));
 });
 
 document.getElementById('btnAddStone').addEventListener('click', () => {
-    objects.push(new FloatingObject(
-        randomFloat(50, canvas.width - 100), 50, 40, 40, 2.5, '#666'
-    ));
+    objects.push(new PhysicsObject(randomFloat(50, canvas.width - 100), 50, 30, 30, 2.5, '#555', 'STONE'));
 });
 
-document.getElementById('btnDrain').addEventListener('click', () => waterLevel += 30);
-document.getElementById('btnFill').addEventListener('click', () => waterLevel -= 30);
-document.getElementById('btnResetBuoyancy').addEventListener('click', () => {
-    objects.length = 0;
-    waterLevel = canvas.height * 0.6;
-});
-
-// Add initial objects
-objects.push(new FloatingObject(200, 50, 60, 40, 0.5, '#8B4513'));
-objects.push(new FloatingObject(400, 50, 40, 40, 2.5, '#666'));
+document.getElementById('btnDrain').addEventListener('click', () => waterLevel = Math.min(waterLevel + 100, 500));
+document.getElementById('btnFill').addEventListener('click', () => waterLevel = Math.max(waterLevel - 100, 200));
+document.getElementById('btnResetBuoyancy').addEventListener('click', () => { objects.length = 0; waterLevel = 350; });
 
 function animate() {
-    clearCanvas(ctx, canvas.width, canvas.height);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw water
-    ctx.fillStyle = 'rgba(64, 164, 223, 0.6)';
+    ctx.fillStyle = 'rgba(30, 144, 255, 0.6)';
     ctx.fillRect(0, waterLevel, canvas.width, canvas.height - waterLevel);
 
-    // Update and draw objects
-    objects.forEach(obj => {
-        obj.update();
-        obj.draw();
-    });
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, waterLevel);
+    ctx.lineTo(canvas.width, waterLevel);
+    ctx.stroke();
 
-    info.textContent = 'Water Level: ' + Math.floor(waterLevel) + ' | Objects: ' + objects.length;
+    objects.forEach(obj => { obj.update(0.016); obj.draw(ctx); });
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Water Level: ' + Math.floor(waterLevel) + 'px', 10, 20);
+    ctx.fillText('Objects: ' + objects.length, 10, 40);
+    info.textContent = 'Click canvas to add random objects!';
     requestAnimationFrame(animate);
 }
 
