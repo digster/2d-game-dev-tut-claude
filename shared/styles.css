@@ -530,3 +530,47 @@ a:hover {
     color: #79c0ff;
     margin: 20px 0;
 }
+
+/* ===================================
+   EXPORT DEMO BUTTON STYLES
+   =================================== */
+
+/* Make summary a flex container for button positioning */
+details[data-demo-id] > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Export button styling - using !important to override global button styles */
+button.export-demo-btn {
+    background: #2d1b69 !important;
+    color: #d2a8ff !important;
+    border: 1px solid #d2a8ff !important;
+    padding: 4px 12px !important;
+    border-radius: 4px !important;
+    font-size: 0.8em !important;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.2s;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+}
+
+button.export-demo-btn:hover {
+    background: #3d2b79 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(210, 168, 255, 0.3) !important;
+}
+
+button.export-demo-btn.success {
+    background: #1e5631 !important;
+    border-color: #66bb6a !important;
+    color: #66bb6a !important;
+}
+
+button.export-demo-btn.success:hover {
+    background: #1e5631 !important;
+    transform: none;
+}

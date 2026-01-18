@@ -1333,7 +1333,7 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
                 </ul>
             </div>
 
-            <details>
+            <details data-demo-id="raycasting" data-deps="vector2d,clearCanvas,randomFloat">
                 <summary>📝 Click to see: Ray Class</summary>
                 <div class="code-container">
                     <pre><code><span class="keyword">class</span> <span class="function">Ray</span> {
@@ -1732,6 +1732,11 @@ canvas.<span class="function">addEventListener</span>(<span class="string">'mous
 
     <!-- Load shared utilities -->
     <script src="shared/utils.js"></script>
+
+    <!-- Export Demo Feature -->
+    <script src="shared/dependency-bundles.js"></script>
+    <script src="shared/demo-bundles.js"></script>
+    <script src="shared/export-demo.js"></script>
 
     <!-- Page-specific JavaScript -->
     <script src="intermediate-demos.js"></script>

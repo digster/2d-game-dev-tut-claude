@@ -16,4 +16,4 @@ Make sure the code examples are error and bug free. Always check the console for
 
 Try and make changes in an iterative way(refer the index file).  Before making any major changes like removing an existing section, ask.
 
-After making any changes, generate a commit message that I can use to commit.
+After making any changes, generate a commit message that I can use to commit. The commit message should be shown at the end, after the changes are done.
