@@ -179,8 +179,8 @@ function derivatives([θ1, ω1, θ2, ω2]) {
                 </div>
             </details>
 
-            <details data-demo-id="doublePendulum" data-deps="clearCanvas">
-                <summary>📝 Click to see: Full Double Pendulum Implementation</summary>
+            <details class="code-block" data-demo-id="doublePendulum" data-deps="clearCanvas">
+                <summary>📖 Complete Code: Double Pendulum</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class DoublePendulum {
     constructor(x, y, L1, L2, m1, m2, θ1, θ2) {
@@ -366,8 +366,8 @@ function derivatives([θ1, ω1, θ2, ω2]) {
                 Click canvas to spawn at cursor | Bodies: <span id="rigidCount">0</span>
             </div>
 
-            <details data-demo-id="rigidBody" data-deps="clearCanvas">
-                <summary>📝 Click to see: Rigid Body Class</summary>
+            <details class="code-block" data-demo-id="rigidBody" data-deps="clearCanvas">
+                <summary>📖 Complete Code: Rigid Body Physics</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class RigidBody {
     constructor(x, y, width, height, mass = 1) {
@@ -616,8 +616,8 @@ function projectShape(corners, axis) {
                 Drag particles | Right-click to pin/unpin | Pull hard to tear
             </div>
 
-            <details data-demo-id="cloth" data-deps="clearCanvas">
-                <summary>📝 Click to see: Cloth Particle System</summary>
+            <details class="code-block" data-demo-id="cloth" data-deps="clearCanvas">
+                <summary>📖 Complete Code: Cloth Simulation</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class ClothParticle {
     constructor(x, y) {
@@ -967,8 +967,8 @@ function updateDensities(particles, spatialHash, kernels) {
                 </div>
             </details>
 
-            <details data-demo-id="sphWaterV2" data-deps="clearCanvas">
-                <summary>📝 Click to see: Full SPH Particle Class</summary>
+            <details class="code-block" data-demo-id="sphWaterV2" data-deps="clearCanvas">
+                <summary>📖 Complete Code: SPH Water v2</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class SPHParticle {
     constructor(x, y) {
@@ -1070,8 +1070,8 @@ function updateDensities(particles, spatialHash, kernels) {
                 | Time Scale: <input type="range" id="windTimeScale" min="1" max="20" value="5" style="width: 100px; vertical-align: middle;">
             </div>
 
-            <details data-demo-id="perlinWind" data-deps="clearCanvas">
-                <summary>📝 Click to see: Perlin Noise Implementation</summary>
+            <details class="code-block" data-demo-id="perlinWind" data-deps="clearCanvas">
+                <summary>📖 Complete Code: Perlin Noise Wind</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">// Classic Perlin noise implementation
 class PerlinNoise {
@@ -1321,8 +1321,8 @@ function getWindWithOctaves(perlin, x, y, t, octaves = 4) {
                 Click to add heat | Materials: Air (fast), Metal (medium), Wood (slow) | Max temp: <span id="heatMaxTemp">0</span>°C
             </div>
 
-            <details data-demo-id="heatDiffusion" data-deps="clearCanvas">
-                <summary>📝 Click to see: Heat Diffusion Implementation</summary>
+            <details class="code-block" data-demo-id="heatDiffusion" data-deps="clearCanvas">
+                <summary>📖 Complete Code: Heat Diffusion</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class HeatGrid {
     constructor(width, height, cellSize) {
