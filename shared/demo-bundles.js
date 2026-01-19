@@ -5468,6 +5468,1206 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+animate();`,
+
+    // ============ SIMULATION V2 DEMOS ============
+
+    doublePendulum: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let compareMode = false;
+let pendulum1, pendulum2;
+let dragging = null;
+
+class DoublePendulum {
+    constructor(x, y, L1, L2, m1, m2, θ1, θ2) {
+        this.origin = { x, y };
+        this.L1 = L1;
+        this.L2 = L2;
+        this.m1 = m1;
+        this.m2 = m2;
+        this.state = [θ1, 0, θ2, 0];
+        this.g = 9.81;
+        this.trail = [];
+        this.maxTrail = 500;
+    }
+
+    getPositions() {
+        const [θ1, , θ2] = this.state;
+        const x1 = this.origin.x + this.L1 * Math.sin(θ1);
+        const y1 = this.origin.y + this.L1 * Math.cos(θ1);
+        const x2 = x1 + this.L2 * Math.sin(θ2);
+        const y2 = y1 + this.L2 * Math.cos(θ2);
+        return { x1, y1, x2, y2 };
+    }
+
+    getEnergy() {
+        const [θ1, ω1, θ2, ω2] = this.state;
+        const { L1, L2, m1, m2, g } = this;
+        const v1sq = L1*L1 * ω1*ω1;
+        const v2sq = L1*L1*ω1*ω1 + L2*L2*ω2*ω2 + 2*L1*L2*ω1*ω2*Math.cos(θ1-θ2);
+        const KE = 0.5*m1*v1sq + 0.5*m2*v2sq;
+        const y1 = -L1 * Math.cos(θ1);
+        const y2 = y1 - L2 * Math.cos(θ2);
+        const PE = m1*g*y1 + m2*g*y2;
+        return KE + PE;
+    }
+
+    update(dt) {
+        const steps = 10;
+        const subDt = dt / steps;
+        for (let i = 0; i < steps; i++) {
+            this.rk4Step(subDt);
+        }
+        const pos = this.getPositions();
+        this.trail.push({ x: pos.x2, y: pos.y2 });
+        if (this.trail.length > this.maxTrail) this.trail.shift();
+    }
+
+    rk4Step(dt) {
+        const k1 = this.derivatives(this.state);
+        const k2 = this.derivatives(this.addState(this.state, k1, dt/2));
+        const k3 = this.derivatives(this.addState(this.state, k2, dt/2));
+        const k4 = this.derivatives(this.addState(this.state, k3, dt));
+        for (let i = 0; i < 4; i++) {
+            this.state[i] += dt * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]) / 6;
+        }
+    }
+
+    addState(state, deriv, dt) {
+        return state.map((s, i) => s + deriv[i] * dt);
+    }
+
+    derivatives(state) {
+        const [θ1, ω1, θ2, ω2] = state;
+        const { L1, L2, m1, m2, g } = this;
+        const delta = θ1 - θ2;
+        const sinD = Math.sin(delta);
+        const cosD = Math.cos(delta);
+        const M = 2*m1 + m2 - m2*Math.cos(2*delta);
+        const α1 = (-g*(2*m1+m2)*Math.sin(θ1) - m2*g*Math.sin(θ1-2*θ2)
+                   - 2*sinD*m2*(ω2*ω2*L2 + ω1*ω1*L1*cosD)) / (L1*M);
+        const α2 = (2*sinD*(ω1*ω1*L1*(m1+m2) + g*(m1+m2)*Math.cos(θ1)
+                   + ω2*ω2*L2*m2*cosD)) / (L2*M);
+        return [ω1, α1, ω2, α2];
+    }
+
+    draw(ctx, color = '#4fc3f7') {
+        const pos = this.getPositions();
+
+        // Trail
+        if (this.trail.length > 1) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.4;
+            ctx.moveTo(this.trail[0].x, this.trail[0].y);
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x, this.trail[i].y);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        // Arms
+        ctx.beginPath();
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 3;
+        ctx.moveTo(this.origin.x, this.origin.y);
+        ctx.lineTo(pos.x1, pos.y1);
+        ctx.lineTo(pos.x2, pos.y2);
+        ctx.stroke();
+
+        // Bobs
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pos.x1, pos.y1, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(pos.x2, pos.y2, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Pivot
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.origin.x, this.origin.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    clearTrail() {
+        this.trail = [];
+    }
+}
+
+function init() {
+    const scale = 100;
+    pendulum1 = new DoublePendulum(canvas.width/2, 100, scale, scale, 1, 1, Math.PI/2, Math.PI/2);
+    if (compareMode) {
+        pendulum2 = new DoublePendulum(canvas.width/2, 100, scale, scale, 1, 1, Math.PI/2 + 0.001, Math.PI/2);
+    } else {
+        pendulum2 = null;
+    }
+}
+
+function update() {
+    if (!paused) {
+        pendulum1.update(0.02);
+        if (pendulum2) pendulum2.update(0.02);
+    }
+}
+
+function draw() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    // Grid
+    ctx.strokeStyle = '#1a1f3a';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    if (pendulum2) pendulum2.draw(ctx, '#ff6b6b');
+    pendulum1.draw(ctx, '#4fc3f7');
+
+    // Compare mode label
+    if (compareMode) {
+        ctx.fillStyle = '#4fc3f7';
+        ctx.font = '14px Arial';
+        ctx.fillText('Blue: Original', 20, 30);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('Red: +0.001 rad difference', 20, 50);
+    }
+
+    const energy = pendulum1.getEnergy() * 100;
+    info.textContent = 'Energy: ' + energy.toFixed(1) + ' J | Drag bobs to reposition';
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// Mouse interaction
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const pos = pendulum1.getPositions();
+    const d1 = Math.hypot(mx - pos.x1, my - pos.y1);
+    const d2 = Math.hypot(mx - pos.x2, my - pos.y2);
+
+    if (d1 < 20) dragging = { pendulum: pendulum1, bob: 1 };
+    else if (d2 < 20) dragging = { pendulum: pendulum1, bob: 2 };
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const p = dragging.pendulum;
+    if (dragging.bob === 1) {
+        const dx = mx - p.origin.x;
+        const dy = my - p.origin.y;
+        p.state[0] = Math.atan2(dx, dy);
+        p.state[1] = 0;
+    } else {
+        const pos = p.getPositions();
+        const dx = mx - pos.x1;
+        const dy = my - pos.y1;
+        p.state[2] = Math.atan2(dx, dy);
+        p.state[3] = 0;
+    }
+    p.clearTrail();
+    if (pendulum2 && compareMode) {
+        pendulum2.state = [...p.state];
+        pendulum2.state[0] += 0.001;
+        pendulum2.clearTrail();
+    }
+});
+
+canvas.addEventListener('mouseup', () => { dragging = null; });
+canvas.addEventListener('mouseleave', () => { dragging = null; });
+
+// Buttons
+document.getElementById('btnReset').addEventListener('click', init);
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('btnCompare').addEventListener('click', function() {
+    compareMode = !compareMode;
+    this.style.background = compareMode ? '#66bb6a' : '#4fc3f7';
+    init();
+});
+document.getElementById('btnClearTrail').addEventListener('click', () => {
+    pendulum1.clearTrail();
+    if (pendulum2) pendulum2.clearTrail();
+});
+
+init();
+animate();`,
+
+    rigidBody: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let bodies = [];
+const gravity = 500;
+
+class RigidBody {
+    constructor(x, y, width, height, mass = 1) {
+        this.pos = { x, y };
+        this.vel = { x: (Math.random() - 0.5) * 200, y: 0 };
+        this.width = width;
+        this.height = height;
+        this.mass = mass;
+        this.angle = Math.random() * Math.PI * 2;
+        this.angularVel = (Math.random() - 0.5) * 5;
+        this.inertia = (mass / 12) * (width*width + height*height);
+        this.restitution = 0.5;
+        this.color = 'hsl(' + Math.random() * 360 + ', 70%, 60%)';
+    }
+
+    getCorners() {
+        const cos = Math.cos(this.angle);
+        const sin = Math.sin(this.angle);
+        const hw = this.width / 2;
+        const hh = this.height / 2;
+        const local = [
+            { x: -hw, y: -hh },
+            { x:  hw, y: -hh },
+            { x:  hw, y:  hh },
+            { x: -hw, y:  hh }
+        ];
+        return local.map(p => ({
+            x: this.pos.x + p.x * cos - p.y * sin,
+            y: this.pos.y + p.x * sin + p.y * cos
+        }));
+    }
+
+    getAxes() {
+        const corners = this.getCorners();
+        const axes = [];
+        for (let i = 0; i < 2; i++) {
+            const p1 = corners[i];
+            const p2 = corners[(i + 1) % corners.length];
+            const edge = { x: p2.x - p1.x, y: p2.y - p1.y };
+            const len = Math.sqrt(edge.x*edge.x + edge.y*edge.y);
+            axes.push({ x: -edge.y / len, y: edge.x / len });
+        }
+        return axes;
+    }
+
+    applyImpulse(impulse, contactPoint) {
+        this.vel.x += impulse.x / this.mass;
+        this.vel.y += impulse.y / this.mass;
+        const r = { x: contactPoint.x - this.pos.x, y: contactPoint.y - this.pos.y };
+        const torque = r.x * impulse.y - r.y * impulse.x;
+        this.angularVel += torque / this.inertia;
+    }
+
+    update(dt) {
+        this.vel.y += gravity * dt;
+        this.pos.x += this.vel.x * dt;
+        this.pos.y += this.vel.y * dt;
+        this.angle += this.angularVel * dt;
+        this.angularVel *= 0.999;
+
+        // Wall collisions
+        const corners = this.getCorners();
+        for (const c of corners) {
+            if (c.y > canvas.height - 10) {
+                this.pos.y -= c.y - (canvas.height - 10);
+                const r = { x: c.x - this.pos.x, y: c.y - this.pos.y };
+                const velAtPoint = {
+                    x: this.vel.x - this.angularVel * r.y,
+                    y: this.vel.y + this.angularVel * r.x
+                };
+                if (velAtPoint.y > 0) {
+                    const j = -(1 + this.restitution) * velAtPoint.y /
+                             (1/this.mass + (r.x*r.x)/this.inertia);
+                    this.applyImpulse({ x: -velAtPoint.x * 0.3, y: j }, c);
+                }
+            }
+            if (c.x < 10) {
+                this.pos.x += 10 - c.x;
+                this.vel.x = Math.abs(this.vel.x) * this.restitution;
+            }
+            if (c.x > canvas.width - 10) {
+                this.pos.x -= c.x - (canvas.width - 10);
+                this.vel.x = -Math.abs(this.vel.x) * this.restitution;
+            }
+        }
+    }
+
+    draw(ctx) {
+        const corners = this.getCorners();
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        for (let i = 1; i < corners.length; i++) {
+            ctx.lineTo(corners[i].x, corners[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function projectShape(corners, axis) {
+    let min = Infinity, max = -Infinity;
+    for (const c of corners) {
+        const proj = c.x * axis.x + c.y * axis.y;
+        min = Math.min(min, proj);
+        max = Math.max(max, proj);
+    }
+    return { min, max };
+}
+
+function satCollision(bodyA, bodyB) {
+    const cornersA = bodyA.getCorners();
+    const cornersB = bodyB.getCorners();
+    const axes = [...bodyA.getAxes(), ...bodyB.getAxes()];
+
+    let minOverlap = Infinity;
+    let smallestAxis = null;
+
+    for (const axis of axes) {
+        const projA = projectShape(cornersA, axis);
+        const projB = projectShape(cornersB, axis);
+        const overlap = Math.min(projA.max - projB.min, projB.max - projA.min);
+        if (overlap < 0) return null;
+        if (overlap < minOverlap) {
+            minOverlap = overlap;
+            smallestAxis = axis;
+        }
+    }
+
+    const d = { x: bodyB.pos.x - bodyA.pos.x, y: bodyB.pos.y - bodyA.pos.y };
+    if (d.x * smallestAxis.x + d.y * smallestAxis.y < 0) {
+        smallestAxis = { x: -smallestAxis.x, y: -smallestAxis.y };
+    }
+
+    let contactPoint = { x: (bodyA.pos.x + bodyB.pos.x) / 2, y: (bodyA.pos.y + bodyB.pos.y) / 2 };
+
+    return { normal: smallestAxis, depth: minOverlap, contactPoint };
+}
+
+function resolveCollision(bodyA, bodyB, collision) {
+    const { normal, depth, contactPoint } = collision;
+
+    const totalMass = bodyA.mass + bodyB.mass;
+    bodyA.pos.x -= normal.x * depth * (bodyB.mass / totalMass);
+    bodyA.pos.y -= normal.y * depth * (bodyB.mass / totalMass);
+    bodyB.pos.x += normal.x * depth * (bodyA.mass / totalMass);
+    bodyB.pos.y += normal.y * depth * (bodyA.mass / totalMass);
+
+    const rA = { x: contactPoint.x - bodyA.pos.x, y: contactPoint.y - bodyA.pos.y };
+    const rB = { x: contactPoint.x - bodyB.pos.x, y: contactPoint.y - bodyB.pos.y };
+
+    const velA = {
+        x: bodyA.vel.x - bodyA.angularVel * rA.y,
+        y: bodyA.vel.y + bodyA.angularVel * rA.x
+    };
+    const velB = {
+        x: bodyB.vel.x - bodyB.angularVel * rB.y,
+        y: bodyB.vel.y + bodyB.angularVel * rB.x
+    };
+
+    const relVel = { x: velA.x - velB.x, y: velA.y - velB.y };
+    const velAlongNormal = relVel.x * normal.x + relVel.y * normal.y;
+
+    if (velAlongNormal > 0) return;
+
+    const e = Math.min(bodyA.restitution, bodyB.restitution);
+    const rAxN = rA.x * normal.y - rA.y * normal.x;
+    const rBxN = rB.x * normal.y - rB.y * normal.x;
+
+    const denom = 1/bodyA.mass + 1/bodyB.mass + (rAxN*rAxN)/bodyA.inertia + (rBxN*rBxN)/bodyB.inertia;
+    const j = -(1 + e) * velAlongNormal / denom;
+
+    const impulse = { x: j * normal.x, y: j * normal.y };
+    bodyA.applyImpulse(impulse, contactPoint);
+    bodyB.applyImpulse({ x: -impulse.x, y: -impulse.y }, contactPoint);
+}
+
+function spawnBox(x, y) {
+    const w = 30 + Math.random() * 40;
+    const h = 30 + Math.random() * 40;
+    bodies.push(new RigidBody(x, y, w, h, w * h * 0.001));
+}
+
+function update() {
+    if (paused) return;
+    const dt = 1/60;
+
+    for (const body of bodies) {
+        body.update(dt);
+    }
+
+    for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+            const collision = satCollision(bodies[i], bodies[j]);
+            if (collision) {
+                resolveCollision(bodies[i], bodies[j], collision);
+            }
+        }
+    }
+
+    bodies = bodies.filter(b => b.pos.y < canvas.height + 200);
+}
+
+function draw() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#1a1f3a';
+    ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+    ctx.fillRect(0, 0, 10, canvas.height);
+    ctx.fillRect(canvas.width - 10, 0, 10, canvas.height);
+
+    for (const body of bodies) {
+        body.draw(ctx);
+    }
+
+    info.textContent = 'Bodies: ' + bodies.length + ' | Click to spawn | Watch them tumble!';
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    spawnBox(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+document.getElementById('btnSpawnBox').addEventListener('click', () => {
+    spawnBox(100 + Math.random() * 600, 50);
+});
+
+document.getElementById('btnSpawnMany').addEventListener('click', () => {
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnBox(100 + Math.random() * 600, 50), i * 100);
+    }
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+    bodies = [];
+});
+
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+
+for (let i = 0; i < 3; i++) {
+    spawnBox(200 + i * 150, 100);
+}
+
+animate();`,
+
+    cloth: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let wind = false;
+let gravityOn = true;
+let particles = [];
+let springs = [];
+let dragging = null;
+
+const cols = 25;
+const rows = 15;
+const spacing = 20;
+const startX = (canvas.width - (cols - 1) * spacing) / 2;
+const startY = 50;
+
+class ClothParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.oldX = x;
+        this.oldY = y;
+        this.pinned = false;
+    }
+
+    update(grav, damping, dt) {
+        if (this.pinned) return;
+        const vx = (this.x - this.oldX) * damping;
+        const vy = (this.y - this.oldY) * damping;
+        this.oldX = this.x;
+        this.oldY = this.y;
+        this.x += vx;
+        this.y += vy + grav * dt * dt;
+    }
+}
+
+class ClothSpring {
+    constructor(p1, p2, type) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.type = type;
+        this.restLength = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        this.broken = false;
+        this.stiffness = type === 'structural' ? 1.0 : type === 'shear' ? 0.7 : 0.3;
+        this.tearThreshold = type === 'structural' ? 3.5 : type === 'shear' ? 4 : 5;
+    }
+
+    satisfy() {
+        if (this.broken) return;
+        const dx = this.p2.x - this.p1.x;
+        const dy = this.p2.y - this.p1.y;
+        const currentLength = Math.hypot(dx, dy);
+        if (currentLength > this.restLength * this.tearThreshold) {
+            this.broken = true;
+            return;
+        }
+        if (currentLength < 0.0001) return;
+        const diff = (currentLength - this.restLength) / currentLength;
+        const moveX = dx * diff * 0.5 * this.stiffness;
+        const moveY = dy * diff * 0.5 * this.stiffness;
+        if (!this.p1.pinned) { this.p1.x += moveX; this.p1.y += moveY; }
+        if (!this.p2.pinned) { this.p2.x -= moveX; this.p2.y -= moveY; }
+    }
+}
+
+function init() {
+    particles = [];
+    springs = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const p = new ClothParticle(startX + x * spacing, startY + y * spacing);
+            if (y === 0 && (x === 0 || x === cols - 1 || x === Math.floor(cols / 2))) {
+                p.pinned = true;
+            }
+            particles.push(p);
+        }
+    }
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const i = y * cols + x;
+            if (x < cols - 1) springs.push(new ClothSpring(particles[i], particles[i + 1], 'structural'));
+            if (y < rows - 1) springs.push(new ClothSpring(particles[i], particles[i + cols], 'structural'));
+            if (x < cols - 1 && y < rows - 1) {
+                springs.push(new ClothSpring(particles[i], particles[i + cols + 1], 'shear'));
+                springs.push(new ClothSpring(particles[i + 1], particles[i + cols], 'shear'));
+            }
+            if (x < cols - 2) springs.push(new ClothSpring(particles[i], particles[i + 2], 'bend'));
+            if (y < rows - 2) springs.push(new ClothSpring(particles[i], particles[i + cols * 2], 'bend'));
+        }
+    }
+}
+
+function update() {
+    if (paused) return;
+    const dt = 1 / 60;
+    const gravity = gravityOn ? 500 : 0;
+    for (const p of particles) {
+        if (wind) {
+            const windForce = (Math.sin(Date.now() * 0.001) + 1) * 50;
+            p.x += windForce * dt * dt;
+        }
+        p.update(gravity, 0.98, dt);
+    }
+    for (let iter = 0; iter < 12; iter++) {
+        for (const s of springs) s.satisfy();
+    }
+    for (const p of particles) {
+        if (p.y > canvas.height - 10) { p.y = canvas.height - 10; p.oldY = p.y; }
+        if (p.x < 10) { p.x = 10; p.oldX = p.x; }
+        if (p.x > canvas.width - 10) { p.x = canvas.width - 10; p.oldX = p.x; }
+    }
+}
+
+function draw() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+    for (const s of springs) {
+        if (s.broken) continue;
+        ctx.beginPath();
+        ctx.moveTo(s.p1.x, s.p1.y);
+        ctx.lineTo(s.p2.x, s.p2.y);
+        ctx.strokeStyle = s.type === 'structural' ? '#4fc3f7' : s.type === 'shear' ? '#66bb6a' : '#ffa726';
+        ctx.lineWidth = s.type === 'structural' ? 2 : 1;
+        ctx.globalAlpha = s.type === 'bend' ? 0.3 : 0.8;
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    for (const p of particles) {
+        ctx.fillStyle = p.pinned ? '#ff6b6b' : '#fff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.pinned ? 6 : 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    info.textContent = 'Drag particles | Right-click to pin/unpin | Pull hard to tear';
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if (e.button === 2) {
+        for (const p of particles) {
+            if (Math.hypot(mx - p.x, my - p.y) < 15) {
+                p.pinned = !p.pinned;
+                break;
+            }
+        }
+    } else {
+        for (const p of particles) {
+            if (Math.hypot(mx - p.x, my - p.y) < 15) {
+                dragging = p;
+                break;
+            }
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    dragging.x = e.clientX - rect.left;
+    dragging.y = e.clientY - rect.top;
+});
+
+canvas.addEventListener('mouseup', () => { dragging = null; });
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+document.getElementById('btnReset').addEventListener('click', init);
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('btnWind').addEventListener('click', function() {
+    wind = !wind;
+    this.style.background = wind ? '#66bb6a' : '#4fc3f7';
+});
+document.getElementById('btnTear').addEventListener('click', function() {
+    // Tear mode hint - right-click on particles
+    info.textContent = 'Pull particles hard to tear! Right-click to pin/unpin.';
+});
+
+init();
+animate();`,
+
+    sphWaterV2: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let particles = [];
+
+const H = 20;
+const H2 = H * H;
+const MASS = 1;
+const REST_DENSITY = 1;
+const GAS_CONSTANT = 200;
+const VISCOSITY = 0.5;
+const GRAVITY = 300;
+
+const poly6Const = 315 / (64 * Math.PI * Math.pow(H, 9));
+const spikyConst = -45 / (Math.PI * Math.pow(H, 6));
+const viscConst = 45 / (Math.PI * Math.pow(H, 6));
+
+class SpatialHash {
+    constructor(cellSize) {
+        this.cellSize = cellSize;
+        this.grid = new Map();
+    }
+    clear() { this.grid.clear(); }
+    hash(x, y) { return Math.floor(x / this.cellSize) + ',' + Math.floor(y / this.cellSize); }
+    insert(p) {
+        const key = this.hash(p.x, p.y);
+        if (!this.grid.has(key)) this.grid.set(key, []);
+        this.grid.get(key).push(p);
+    }
+    getNeighbors(p) {
+        const neighbors = [];
+        const cx = Math.floor(p.x / this.cellSize);
+        const cy = Math.floor(p.y / this.cellSize);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const cell = this.grid.get((cx + dx) + ',' + (cy + dy));
+                if (cell) neighbors.push(...cell);
+            }
+        }
+        return neighbors;
+    }
+}
+
+const spatialHash = new SpatialHash(H);
+
+class SPHParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = 0;
+        this.fx = 0;
+        this.fy = 0;
+        this.density = 0;
+        this.pressure = 0;
+    }
+}
+
+function poly6(r2) {
+    if (r2 >= H2) return 0;
+    const diff = H2 - r2;
+    return poly6Const * diff * diff * diff;
+}
+
+function spikyGrad(r, dx, dy) {
+    if (r >= H || r < 0.0001) return { x: 0, y: 0 };
+    const diff = H - r;
+    const scale = spikyConst * diff * diff / r;
+    return { x: scale * dx, y: scale * dy };
+}
+
+function viscLaplacian(r) {
+    if (r >= H) return 0;
+    return viscConst * (H - r);
+}
+
+function update() {
+    if (paused) return;
+    const dt = 1 / 60;
+
+    spatialHash.clear();
+    for (const p of particles) spatialHash.insert(p);
+
+    // Compute density and pressure
+    for (const p of particles) {
+        p.density = 0;
+        const neighbors = spatialHash.getNeighbors(p);
+        for (const n of neighbors) {
+            const r2 = (p.x - n.x) ** 2 + (p.y - n.y) ** 2;
+            p.density += MASS * poly6(r2);
+        }
+        p.density = Math.max(p.density, REST_DENSITY);
+        p.pressure = GAS_CONSTANT * (p.density - REST_DENSITY);
+    }
+
+    // Compute forces
+    for (const p of particles) {
+        p.fx = 0;
+        p.fy = GRAVITY * p.density;
+        const neighbors = spatialHash.getNeighbors(p);
+        for (const n of neighbors) {
+            if (n === p) continue;
+            const dx = n.x - p.x;
+            const dy = n.y - p.y;
+            const r = Math.sqrt(dx * dx + dy * dy);
+            if (r < H && r > 0.0001) {
+                const pressureForce = -(p.pressure + n.pressure) / (2 * n.density);
+                const grad = spikyGrad(r, dx, dy);
+                p.fx += pressureForce * grad.x * MASS;
+                p.fy += pressureForce * grad.y * MASS;
+                const viscForce = VISCOSITY * viscLaplacian(r) / n.density;
+                p.fx += viscForce * (n.vx - p.vx) * MASS;
+                p.fy += viscForce * (n.vy - p.vy) * MASS;
+            }
+        }
+    }
+
+    // Integrate
+    for (const p of particles) {
+        p.vx += p.fx / p.density * dt;
+        p.vy += p.fy / p.density * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        // Boundaries
+        if (p.x < 10) { p.x = 10; p.vx *= -0.5; }
+        if (p.x > canvas.width - 10) { p.x = canvas.width - 10; p.vx *= -0.5; }
+        if (p.y < 10) { p.y = 10; p.vy *= -0.5; }
+        if (p.y > canvas.height - 10) { p.y = canvas.height - 10; p.vy *= -0.5; }
+    }
+}
+
+function draw() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+
+    for (const p of particles) {
+        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        const hue = 200 - Math.min(speed * 2, 100);
+        ctx.fillStyle = 'hsl(' + hue + ', 80%, 60%)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    info.textContent = 'Particles: ' + particles.length + ' | Click to spawn water';
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    for (let i = 0; i < 20; i++) {
+        particles.push(new SPHParticle(mx + (Math.random() - 0.5) * 30, my + (Math.random() - 0.5) * 30));
+    }
+});
+
+document.getElementById('btnReset').addEventListener('click', () => { particles = []; });
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('btnSpawnWater').addEventListener('click', () => {
+    for (let i = 0; i < 50; i++) {
+        particles.push(new SPHParticle(canvas.width/2 + (Math.random() - 0.5) * 100, 50 + Math.random() * 50));
+    }
+});
+
+animate();`,
+
+    perlinWind: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let particles = [];
+let time = 0;
+
+class PerlinNoise {
+    constructor() {
+        this.perm = new Array(512);
+        const p = [];
+        for (let i = 0; i < 256; i++) p[i] = i;
+        for (let i = 255; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [p[i], p[j]] = [p[j], p[i]];
+        }
+        for (let i = 0; i < 512; i++) this.perm[i] = p[i & 255];
+    }
+    fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    lerp(a, b, t) { return a + t * (b - a); }
+    grad(hash, x, y, z) {
+        const h = hash & 15;
+        const u = h < 8 ? x : y;
+        const v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+        return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+    }
+    noise(x, y, z = 0) {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        const Z = Math.floor(z) & 255;
+        x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+        const u = this.fade(x), v = this.fade(y), w = this.fade(z);
+        const A = this.perm[X] + Y, AA = this.perm[A] + Z, AB = this.perm[A + 1] + Z;
+        const B = this.perm[X + 1] + Y, BA = this.perm[B] + Z, BB = this.perm[B + 1] + Z;
+        return this.lerp(
+            this.lerp(this.lerp(this.grad(this.perm[AA], x, y, z), this.grad(this.perm[BA], x-1, y, z), u),
+                      this.lerp(this.grad(this.perm[AB], x, y-1, z), this.grad(this.perm[BB], x-1, y-1, z), u), v),
+            this.lerp(this.lerp(this.grad(this.perm[AA+1], x, y, z-1), this.grad(this.perm[BA+1], x-1, y, z-1), u),
+                      this.lerp(this.grad(this.perm[AB+1], x, y-1, z-1), this.grad(this.perm[BB+1], x-1, y-1, z-1), u), v), w);
+    }
+}
+
+const perlin = new PerlinNoise();
+
+function getCurlNoise(x, y, t, scale) {
+    const eps = 1;
+    const n = perlin.noise(x * scale, (y - eps) * scale, t);
+    const s = perlin.noise(x * scale, (y + eps) * scale, t);
+    const e = perlin.noise((x + eps) * scale, y * scale, t);
+    const w = perlin.noise((x - eps) * scale, y * scale, t);
+    return { x: (n - s) / (2 * eps), y: -(e - w) / (2 * eps) };
+}
+
+function getWind(x, y, t) {
+    const turbulence = 0.03;
+    let wind = { x: 0, y: 0 };
+    let amp = 1, freq = 1, maxAmp = 0;
+    for (let i = 0; i < 4; i++) {
+        const curl = getCurlNoise(x * freq, y * freq, t * freq, turbulence);
+        wind.x += curl.x * amp;
+        wind.y += curl.y * amp;
+        maxAmp += amp;
+        amp *= 0.5;
+        freq *= 2;
+    }
+    wind.x /= maxAmp;
+    wind.y /= maxAmp;
+    return wind;
+}
+
+class WindParticle {
+    constructor() {
+        this.reset();
+    }
+    reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.life = 100 + Math.random() * 200;
+        this.maxLife = this.life;
+        this.history = [];
+    }
+    update(t) {
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > 15) this.history.shift();
+
+        const wind = getWind(this.x, this.y, t);
+        const strength = 3;
+        this.x += wind.x * strength;
+        this.y += wind.y * strength;
+        this.life--;
+
+        if (this.x < 0) this.x = canvas.width;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.y < 0) this.y = canvas.height;
+        if (this.y > canvas.height) this.y = 0;
+
+        if (this.life <= 0) this.reset();
+    }
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        if (this.history.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(this.history[0].x, this.history[0].y);
+            for (const p of this.history) ctx.lineTo(p.x, p.y);
+            ctx.lineTo(this.x, this.y);
+            ctx.strokeStyle = 'rgba(79, 195, 247, ' + (alpha * 0.5) + ')';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(79, 195, 247, ' + alpha + ')';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function init() {
+    particles = [];
+    for (let i = 0; i < 500; i++) particles.push(new WindParticle());
+}
+
+function update() {
+    if (paused) return;
+    time += 0.005;
+    for (const p of particles) p.update(time);
+}
+
+function draw() {
+    clearCanvas(ctx, canvas.width, canvas.height);
+    for (const p of particles) p.draw(ctx);
+    info.textContent = 'Perlin curl noise wind field | Particles: ' + particles.length;
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+document.getElementById('btnReset').addEventListener('click', init);
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+
+init();
+animate();`,
+
+    heatDiffusion: `
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+let paused = false;
+let useConvection = true;
+let isMouseDown = false;
+
+const cellSize = 8;
+const cols = Math.floor(canvas.width / cellSize);
+const rows = Math.floor(canvas.height / cellSize);
+
+const materials = {
+    0: { name: 'Air', diffusivity: 0.4, emissivity: 0.05, color: '#1a1f3a' },
+    1: { name: 'Metal', diffusivity: 0.8, emissivity: 0.01, color: '#607d8b' },
+    2: { name: 'Wood', diffusivity: 0.08, emissivity: 0.2, color: '#8d6e63' }
+};
+
+let temp = [], tempNew = [], material = [];
+const ambientTemp = 20;
+
+function init() {
+    temp = []; tempNew = []; material = [];
+    for (let y = 0; y < rows; y++) {
+        temp[y] = new Array(cols).fill(ambientTemp);
+        tempNew[y] = new Array(cols).fill(ambientTemp);
+        material[y] = new Array(cols).fill(0);
+    }
+    // Add some metal blocks
+    for (let y = 15; y < 25; y++) {
+        for (let x = 20; x < 40; x++) material[y][x] = 1;
+    }
+    // Add some wood
+    for (let y = 35; y < 50; y++) {
+        for (let x = 60; x < 80; x++) material[y][x] = 2;
+    }
+}
+
+function tempToColor(t) {
+    const normalized = Math.max(0, Math.min(1, (t - ambientTemp) / 400));
+    if (normalized < 0.25) {
+        const f = normalized / 0.25;
+        return 'rgb(' + Math.floor(50 + 50*f) + ', ' + Math.floor(50 + 50*f) + ', ' + Math.floor(100 + 155*f) + ')';
+    } else if (normalized < 0.5) {
+        const f = (normalized - 0.25) / 0.25;
+        return 'rgb(' + Math.floor(100 + 155*f) + ', ' + Math.floor(100 + 155*f) + ', 255)';
+    } else if (normalized < 0.75) {
+        const f = (normalized - 0.5) / 0.25;
+        return 'rgb(255, ' + Math.floor(255 - 55*f) + ', ' + Math.floor(255 - 255*f) + ')';
+    } else {
+        const f = (normalized - 0.75) / 0.25;
+        return 'rgb(255, ' + Math.floor(200 - 150*f) + ', 0)';
+    }
+}
+
+function update() {
+    if (paused) return;
+    const dt = 0.1;
+
+    for (let y = 1; y < rows - 1; y++) {
+        for (let x = 1; x < cols - 1; x++) {
+            const mat = materials[material[y][x]];
+            const laplacian = temp[y-1][x] + temp[y+1][x] + temp[y][x-1] + temp[y][x+1] - 4 * temp[y][x];
+            let newT = temp[y][x] + mat.diffusivity * laplacian * dt;
+
+            if (useConvection && material[y][x] === 0 && y > 0) {
+                const heatBelow = y < rows - 1 ? temp[y + 1][x] : temp[y][x];
+                if (heatBelow > temp[y][x]) {
+                    newT += (heatBelow - temp[y][x]) * 0.15 * dt;
+                }
+            }
+
+            const excess = newT - ambientTemp;
+            if (excess > 0) newT -= excess * mat.emissivity * dt * 0.05;
+
+            tempNew[y][x] = Math.max(ambientTemp, Math.min(600, newT));
+        }
+    }
+    [temp, tempNew] = [tempNew, temp];
+}
+
+function draw() {
+    let maxT = ambientTemp;
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const t = temp[y][x];
+            const mat = material[y][x];
+            if (t > maxT) maxT = t;
+
+            if (t > ambientTemp + 5) {
+                ctx.fillStyle = tempToColor(t);
+            } else {
+                ctx.fillStyle = materials[mat].color;
+            }
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+    }
+    info.textContent = 'Click to add heat | Max temp: ' + Math.floor(maxT) + '°C | Materials: Air, Metal, Wood';
+}
+
+function addHeat(mx, my, amount) {
+    const cx = Math.floor(mx / cellSize);
+    const cy = Math.floor(my / cellSize);
+    const radius = 3;
+    for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist <= radius) {
+                    temp[ny][nx] += amount * (1 - dist / radius);
+                }
+            }
+        }
+    }
+}
+
+function animate() {
+    update();
+    draw();
+    requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    isMouseDown = true;
+    const rect = canvas.getBoundingClientRect();
+    addHeat(e.clientX - rect.left, e.clientY - rect.top, 150);
+});
+canvas.addEventListener('mousemove', (e) => {
+    if (!isMouseDown) return;
+    const rect = canvas.getBoundingClientRect();
+    addHeat(e.clientX - rect.left, e.clientY - rect.top, 50);
+});
+canvas.addEventListener('mouseup', () => { isMouseDown = false; });
+canvas.addEventListener('mouseleave', () => { isMouseDown = false; });
+
+document.getElementById('btnReset').addEventListener('click', init);
+document.getElementById('btnPause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('btnMaterial').addEventListener('click', function() {
+    info.textContent = 'Materials shown: Air (dark blue), Metal (gray), Wood (brown)';
+});
+document.getElementById('btnConvection').addEventListener('click', function() {
+    useConvection = !useConvection;
+    this.style.background = useConvection ? '#66bb6a' : '#4fc3f7';
+});
+
+init();
 animate();`
 };
 
@@ -5963,5 +7163,71 @@ const DEMO_HTML = {
             { id: 'resetThermal', text: 'Reset' }
         ],
         info: 'Place materials and start fires. Watch them spread!'
+    },
+
+    // ============ SIMULATION V2 DEMOS ============
+
+    doublePendulum: {
+        title: 'Double Pendulum (Chaos Theory)',
+        canvas: { width: 800, height: 500 },
+        controls: [
+            { id: 'btnReset', text: 'Reset' },
+            { id: 'btnPause', text: 'Pause' },
+            { id: 'btnCompare', text: 'Compare Mode' },
+            { id: 'btnClearTrail', text: 'Clear Trail' }
+        ],
+        info: 'Drag bobs to reposition. Compare mode shows chaos sensitivity.'
+    },
+    rigidBody: {
+        title: 'Rigid Body Physics',
+        canvas: { width: 800, height: 500 },
+        controls: [
+            { id: 'btnSpawnBox', text: 'Spawn Box' },
+            { id: 'btnSpawnMany', text: 'Spawn 5' },
+            { id: 'btnClear', text: 'Clear' },
+            { id: 'btnPause', text: 'Pause' }
+        ],
+        info: 'Click canvas to spawn boxes. Watch them tumble with proper torque!'
+    },
+    cloth: {
+        title: 'Cloth Simulation',
+        canvas: { width: 800, height: 500 },
+        controls: [
+            { id: 'btnReset', text: 'Reset' },
+            { id: 'btnPause', text: 'Pause' },
+            { id: 'btnWind', text: 'Toggle Wind' },
+            { id: 'btnTear', text: 'Tear Mode' }
+        ],
+        info: 'Drag particles. Right-click to pin/unpin. Pull hard to tear!'
+    },
+    sphWaterV2: {
+        title: 'SPH Water Simulation v2',
+        canvas: { width: 800, height: 500 },
+        controls: [
+            { id: 'btnReset', text: 'Reset' },
+            { id: 'btnPause', text: 'Pause' },
+            { id: 'btnSpawnWater', text: 'Spawn Water' }
+        ],
+        info: 'Click anywhere to spawn water particles. Uses spatial hashing!'
+    },
+    perlinWind: {
+        title: 'Perlin Noise Wind Field',
+        canvas: { width: 800, height: 400 },
+        controls: [
+            { id: 'btnReset', text: 'Reset' },
+            { id: 'btnPause', text: 'Pause' }
+        ],
+        info: 'Perlin curl noise creates divergence-free wind patterns.'
+    },
+    heatDiffusion: {
+        title: 'Heat Diffusion Simulation',
+        canvas: { width: 800, height: 400 },
+        controls: [
+            { id: 'btnReset', text: 'Reset' },
+            { id: 'btnPause', text: 'Pause' },
+            { id: 'btnMaterial', text: 'Material Info' },
+            { id: 'btnConvection', text: 'Toggle Convection' }
+        ],
+        info: 'Click to add heat. Watch it spread through different materials!'
     }
 };

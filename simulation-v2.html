@@ -179,7 +179,7 @@ function derivatives([θ1, ω1, θ2, ω2]) {
                 </div>
             </details>
 
-            <details>
+            <details data-demo-id="doublePendulum" data-deps="clearCanvas">
                 <summary>📝 Click to see: Full Double Pendulum Implementation</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class DoublePendulum {
@@ -366,7 +366,7 @@ function derivatives([θ1, ω1, θ2, ω2]) {
                 Click canvas to spawn at cursor | Bodies: <span id="rigidCount">0</span>
             </div>
 
-            <details>
+            <details data-demo-id="rigidBody" data-deps="clearCanvas">
                 <summary>📝 Click to see: Rigid Body Class</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class RigidBody {
@@ -616,7 +616,7 @@ function projectShape(corners, axis) {
                 Drag particles | Right-click to pin/unpin | Pull hard to tear
             </div>
 
-            <details>
+            <details data-demo-id="cloth" data-deps="clearCanvas">
                 <summary>📝 Click to see: Cloth Particle System</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class ClothParticle {
@@ -967,7 +967,7 @@ function updateDensities(particles, spatialHash, kernels) {
                 </div>
             </details>
 
-            <details>
+            <details data-demo-id="sphWaterV2" data-deps="clearCanvas">
                 <summary>📝 Click to see: Full SPH Particle Class</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class SPHParticle {
@@ -1070,7 +1070,7 @@ function updateDensities(particles, spatialHash, kernels) {
                 | Time Scale: <input type="range" id="windTimeScale" min="1" max="20" value="5" style="width: 100px; vertical-align: middle;">
             </div>
 
-            <details>
+            <details data-demo-id="perlinWind" data-deps="clearCanvas">
                 <summary>📝 Click to see: Perlin Noise Implementation</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">// Classic Perlin noise implementation
@@ -1321,7 +1321,7 @@ function getWindWithOctaves(perlin, x, y, t, octaves = 4) {
                 Click to add heat | Materials: Air (fast), Metal (medium), Wood (slow) | Max temp: <span id="heatMaxTemp">0</span>°C
             </div>
 
-            <details>
+            <details data-demo-id="heatDiffusion" data-deps="clearCanvas">
                 <summary>📝 Click to see: Heat Diffusion Implementation</summary>
                 <div class="code-container">
                     <pre><code class="language-javascript">class HeatGrid {
@@ -2852,5 +2852,10 @@ class CombustibleHeatGrid extends HeatGrid {
     scrollToTopBtn.style.opacity = '0';
     scrollToTopBtn.style.transition = 'opacity 0.3s';
     </script>
+
+    <!-- Export Demo System -->
+    <script src="shared/dependency-bundles.js"></script>
+    <script src="shared/demo-bundles.js"></script>
+    <script src="shared/export-demo.js"></script>
 </body>
 </html>
